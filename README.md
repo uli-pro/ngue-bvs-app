@@ -30,10 +30,9 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 - Responsive Design für alle Geräte
 
 ### Technische Besonderheiten
-- **Dual-Translation-System**: 
-  - Schlachter 1951 (gemeinfrei) für die Anzeige
-  - Hoffnung für Alle 2015 (intern) für optimale Suchergebnisse
-- **Vektor-basierte Suche**: Moderne Embedding-Technologie für semantische Ähnlichkeit
+- **Vektorbasierte Suche**: Moderne Embedding-Technologie für semantische Ähnlichkeit
+- **Schlachter 1951**: Gemeinfrei und überraschend effektiv für Vektorsuche (72,7% Genauigkeit)
+- **Optimiertes Modell**: paraphrase-multilingual-mpnet-base-v2 (768 Dimensionen)
 
 ## Technologie-Stack
 
@@ -53,7 +52,7 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 - **ReportLab** oder **WeasyPrint** für PDF-Generierung
 - **Flask-Login** für Authentifizierung
 - **pytest** für Testing
-- **Embedding-Modell** (z.B. Sentence-BERT oder OpenAI Embeddings) für Textvektorisierung
+- **Embedding-Modell** (Sentence-BERT: paraphrase-multilingual-mpnet-base-v2)
 
 ## Projektstruktur
 
@@ -66,10 +65,8 @@ ngue-bvs-app/
 │   ├── forms.py
 │   └── utils.py
 ├── data/                   # Bibeldaten (nicht im Git)
-│   ├── schlachter-1951/    # HTML-Dateien für Anzeige
-│   └── search-data/        # Daten für Suche
-│       ├── hfa-2015.txt    # Text für Vektorisierung
-│       └── vectors/        # Generierte Vektoren
+│   ├── schlachter-1951/    # HTML-Dateien für Import
+│   └── vectors/            # Generierte Vektordaten
 ├── prompts/                # Entwicklungs-Prompts
 │   ├── claude-code/        # Für Claude Code
 │   ├── development/        # Für allgemeine Entwicklung
@@ -159,7 +156,6 @@ cp .env.example .env
 5. Bibeldaten platzieren
 ```bash
 # Schlachter 1951 HTML-Dateien nach data/schlachter-1951/
-# HFA 2015 Textdatei nach data/search-data/hfa-2015.txt
 ```
 
 6. Datenbank initialisieren
@@ -236,8 +232,7 @@ OPENAI_API_KEY=your-openai-key  # Falls OpenAI Embeddings genutzt werden
 ### VerseVector
 - id (Primary Key)
 - verse_id (Foreign Key zu BibelVerse)
-- text_hfa (Text - vollständiger Vers HFA 2015)
-- embedding (vector(1536) - Vektor-Repräsentation)
+- embedding (vector(768) - Vektor-Repräsentation)
 - model_version (String - verwendetes Embedding-Modell)
 - created_at
 

@@ -20,9 +20,10 @@ This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that ena
 ## Architecture Overview
 
 ### Bible Text Management
-The application uses a dual-translation approach:
-- **Schlachter 1951**: Public domain German translation used for display in the web application
-- **Hoffnung für Alle 2015**: Modern dynamic translation used internally for semantic search vectorization
+The application uses a single-translation approach:
+- **Schlachter 1951**: Public domain German translation used for both display AND vectorization
+- Based on POC results showing 72.7% accuracy with Schlachter vs. 18.2% with modern translations
+- Simplifies architecture and reduces complexity
 
 ### Semantic Search Architecture
 The app implements advanced verse search using:

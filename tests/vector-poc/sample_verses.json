@@ -1,0 +1,82 @@
+{
+  "test_verses": [
+    {
+      "reference": "PSA.23.1",
+      "schlachter": "Der HERR ist mein Hirte; mir wird nichts mangeln.",
+      "hfa": "Der HERR ist mein Hirte, nichts wird mir fehlen.",
+      "theme": ["Vertrauen", "Fürsorge", "Gott als Hirte"]
+    },
+    {
+      "reference": "JER.29.11",
+      "schlachter": "Denn ich weiß, was ich für Gedanken über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben.",
+      "hfa": "Denn ich allein weiß, was ich mit euch vorhabe: Ich, der HERR, habe Frieden für euch im Sinn und will euch aus dem Leid befreien. Ich gebe euch wieder Zukunft und Hoffnung. Mein Wort gilt!",
+      "theme": ["Hoffnung", "Zukunft", "Gottes Plan"]
+    },
+    {
+      "reference": "JOS.1.9",
+      "schlachter": "Habe ich dir nicht geboten, dass du stark und mutig sein sollst? Sei unerschrocken und sei nicht verzagt; denn der HERR, dein Gott, ist mit dir überall, wo du hingehst!",
+      "hfa": "Ja, ich sage es noch einmal: Sei mutig und entschlossen! Lass dich nicht einschüchtern und hab keine Angst! Denn ich, der HERR, dein Gott, stehe dir bei, wohin du auch gehst.",
+      "theme": ["Mut", "Stärke", "Gottes Gegenwart"]
+    },
+    {
+      "reference": "PSA.46.2",
+      "schlachter": "Gott ist unsere Zuflucht und Stärke, ein Helfer, bewährt in Nöten.",
+      "hfa": "Gott ist unsere Zuflucht und Stärke, ein bewährter Helfer in Zeiten der Not.",
+      "theme": ["Zuflucht", "Hilfe", "Not"]
+    },
+    {
+      "reference": "ISA.40.31",
+      "schlachter": "Aber die auf den HERRN harren, kriegen neue Kraft, dass sie auffahren mit Flügeln wie Adler, dass sie laufen und nicht matt werden, dass sie wandeln und nicht müde werden.",
+      "hfa": "Aber alle, die ihre Hoffnung auf den HERRN setzen, bekommen neue Kraft. Sie sind wie Adler, denen mächtige Schwingen wachsen. Sie gehen und werden nicht müde, sie laufen und sind nicht erschöpft.",
+      "theme": ["Kraft", "Ausdauer", "Hoffnung auf Gott"]
+    },
+    {
+      "reference": "PSA.23.4",
+      "schlachter": "Und ob ich schon wanderte im finstern Tal, fürchte ich kein Unglück; denn du bist bei mir, dein Stecken und Stab trösten mich.",
+      "hfa": "Auch wenn es durch dunkle Täler geht, fürchte ich kein Unglück, denn du, HERR, bist bei mir. Dein Hirtenstab gibt mir Schutz und Trost.",
+      "theme": ["Trost", "Keine Furcht", "Gottes Begleitung"]
+    },
+    {
+      "reference": "MAL.3.10",
+      "schlachter": "Bringet den Zehnten ganz in das Kornhaus, auf dass Speise in meinem Hause sei, und prüfet mich hierin, spricht der HERR der Heerscharen, ob ich euch nicht des Himmels Fenster auftun und euch Segen herabschütten werde bis zum Überfluss!",
+      "hfa": "Ich, der HERR, der allmächtige Gott, fordere euch nun auf: Bringt den zehnten Teil eurer Erträge in vollem Umfang zu meinem Tempel, damit in den Vorratsräumen kein Mangel herrscht! Stellt mich doch auf die Probe und seht, ob ich meine Zusage halte! Denn ich verspreche euch, dass ich dann die Schleusen des Himmels wieder öffne und euch überreich mit meinem Segen beschenke.",
+      "theme": ["Segen", "Vertrauen", "Geben"]
+    },
+    {
+      "reference": "ISA.41.10",
+      "schlachter": "Fürchte dich nicht; denn ich bin mit dir; sei nicht ängstlich, denn ich bin dein Gott; ich stärke dich, ich helfe dir auch, ich erhalte dich durch die rechte Hand meiner Gerechtigkeit.",
+      "hfa": "Fürchte dich nicht, denn ich stehe dir bei; hab keine Angst, denn ich bin dein Gott! Ich mache dich stark, ich helfe dir, mit meiner siegreichen Hand beschütze ich dich!",
+      "theme": ["Keine Furcht", "Stärke", "Gottes Hilfe"]
+    },
+    {
+      "reference": "ROM.8.28",
+      "schlachter": "Wir wissen aber, dass denen, die Gott lieben, alle Dinge zum Besten dienen, denen, die nach dem Vorsatz berufen sind.",
+      "hfa": "Das eine aber wissen wir: Wer Gott liebt, dem dient alles, was geschieht, zum Guten. Dies gilt für alle, die Gott nach seinem Plan und Willen zum neuen Leben erwählt hat.",
+      "theme": ["Gottes Plan", "Gutes", "Liebe zu Gott"]
+    },
+    {
+      "reference": "PHP.4.13",
+      "schlachter": "Ich vermag alles durch den, der mich stark macht, Christus.",
+      "hfa": "Alles kann ich durch Christus, der mir Kraft und Stärke gibt.",
+      "theme": ["Kraft", "Christus", "Stärke"]
+    }
+  ],
+  "test_queries": [
+    {
+      "query": "Hoffnung",
+      "expected_matches": ["JER.29.11", "ISA.40.31"]
+    },
+    {
+      "query": "Angst überwinden",
+      "expected_matches": ["JOS.1.9", "ISA.41.10", "PSA.23.4"]
+    },
+    {
+      "query": "Gottes Hilfe in schweren Zeiten",
+      "expected_matches": ["PSA.46.2", "PSA.23.4", "ISA.41.10"]
+    },
+    {
+      "query": "Kraft und Stärke",
+      "expected_matches": ["ISA.40.31", "PHP.4.13", "ISA.41.10"]
+    }
+  ]
+}

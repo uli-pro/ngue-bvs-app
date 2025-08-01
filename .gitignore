@@ -75,10 +75,8 @@ temp/
 
 # Bible data files
 /data/schlachter-1951/
-/data/search-data/*.txt
-/data/search-data/vectors/
+/data/vectors/
 
 # Keep directory structure
 !/data/
-!/data/search-data/
-!/data/search-data/vectors/.gitkeep
+!/data/vectors/.gitkeep

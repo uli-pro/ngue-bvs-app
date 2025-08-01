@@ -2,8 +2,9 @@
 
 > ⚠️ **HINWEIS**: Dies ist die ursprüngliche Projektbeschreibung vom Beginn der Entwicklung. Einige technische Entscheidungen haben sich inzwischen geändert:
 > - **Datenbank**: Wir verwenden jetzt PostgreSQL mit pgvector statt SQLite
-> - **Bibelübersetzungen**: Dual-Translation-Ansatz mit Schlachter 1951 (Anzeige) und HFA 2015 (Vektorisierung)
+> - **Bibelübersetzungen**: Nur noch Schlachter 1951 (POC zeigte 72,7% Genauigkeit vs. 18,2% mit HFA)
 > - **Suche**: Semantische Suche mit Cosine Similarity statt einfacher Volltextsuche
+> - **Spendenbescheinigung**: Automatische Generierung wurde als neues Feature hinzugefügt
 > 
 > Für aktuelle Informationen siehe README.md und CLAUDE.md. Dieses Dokument wird als historische Referenz beibehalten.
 

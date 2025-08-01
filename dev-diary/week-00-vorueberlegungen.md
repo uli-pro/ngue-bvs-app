@@ -149,7 +149,7 @@ Die Projektdokumentation (README.md, project-description.md, development-plan.md
 ---
 
 ## Technische Grundsatzentscheidungen
-**Datum:** [Heutiges Datum einfügen]  
+**Datum:** 1. August 2025  
 **Art:** Architektur-Entscheidungen
 
 ### Datenbank: PostgreSQL statt SQLite
@@ -246,8 +246,79 @@ Diese technischen Entscheidungen erhöhen zwar die initiale Komplexität, schaff
 
 ---
 
+## Vector Search Proof of Concept - Überraschende Ergebnisse
+**Datum:** 01.08.2025  
+**Art:** Technischer Test
+
+### Testziel
+
+Vor der Hauptentwicklung wollten wir validieren:
+1. Funktioniert semantische Suche mit deutschen Bibeltexten?
+2. Liefert HFA 2015 bessere Ergebnisse als Schlachter 1951?
+3. Welches Embedding-Modell ist optimal?
+4. Ist die Performance akzeptabel?
+
+### Testergebnisse
+
+**Getestete Modelle:**
+- paraphrase-multilingual-MiniLM-L12-v2 (384 Dimensionen)
+- paraphrase-multilingual-mpnet-base-v2 (768 Dimensionen)
+
+**Überraschende Erkenntnis:**
+
+| Modell | Schlachter 1951 | HFA 2015 |
+|--------|-----------------|----------|
+| MiniLM (384d) | 54,5% | 9,1% |
+| MPNet (768d) | **72,7%** | 18,2% |
+
+Die Schlachter 1951 performt dramatisch besser als die moderne HFA 2015!
+
+### Analyse der Ergebnisse
+
+**Warum Schlachter besser funktioniert:**
+1. **Konsistente Terminologie**: Wörtliche Übersetzungen verwenden durchgängig dieselben Begriffe
+2. **Weniger Paraphrasierung**: Klarere semantische Signale für das Modell
+3. **Strukturierte Sprache**: Die formellere Sprache könnte besser zu Trainingsdaten passen
+
+**Ist 72,7% Genauigkeit ausreichend?**
+Ja! Aus mehreren Gründen:
+- Test zählte nur Top-3 Ergebnisse (in der App zeigen wir 5-10)
+- Abstrakte Queries wie "Angst überwinden" sind schwieriger als konkrete Suchen
+- Zusätzliche Kontext-basierte Alternativen (vorheriger/nächster Vers) erhöhen Trefferquote
+- Hybrid-Ansatz mit Keyword-Matching möglich
+
+### Neue technische Entscheidung
+
+**Wir verwenden nur Schlachter 1951:**
+- Bessere Suchergebnisse (72,7% vs. 18,2%)
+- Deutlich einfachere Architektur
+- Keine rechtlichen Komplikationen
+- Ein Datenbestand statt zwei
+
+**Optimales Setup:**
+- Modell: paraphrase-multilingual-mpnet-base-v2
+- Dimensionen: 768
+- Übersetzung: Schlachter 1951
+- Datenbank: PostgreSQL mit pgvector
+
+### Auswirkungen auf das Projekt
+
+1. **Vereinfachte Datenstruktur**: Keine separate HFA-Tabelle nötig
+2. **Einfacherer Import**: Nur eine Quelle zu parsen
+3. **Klarere Lizenzlage**: Nur gemeinfreie Texte
+4. **Bessere Performance**: Ein Vektorraum statt zwei
+
+### Nächste Schritte
+
+1. Größerer Test mit 100+ Versen zur Validierung
+2. Import-Script für alle Schlachter-HTML-Dateien
+3. Performance-Tests mit vollständigem Datensatz
+4. Feintuning der Suchparameter
+
+---
+
 ## Enthusiastisches Feedback vom Auftraggeber
-**Datum:** [Heutiges Datum einfügen]  
+**Datum:** 1.August 2025  
 **Art:** Feature-Anforderung per E-Mail
 
 ### Reaktion auf das Projekt
