@@ -10,6 +10,11 @@ Dieses Tagebuch dokumentiert die Entwicklung meines CS50-Abschlussprojekts: Eine
 ## Wochen-Übersicht
 
 ### Phase 1: Konzeption und Design
+
+- [ ] [Woche 0: Vorüberlegungen](./week-00-vorueberlegungen.md)
+  - Session 1: Auswahl der Bibelverse
+  - Session 2: 
+
 - [ ] [Woche 1: Konzeption und Design](./week-01-konzeption.md)
   - Session 1: User Journey Mapping
   - Session 2: Wireframes erstellen

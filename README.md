@@ -11,11 +11,13 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 ## Features
 
 ### Kernfunktionen
-- **Vers-Sponsoring**: Automatische Zuweisung eines verfügbaren Verses bei 100€ Spende
-- **Premium-Sponsoring**: Selbstauswahl eines Verses bei höheren Spenden (z.B. 150€)
+- **Vers-Sponsoring**: Auswahl eines verfügbaren Verses für 100€ Spende
+- **Such- und Auswahlsystem**: Volltextsuche, thematische Suche und Browsing durch Bücher
+- **Intelligente Alternativen**: Vorschläge bei bereits vergebenen Versen
 - **Zertifikat-System**: Automatische Generierung und Versand personalisierter Zertifikate
 - **Benutzerkonten**: Optional für Spender, mit Übersicht aller gesponserten Verse
 - **Gast-Spenden**: Möglichkeit ohne Registrierung zu spenden
+- **Visuelle Fortschrittsanzeige**: Animation beim Sponsoring eines Verses
 
 ### Zusatzfunktionen
 - Geschenk-Option für Vers-Sponsoring
@@ -154,6 +156,7 @@ MAIL_PASSWORD=your-email-password
 - book
 - chapter
 - verse
+- text_preview (für Suchfunktion)
 - is_sponsored (Boolean)
 - purchase_id (Foreign Key)
 
@@ -185,7 +188,8 @@ pytest --cov=app tests/
 |---------|----------|--------------|
 | GET | `/` | Homepage |
 | GET | `/verses` | Verfügbare Verse anzeigen |
-| GET | `/checkout` | Checkout-Seite |
+| GET | `/verses/search` | Verse suchen |
+| GET | `/checkout/<verse_id>` | Checkout-Seite für spezifischen Vers |
 | POST | `/process-payment` | Zahlung verarbeiten |
 | GET | `/register` | Registrierungsseite |
 | POST | `/register` | Benutzer registrieren |
@@ -219,6 +223,7 @@ Projekt Link: [https://github.com/[ihr-username]/ngue-bvs-app](https://github.co
 ## Entwicklungsstatus
 
 - [x] Projektplanung
+- [x] User-Feedback und Konzeptanpassung
 - [ ] Woche 1: Konzeption und Design
 - [ ] Woche 2: Backend-Grundstruktur
 - [ ] Woche 3: Frontend-Entwicklung

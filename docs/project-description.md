@@ -1,10 +1,12 @@
 # NGÜ Bibelvers-Spenden-App
 
-*(Ergebnisse eines Chats mit ChatGPT*)
-
 ## Detaillierte Projektbeschreibung
 
 Das Projekt ist eine Web-Applikation zur Finanzierung der Bibelübersetzung NGÜ (Neue Genfer Übersetzung) für das Alte Testament. Das Neue Testament ist bereits veröffentlicht, nun soll das Alte Testament finanziert werden. Die Grundidee besteht darin, dass Spender einzelne Bibelverse für jeweils 100 Euro "sponsern" können. Als Gegenleistung erhalten sie ein Zertifikat mit der Information, welchen spezifischen Vers sie finanziert haben - ein ideeller Gegenwert, der es den Spendern ermöglicht, auch in 50 Jahren noch zu sagen: "Ich habe Jesaja 57 Vers 2 finanziert."
+
+## Wichtige Projektentscheidung
+
+Nach ausführlichem User-Feedback wurde entschieden, dass es **nur ein einheitliches Preismodell** geben wird. Alle Spender zahlen 100 Euro und können sich aus dem Pool der verfügbaren Verse einen aussuchen. Es gibt keine Premium-Stufe. Diese Entscheidung basiert auf dem eindeutigen Feedback, dass unterschiedliche Preisstufen als unfair empfunden werden.
 
 ## Technische Architektur im Detail
 
@@ -16,11 +18,11 @@ Der Entwickler plant einen modernen Python-basierten Stack mit Flask als Web-Fra
 
 Die Datenbank besteht aus drei Haupttabellen:
 
-**Bibelvers-Tabelle**: Diese Tabelle enthält jeden einzelnen Vers des Alten Testaments als eigenen Eintrag (geschätzt etwa 7.000 Einträge). Jeder Eintrag enthält die Vers-Referenz (Buch, Kapitel, Vers), den Text des Verses (in der NGÜ-Übersetzung falls bereits übersetzt, sonst in der Luther1948-Übersetzung),  einen Status-Indikator ob der Vers bereits gesponsert wurde, und bei gesponserten Versen einen Verweis auf die entsprechende Kauf-ID aus der Kauf-Tabelle.
+**Bibelvers-Tabelle**: Diese Tabelle enthält jeden einzelnen Vers des Alten Testaments als eigenen Eintrag (etwa 11.000 noch zu übersetzende Verse). Jeder Eintrag enthält die Vers-Referenz (Buch, Kapitel, Vers), einen Text-Preview für die Suchfunktion, einen Status-Indikator ob der Vers bereits gesponsert wurde, und bei gesponserten Versen einen Verweis auf die entsprechende Kauf-ID aus der Kauf-Tabelle.
 
 **User-Tabelle**: Speichert alle registrierten Benutzer mit ihren Kontaktdaten, insbesondere E-Mail-Adressen für Newsletter und Spendenbescheinigungen. Passwörter werden gehasht und gesalzen gespeichert. Die Tabelle ermöglicht es Nutzern, ihre Spendenhistorie einzusehen und mehrere Verse über Zeit zu sammeln.
 
-**Kauf-/Spenden-Tabelle**: Dokumentiert jede einzelne Transaktion mit Transaktions-ID von Stripe, User-ID (oder Gast-Informationen), Spendenbetrag, Datum und Uhrzeit der Spende, Art der Spende (Standard oder Premium), zugewiesener Bibelvers und optional Informationen für Geschenkspenden.
+**Kauf-/Spenden-Tabelle**: Dokumentiert jede einzelne Transaktion mit Transaktions-ID von Stripe, User-ID (oder Gast-Informationen), Spendenbetrag (standardmäßig 100€), Datum und Uhrzeit der Spende, zugewiesener Bibelvers und optional Informationen für Geschenkspenden.
 
 ### Zahlungsintegration mit Stripe
 
@@ -30,17 +32,30 @@ Die Peter-Schöffer-Stiftung kann als gemeinnützige Organisation reduzierte Geb
 
 ## Detaillierte Funktionalitäten
 
-### Spendenmodelle
+### Zentrales Spendenmodell
 
-Das System bietet zwei verschiedene Spendenmodelle:
+Das System bietet ein einheitliches Spendenmodell:
 
-**Standardspende (100 Euro)**: Der Spender erhält automatisch den nächsten verfügbaren Vers zugewiesen. Dies ermöglicht einen schnellen, unkomplizierten Spendenprozess.
+**Vers-Sponsoring (100 Euro)**: Jeder Spender kann sich aus allen verfügbaren Versen einen aussuchen. Die Auswahl erfolgt über eine benutzerfreundliche Suchfunktion mit verschiedenen Zugängen:
+- Direkte Eingabe der Bibelstelle
+- Volltextsuche nach Stichworten
+- Thematische Suche (z.B. "Hoffnung", "Trost", "Mut")
+- Browsing durch Bücher und Kapitel
 
-**Premium-Spende (z.B. 150 Euro)**: Der Spender kann aus allen noch verfügbaren Versen selbst einen auswählen. Diese Option ermöglicht es auch, einen Vers zu verschenken, wobei der Beschenkte dann das Zertifikat erhält.
+### Intelligente Alternative bei vergebenen Versen
+
+Falls der Wunschvers bereits vergeben ist, bietet das System intelligente Alternativen:
+- Kontextbasierte Vorschläge (vorheriger/nächster Vers)
+- Verse aus demselben Kapitel
+- Thematisch ähnliche Verse
+
+### Visuelle Features
+
+Eine animierte Darstellung zeigt, wie ein Vers beim Sponsoring "aktiviert" wird - inspiriert von kaufnekuh.de. Dies könnte eine Animation sein, bei der der Vers sich von Hebräisch zu Deutsch verwandelt oder grün aufleuchtet.
 
 ### Nutzerverwaltung und Gastspenden
 
-Das System ist flexibel gestaltet und erlaubt sowohl registrierte Nutzer als auch Gastspenden. Gastspender müssen kein Konto anlegen, erhalten aber trotzdem ihr Zertifikat und die Spendenbescheinigung per E-Mail. Registrierte Nutzer haben zusätzliche Vorteile: Übersicht aller gesponserten Verse, erneuter Download von Zertifikaten, Verwaltung der persönlichen Daten und eventuell eine Liste zum Ausdrucken aller gesponserten Verse.
+Das System ist flexibel gestaltet und erlaubt sowohl registrierte Nutzer als auch Gastspenden. Gastspender müssen kein Konto anlegen, erhalten aber trotzdem ihr Zertifikat und die Spendenbescheinigung per E-Mail. Registrierte Nutzer haben zusätzliche Vorteile: Übersicht aller gesponserten Verse, erneuter Download von Zertifikaten, Verwaltung der persönlichen Daten und eine Liste zum Ausdrucken aller gesponserten Verse.
 
 Bei nachträglicher Registrierung können frühere Gastspenden über die E-Mail-Adresse dem neuen Nutzerkonto zugeordnet werden, sodass eine vollständige Historie entsteht.
 
@@ -62,6 +77,14 @@ Der Entwickler plant, zunächst die Funktionalität zu entwickeln und erst spät
 
 ## Technische Herausforderungen und Lösungsansätze
 
+### Suchfunktionalität
+
+Die größte technische Herausforderung ist die Implementierung einer leistungsfähigen Suchfunktion über 11.000 Verse. Dies erfordert:
+- Volltext-Indizierung aller Verse
+- Thematische Verschlagwortung
+- Effizienter Such-Algorithmus
+- Möglichkeit für unscharfe Suche
+
 ### Skalierbarkeit
 
 SQLite3 hat Limitierungen bei gleichzeitigen Schreibzugriffen - nur ein Schreibvorgang ist gleichzeitig möglich. Bei erwarteten vielen gleichzeitigen Spenden könnte dies zu Engpässen führen. Die Verwendung von SQLAlchemy ermöglicht jedoch einen späteren nahtlosen Wechsel zu PostgreSQL oder MySQL.
@@ -72,7 +95,7 @@ DSGVO-konforme Speicherung und Verarbeitung von personenbezogenen Daten ist esse
 
 ### Performance-Optimierung
 
-Bei etwa 7.000 Bibelvers-Einträgen müssen Datenbankabfragen optimiert werden. Indizes auf häufig abgefragte Felder (z.B. "ist_gesponsert") sollten gesetzt werden. Caching-Mechanismen für häufig abgerufene Daten könnten implementiert werden.
+Bei 11.000 Bibelvers-Einträgen müssen Datenbankabfragen optimiert werden. Indizes auf häufig abgefragte Felder (z.B. "ist_gesponsert") sollten gesetzt werden. Caching-Mechanismen für häufig abgerufene Daten könnten implementiert werden.
 
 ### Buchhaltung und rechtliche Aspekte
 
@@ -80,6 +103,6 @@ Die korrekte Dokumentation für Spendenbescheinigungen muss gewährleistet sein.
 
 ## Geplante Entwicklungsschritte
 
-Der Entwickler plant einen iterativen Ansatz: Zunächst Entwicklung der Kernfunktionalität mit einfachem Design, Implementierung der Datenbankstruktur und grundlegenden CRUD-Operationen, Integration der Stripe-Zahlungsabwicklung und Automatisierung der Zertifikat-Generierung. Nach erfolgreichem Test folgen die Implementierung der Nutzerverwaltung, Erweiterung um Premium-Features (Vers-Auswahl, Geschenkoption), grafische Überarbeitung und Anpassung an NGÜ-Design sowie die finale Integration in die WordPress-Seite.
+Der Entwickler plant einen iterativen Ansatz: Zunächst Entwicklung der Kernfunktionalität mit einfachem Design, Implementierung der Datenbankstruktur und grundlegenden CRUD-Operationen, Integration der Stripe-Zahlungsabwicklung und Automatisierung der Zertifikat-Generierung. Nach erfolgreichem Test folgen die Implementierung der Nutzerverwaltung, Entwicklung der Such- und Auswahlfunktionen, grafische Überarbeitung und Anpassung an NGÜ-Design sowie die finale Integration in die WordPress-Seite.
 
 Das Projekt dient gleichzeitig als Abschlussprojekt für den Harvard CS50-Kurs, was eine gute Balance zwischen Lernerfahrung und praktischem Nutzen darstellt.
