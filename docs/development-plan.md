@@ -60,22 +60,25 @@
 ### Session 7 - Projekt-Setup
 - Flask-Projekt initialisieren
 - Virtuelle Umgebung einrichten
-- Alle Dependencies installieren (Flask, SQLAlchemy, etc.)
+- Alle Dependencies installieren (Flask, SQLAlchemy, psycopg2, etc.)
 - Git-Repository erstellen
 - Grundlegende Ordnerstruktur anlegen
+- PostgreSQL mit Docker aufsetzen
 
 ### Session 8 - Datenbank-Setup
-- SQLAlchemy-Models erstellen (User, BibelVerse, Purchase)
+- PostgreSQL-Datenbank mit pgvector Extension einrichten
+- SQLAlchemy-Models erstellen (User, BibelVerse, VerseVector, Purchase)
 - Datenbank initialisieren
 - Migrations-System einrichten
 - Test-Daten einfügen (ein paar Beispiel-Verse)
 
 ### Session 9 - Bibelvers-Daten importieren
-- Script zum Import aller AT-Verse schreiben
-- CSV/JSON mit allen 11.000 Versen vorbereiten
-- Text-Previews für Suchfunktion generieren
-- Import durchführen und verifizieren
+- Script zum Import der Schlachter-1951 HTML-Dateien schreiben
+- Parser für HTML-Struktur entwickeln
+- HFA-2015 Textdatei einlesen und Verse zuordnen
+- Beide Übersetzungen in Datenbank importieren
 - Backup-Strategie implementieren
+- Embedding-Modell auswählen (Sentence-BERT oder OpenAI)
 
 ### Session 10 - Basis-Routes implementieren
 - Homepage-Route
@@ -110,17 +113,19 @@
 - Visuelle Fortschrittsanzeige
 
 ### Session 15 - Vers-Suche implementieren
-- Volltextsuche über alle Verse
-- Thematische Kategorien/Tags
+- Semantische Suche mit Vektoren implementieren
+- Stichwort-zu-Vektor Konvertierung
+- Cosine-Similarity-Suche in pgvector
 - Filter nach Büchern
-- Such-Ergebnisse anzeigen
+- Such-Ergebnisse mit Ähnlichkeits-Score anzeigen
 
 ### Session 16 - Vers-Auswahl-Interface
 - Interaktive Vers-Auswahl
-- Vorschau des ausgewählten Verses
-- Alternative Vorschläge bei vergebenen Versen
+- Vorschau des ausgewählten Verses (Schlachter-Text)
+- Semantische Alternativen bei vergebenen Versen
 - Kontext-basierte Alternativen (vorheriger/nächster Vers)
 - Mobile-optimierte Auswahl
+- Vektorisierung neuer Suchanfragen
 
 ### Session 17 - Forms und Validierung
 - Client-seitige Validierung mit JavaScript
@@ -226,8 +231,9 @@
 
 ### Session 33 - Performance-Optimierung
 - Datenbank-Queries optimieren
-- Such-Performance verbessern
-- Caching implementieren
+- Vektor-Indizes in pgvector einrichten
+- Such-Performance mit Caching verbessern
+- Batch-Vektorisierung für neue Anfragen
 - Asset-Optimierung
 - Ladezeiten messen
 

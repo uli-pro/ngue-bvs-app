@@ -145,3 +145,101 @@ Die Herausforderung besteht nun darin, andere Wege zu finden, um Anreize für h�
 ### Nächste Schritte
 
 Die Projektdokumentation (README.md, project-description.md, development-plan.md) muss entsprechend aktualisiert werden, um diese fundamentale Änderung zu reflektieren. Alle Referenzen zu Premium-Features oder gestaffelten Preisen müssen entfernt werden. Die technische Planung kann sich nun voll auf die Implementierung einer exzellenten Such- und Auswahlfunktion konzentrieren.
+
+---
+
+## Technische Grundsatzentscheidungen
+**Datum:** [Heutiges Datum einfügen]  
+**Art:** Architektur-Entscheidungen
+
+### Datenbank: PostgreSQL statt SQLite
+
+Nach eingehender Überlegung habe ich mich entschieden, direkt mit PostgreSQL zu starten, anstatt wie ursprünglich geplant mit SQLite zu beginnen. Der ausschlaggebende Faktor ist die Notwendigkeit einer effizienten Vektor-Suche für die semantische Vers-Ähnlichkeit.
+
+**Begründung:**
+- SQLite hat keine native Unterstützung für Vektor-Operationen
+- Die pgvector Extension für PostgreSQL ermöglicht effiziente Cosine-Similarity-Berechnungen direkt in der Datenbank
+- Eine spätere Migration wäre aufwendig und würde Refactoring erfordern
+- PostgreSQL ist nicht wesentlich komplexer in der Handhabung als SQLite
+- Docker macht das lokale Setup unkompliziert
+
+### Dual-Translation-Ansatz
+
+Eine wichtige Entscheidung betrifft die Verwendung von zwei verschiedenen Bibelübersetzungen:
+
+**Schlachter 1951** (gemeinfrei):
+- Wird für die Anzeige in der Web-App verwendet
+- Rechtlich unbedenklich, da gemeinfrei
+- Klassische, wörtliche Übersetzung
+
+**Hoffnung für Alle 2015** (urheberrechtlich geschützt):
+- Wird NUR intern für die Vektorisierung verwendet
+- Niemals für User sichtbar
+- Moderne, dynamische Übersetzung optimiert für NLP
+- Bessere Ergebnisse bei semantischer Suche erwartet
+
+**Begründung:**
+Moderne Embedding-Modelle wurden auf zeitgenössischen Texten trainiert und verstehen natürliche, moderne Sprache besser. Die HFA verwendet aktuelles Deutsch und erklärt antike Konzepte mit modernen Begriffen, was zu besseren Vektoren führt. Die rechtliche Trennung (HFA nur intern, Schlachter für Anzeige) ist sauber und vermeidet Urheberrechtsprobleme.
+
+### Semantische Suche mit Cosine Similarity
+
+Für die Ähnlichkeitssuche verwenden wir **Cosine Similarity**, eine bewährte Methode im NLP-Bereich:
+
+**Was ist Cosine Similarity?**
+- Misst die Ähnlichkeit zwischen zwei Vektoren anhand des Winkels zwischen ihnen
+- Werte zwischen 0 (keine Ähnlichkeit) und 1 (identisch)
+- Ideal für hochdimensionale Räume wie Text-Embeddings
+- Unabhängig von der Vektor-Länge (nur Richtung zählt)
+
+**Implementierung mit pgvector:**
+```sql
+-- Ähnliche Verse finden
+SELECT 
+    v.id,
+    v.reference,
+    v.text_schlachter,
+    1 - (vv.embedding <=> $1) as similarity
+FROM bibelverse v
+JOIN verse_vectors vv ON v.id = vv.verse_id
+WHERE v.is_sponsored = false
+ORDER BY vv.embedding <=> $1
+LIMIT 5;
+```
+
+**Anwendungsfälle:**
+1. Alternative Verse vorschlagen, wenn Wunschvers vergeben ist
+2. Thematische Suche basierend auf Stichworten
+3. "Ähnliche Verse" Feature für Exploration
+
+### Datenstruktur-Entscheidungen
+
+**Getrennte Tabellen für Verse und Vektoren:**
+- `bibelverse`: Enthält Schlachter-Text und Metadaten
+- `verse_vectors`: Enthält HFA-Text und Embeddings
+- Ermöglicht saubere Trennung der Übersetzungen
+- Flexibilität für zukünftige Embedding-Updates
+
+**Einheitliche Vers-Referenzen:**
+- Format: "BOOK.CHAPTER.VERSE" (z.B. "GEN.1.1")
+- Ermöglicht eindeutige Zuordnung zwischen Übersetzungen
+- Internationale Standards-konform
+
+### Technologie-Stack Zusammenfassung
+
+- **Datenbank**: PostgreSQL mit pgvector
+- **Backend**: Flask (Python)
+- **Embedding**: Sentence-BERT oder OpenAI Embeddings (noch zu evaluieren)
+- **Bibeltexte**: Schlachter 1951 (Anzeige) + HFA 2015 (Vektorisierung)
+- **Suche**: Cosine Similarity für semantische Ähnlichkeit
+
+### Offene technische Fragen
+
+1. **Embedding-Modell**: Welches Modell liefert die besten Ergebnisse für deutsche Bibeltexte?
+2. **Vektor-Dimensionen**: 384 (Sentence-BERT) oder 1536 (OpenAI)?
+3. **Performance**: Wie schnell sind Vektor-Suchen bei ~11.000 Versen?
+4. **Caching**: Brauchen wir Redis für häufige Suchanfragen?
+5. **Batch-Vektorisierung**: Wie organisieren wir den initialen Import?
+
+### Reflexion
+
+Diese technischen Entscheidungen erhöhen zwar die initiale Komplexität, schaffen aber eine solide Grundlage für die gewünschten Features. Der Dual-Translation-Ansatz ist eine elegante Lösung für das Spannungsfeld zwischen optimaler Suche und rechtlichen Beschränkungen. PostgreSQL mit pgvector gibt uns Enterprise-Level-Fähigkeiten für semantische Suche, die mit SQLite nicht möglich wären.

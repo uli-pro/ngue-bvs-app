@@ -12,8 +12,11 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 
 ### Kernfunktionen
 - **Vers-Sponsoring**: Auswahl eines verfügbaren Verses für 100€ Spende
-- **Such- und Auswahlsystem**: Volltextsuche, thematische Suche und Browsing durch Bücher
-- **Intelligente Alternativen**: Vorschläge bei bereits vergebenen Versen
+- **Intelligente Semantische Suche**: 
+  - Thematische Suche mit modernen NLP-Technologien
+  - Automatische Vorschläge ähnlicher Verse bei bereits vergebenen Versen
+  - Cosine-Similarity-basierte Ähnlichkeitsberechnung
+- **Such- und Auswahlsystem**: Dropdown-Auswahl nach Buch/Kapitel/Vers oder Stichwortsuche
 - **Zertifikat-System**: Automatische Generierung und Versand personalisierter Zertifikate
 - **Benutzerkonten**: Optional für Spender, mit Übersicht aller gesponserten Verse
 - **Gast-Spenden**: Möglichkeit ohne Registrierung zu spenden
@@ -25,12 +28,18 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 - Spendenhistorie für registrierte Nutzer
 - Responsive Design für alle Geräte
 
+### Technische Besonderheiten
+- **Dual-Translation-System**: 
+  - Schlachter 1951 (gemeinfrei) für die Anzeige
+  - Hoffnung für Alle 2015 (intern) für optimale Suchergebnisse
+- **Vektor-basierte Suche**: Moderne Embedding-Technologie für semantische Ähnlichkeit
+
 ## Technologie-Stack
 
 ### Backend
-- **Python 3.x** mit **Flask** Web-Framework
+- **Python 3.8+** mit **Flask** Web-Framework
+- **PostgreSQL** mit **pgvector** Extension für Vektoroperationen
 - **SQLAlchemy** als ORM
-- **SQLite3** (Development) / **PostgreSQL** (Production)
 - **Stripe** für Zahlungsabwicklung
 
 ### Frontend
@@ -43,37 +52,42 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 - **ReportLab** oder **WeasyPrint** für PDF-Generierung
 - **Flask-Login** für Authentifizierung
 - **pytest** für Testing
+- **Embedding-Modell** (z.B. Sentence-BERT oder OpenAI Embeddings) für Textvektorisierung
 
 ## Projektstruktur
 
 ```
 ngue-bvs-app/
-├── app/
+├── app/                    # Flask-Anwendung (wird erstellt)
 │   ├── __init__.py
 │   ├── models.py
 │   ├── routes.py
 │   ├── forms.py
 │   └── utils.py
-├── static/
-│   ├── css/
-│   ├── js/
-│   └── images/
-├── templates/
-│   ├── base.html
-│   ├── index.html
-│   ├── checkout.html
-│   └── ...
-├── tests/
-├── migrations/
-├── docs/
+├── data/                   # Bibeldaten (nicht im Git)
+│   ├── schlachter-1951/    # HTML-Dateien für Anzeige
+│   └── search-data/        # Daten für Suche
+│       ├── hfa-2015.txt    # Text für Vektorisierung
+│       └── vectors/        # Generierte Vektoren
+├── prompts/                # Entwicklungs-Prompts
+│   ├── claude-code/        # Für Claude Code
+│   ├── development/        # Für allgemeine Entwicklung
+│   └── README.md
+├── static/                 # Statische Dateien
+├── templates/              # Jinja2 Templates
+├── tests/                  # Test-Suite
+├── docs/                   # Projektdokumentation
 │   ├── development-plan.md
-│   └── ...
-├── dev-diary/
+│   ├── project-description.md
+│   └── untranslated_bible_books.csv
+├── dev-diary/              # Entwicklungstagebuch
 │   ├── README.md
+│   ├── week-00-vorueberlegungen.md
 │   └── week-01-konzeption.md
-├── requirements.txt
-├── config.py
-├── .env.example
+├── CLAUDE.md               # Anleitung für Claude Code
+├── requirements.txt        # Python-Dependencies
+├── config.py              # App-Konfiguration
+├── .env.example           # Umgebungsvariablen-Template
 ├── .gitignore
 └── README.md
 ```
@@ -82,10 +96,41 @@ ngue-bvs-app/
 
 ### Voraussetzungen
 - Python 3.8+
+- PostgreSQL 14+ 
+- Docker (optional, für einfaches PostgreSQL-Setup)
 - pip
 - virtualenv (empfohlen)
 
-### Setup
+### PostgreSQL mit pgvector einrichten
+
+#### Option 1: Mit Docker (empfohlen für Entwicklung)
+```bash
+docker run -d \
+  --name ngue-postgres \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=ngue_bvs_db \
+  -p 5432:5432 \
+  ankane/pgvector
+```
+
+#### Option 2: Manuelle Installation
+1. PostgreSQL installieren
+2. pgvector Extension installieren:
+```bash
+# Ubuntu/Debian
+sudo apt install postgresql-14-pgvector
+
+# macOS mit Homebrew
+brew install pgvector
+```
+3. In PostgreSQL:
+```sql
+CREATE DATABASE ngue_bvs_db;
+\c ngue_bvs_db
+CREATE EXTENSION vector;
+```
+
+### App-Setup
 
 1. Repository klonen
 ```bash
@@ -110,14 +155,26 @@ cp .env.example .env
 # .env Datei mit eigenen Werten füllen
 ```
 
-5. Datenbank initialisieren
+5. Bibeldaten platzieren
+```bash
+# Schlachter 1951 HTML-Dateien nach data/schlachter-1951/
+# HFA 2015 Textdatei nach data/search-data/hfa-2015.txt
+```
+
+6. Datenbank initialisieren
 ```bash
 flask db init
 flask db migrate -m "Initial migration"
 flask db upgrade
 ```
 
-6. Entwicklungsserver starten
+7. Bibelverse importieren und vektorisieren
+```bash
+flask import-verses
+flask vectorize-verses
+```
+
+8. Entwicklungsserver starten
 ```bash
 flask run
 ```
@@ -132,16 +189,21 @@ Erstellen Sie eine `.env` Datei mit folgenden Variablen:
 FLASK_APP=app
 FLASK_ENV=development
 SECRET_KEY=your-secret-key
-DATABASE_URL=sqlite:///app.db
+DATABASE_URL=postgresql://postgres:password@localhost:5432/ngue_bvs_db
 STRIPE_PUBLIC_KEY=your-stripe-public-key
 STRIPE_SECRET_KEY=your-stripe-secret-key
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-email-password
+
+# Optional: Für externe Embedding-APIs
+OPENAI_API_KEY=your-openai-key  # Falls OpenAI Embeddings genutzt werden
 ```
 
-## Datenbank-Schema
+## Datenbank-Schema (Vorläufig)
+
+**Hinweis**: Das folgende Schema ist vorläufig und wird sich während der Entwicklung noch weiterentwickeln.
 
 ### User
 - id (Primary Key)
@@ -153,22 +215,44 @@ MAIL_PASSWORD=your-email-password
 
 ### BibelVerse
 - id (Primary Key)
-- book
-- chapter
-- verse
-- text_preview (für Suchfunktion)
+- reference (z.B. "GEN.1.1" - eindeutige Referenz)
+- book (String)
+- chapter (Integer)
+- verse (Integer)
+- text_schlachter (Text - vollständiger Vers Schlachter 1951)
 - is_sponsored (Boolean)
-- purchase_id (Foreign Key)
+- sponsor_name (String, nullable)
+- created_at
+- updated_at
+
+### VerseVector
+- id (Primary Key)
+- verse_id (Foreign Key zu BibelVerse)
+- text_hfa (Text - vollständiger Vers HFA 2015)
+- embedding (vector(1536) - Vektor-Repräsentation)
+- model_version (String - verwendetes Embedding-Modell)
+- created_at
 
 ### Purchase
 - id (Primary Key)
 - user_id (Foreign Key, nullable für Gäste)
-- verse_id (Foreign Key)
-- amount
-- stripe_payment_id
+- verse_id (Foreign Key zu BibelVerse)
+- amount (Decimal)
+- stripe_payment_id (String)
+- certificate_url (String)
 - created_at
 - is_gift (Boolean)
-- recipient_email
+- recipient_name (String, nullable)
+- recipient_email (String, nullable)
+- gift_message (Text, nullable)
+
+### SearchLog (Optional, für Analyse)
+- id (Primary Key)
+- search_query (String)
+- search_type (Enum: 'keyword', 'reference', 'similarity')
+- results_count (Integer)
+- selected_verse_id (Foreign Key, nullable)
+- created_at
 
 ## Testing
 
@@ -182,13 +266,14 @@ Mit Coverage-Report:
 pytest --cov=app tests/
 ```
 
-## API Endpoints
+## API Endpoints (Geplant)
 
 | Methode | Endpoint | Beschreibung |
 |---------|----------|--------------|
 | GET | `/` | Homepage |
-| GET | `/verses` | Verfügbare Verse anzeigen |
-| GET | `/verses/search` | Verse suchen |
+| GET | `/api/verses/available` | Verfügbare Verse (JSON) |
+| GET | `/api/verses/search` | Verse suchen (Keyword oder Referenz) |
+| POST | `/api/verses/similar` | Ähnliche Verse finden (Vektor-Suche) |
 | GET | `/checkout/<verse_id>` | Checkout-Seite für spezifischen Vers |
 | POST | `/process-payment` | Zahlung verarbeiten |
 | GET | `/register` | Registrierungsseite |
@@ -197,6 +282,22 @@ pytest --cov=app tests/
 | POST | `/login` | Benutzer einloggen |
 | GET | `/dashboard` | Benutzer-Dashboard |
 | GET | `/certificate/<id>` | Zertifikat herunterladen |
+
+## Cosine Similarity für Vers-Ähnlichkeit
+
+**Cosine Similarity** misst die Ähnlichkeit zwischen zwei Vektoren anhand des Winkels zwischen ihnen:
+- Wert zwischen -1 und 1 (meist 0 bis 1 bei Textvektoren)
+- 1 = identisch, 0 = keine Ähnlichkeit
+- Ideal für hochdimensionale Vektorräume
+- In PostgreSQL mit pgvector: `<=>` Operator für Cosine Distance
+
+Beispiel-Query:
+```sql
+SELECT verse_id, 1 - (embedding <=> query_embedding) as similarity
+FROM verse_vectors
+ORDER BY embedding <=> query_embedding
+LIMIT 5;
+```
 
 ## Mitwirken
 

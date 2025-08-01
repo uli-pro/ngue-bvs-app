@@ -72,3 +72,13 @@ media/
 # Temporary files
 tmp/
 temp/
+
+# Bible data files
+/data/schlachter-1951/
+/data/search-data/*.txt
+/data/search-data/vectors/
+
+# Keep directory structure
+!/data/
+!/data/search-data/
+!/data/search-data/vectors/.gitkeep

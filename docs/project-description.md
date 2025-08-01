@@ -1,5 +1,12 @@
 # NGÜ Bibelvers-Spenden-App
 
+> ⚠️ **HINWEIS**: Dies ist die ursprüngliche Projektbeschreibung vom Beginn der Entwicklung. Einige technische Entscheidungen haben sich inzwischen geändert:
+> - **Datenbank**: Wir verwenden jetzt PostgreSQL mit pgvector statt SQLite
+> - **Bibelübersetzungen**: Dual-Translation-Ansatz mit Schlachter 1951 (Anzeige) und HFA 2015 (Vektorisierung)
+> - **Suche**: Semantische Suche mit Cosine Similarity statt einfacher Volltextsuche
+> 
+> Für aktuelle Informationen siehe README.md und CLAUDE.md. Dieses Dokument wird als historische Referenz beibehalten.
+
 ## Detaillierte Projektbeschreibung
 
 Das Projekt ist eine Web-Applikation zur Finanzierung der Bibelübersetzung NGÜ (Neue Genfer Übersetzung) für das Alte Testament. Das Neue Testament ist bereits veröffentlicht, nun soll das Alte Testament finanziert werden. Die Grundidee besteht darin, dass Spender einzelne Bibelverse für jeweils 100 Euro "sponsern" können. Als Gegenleistung erhalten sie ein Zertifikat mit der Information, welchen spezifischen Vers sie finanziert haben - ein ideeller Gegenwert, der es den Spendern ermöglicht, auch in 50 Jahren noch zu sagen: "Ich habe Jesaja 57 Vers 2 finanziert."
