@@ -243,3 +243,57 @@ LIMIT 5;
 ### Reflexion
 
 Diese technischen Entscheidungen erhöhen zwar die initiale Komplexität, schaffen aber eine solide Grundlage für die gewünschten Features. Der Dual-Translation-Ansatz ist eine elegante Lösung für das Spannungsfeld zwischen optimaler Suche und rechtlichen Beschränkungen. PostgreSQL mit pgvector gibt uns Enterprise-Level-Fähigkeiten für semantische Suche, die mit SQLite nicht möglich wären.
+
+---
+
+## Enthusiastisches Feedback vom Auftraggeber
+**Datum:** [Heutiges Datum einfügen]  
+**Art:** Feature-Anforderung per E-Mail
+
+### Reaktion auf das Projekt
+
+Daniel von der Peter-Schöffer-Stiftung hat sehr enthusiastisch auf das Projekt reagiert: "Finde es mega! Lass uns das unbedingt machen!" Diese Begeisterung ist eine großartige Bestätigung für die bisherige Arbeit.
+
+### Neue Anforderung: Automatische Spendenbescheinigung
+
+Eine wichtige neue Anforderung wurde hinzugefügt: Die App soll nicht nur das Zertifikat, sondern auch eine offizielle Spendenbescheinigung automatisch generieren und versenden.
+
+**Benötigte Daten für die Spendenbescheinigung:**
+- Anrede (Herr, Frau, Eheleute, Firma)
+- Vorname
+- Nachname
+- Straße, Nr.
+- PLZ
+- Ort
+- E-Mail-Adresse
+- Spendenbetrag
+- Spendendatum
+- Spenden-Projekt: NGÜ
+- Einverständnis zur Verarbeitung der Daten
+
+### Technische Implikationen
+
+Diese Anforderung hat mehrere Auswirkungen auf die Entwicklung:
+
+1. **Erweiterte Datenerfassung**: Das Checkout-Formular muss deutlich mehr Felder enthalten
+2. **Datenbank-Schema**: Die User- und GuestDonor-Tabellen müssen erweitert werden
+3. **PDF-Generierung**: Zwei PDFs statt einem (Zertifikat + Spendenbescheinigung)
+4. **Nummerierung**: Fortlaufende Spendenbescheinigungsnummern müssen generiert werden
+5. **Compliance**: Offizielle Anforderungen für Spendenbescheinigungen müssen erfüllt werden
+
+### Vorteile der Automatisierung
+
+Die automatische Generierung und der Versand beider Dokumente zusammen bietet mehrere Vorteile:
+- Sofortige Zustellung an den Spender
+- Keine manuelle Nachbearbeitung nötig
+- Konsistente Formatierung und Nummerierung
+- Reduzierter Verwaltungsaufwand für die Stiftung
+- Professioneller Eindruck beim Spender
+
+### Nächste Schritte
+
+1. Template für Spendenbescheinigung designen (rechtliche Anforderungen prüfen)
+2. Checkout-Formular um alle benötigten Felder erweitern
+3. Validierung für Adressdaten implementieren
+4. System für fortlaufende Nummerierung entwickeln
+5. Zwei-PDF-Generierung und -Versand implementieren

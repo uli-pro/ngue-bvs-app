@@ -44,9 +44,22 @@ The application revolves around three main entities:
 - Uniform €100 pricing model (no premium tiers based on user feedback)
 - Advanced verse search (full-text, thematic, book browsing)
 - Intelligent alternatives when desired verses are already sponsored
+- **Automated dual PDF generation: personalized certificate + official donation receipt**
 - Automated certificate generation and email delivery
 - Guest checkout without registration requirement
 - Animated verse sponsoring visualization
+
+### Required Data for Donation Receipt
+The app collects the following information for automatic donation receipt generation:
+- Salutation (Herr, Frau, Eheleute, Firma)
+- First name and last name
+- Street and house number
+- Postal code and city
+- Email address
+- Donation amount (€100)
+- Donation date
+- Donation project: NGÜ
+- Data processing consent
 
 ## Development Commands
 

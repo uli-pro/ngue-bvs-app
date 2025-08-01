@@ -18,6 +18,7 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
   - Cosine-Similarity-basierte Ähnlichkeitsberechnung
 - **Such- und Auswahlsystem**: Dropdown-Auswahl nach Buch/Kapitel/Vers oder Stichwortsuche
 - **Zertifikat-System**: Automatische Generierung und Versand personalisierter Zertifikate
+- **Spendenbescheinigung**: Automatische Erstellung und Versand offizieller Spendenbescheinigungen
 - **Benutzerkonten**: Optional für Spender, mit Übersicht aller gesponserten Verse
 - **Gast-Spenden**: Möglichkeit ohne Registrierung zu spenden
 - **Visuelle Fortschrittsanzeige**: Animation beim Sponsoring eines Verses
@@ -209,9 +210,16 @@ OPENAI_API_KEY=your-openai-key  # Falls OpenAI Embeddings genutzt werden
 - id (Primary Key)
 - email (Unique)
 - password_hash
-- name
+- salutation (Enum: 'Herr', 'Frau', 'Eheleute', 'Firma')
+- first_name
+- last_name
+- street
+- house_number
+- postal_code
+- city
+- newsletter_subscribed (Boolean)
+- data_processing_consent (Boolean)
 - created_at
-- newsletter_subscribed
 
 ### BibelVerse
 - id (Primary Key)
@@ -240,11 +248,29 @@ OPENAI_API_KEY=your-openai-key  # Falls OpenAI Embeddings genutzt werden
 - amount (Decimal)
 - stripe_payment_id (String)
 - certificate_url (String)
+- donation_receipt_url (String)
+- donation_receipt_number (String, unique)
 - created_at
 - is_gift (Boolean)
-- recipient_name (String, nullable)
+- recipient_salutation (String, nullable)
+- recipient_first_name (String, nullable)
+- recipient_last_name (String, nullable)
 - recipient_email (String, nullable)
 - gift_message (Text, nullable)
+
+### GuestDonor (Für Spenden ohne Registrierung)
+- id (Primary Key)
+- purchase_id (Foreign Key zu Purchase)
+- salutation
+- first_name
+- last_name
+- street
+- house_number
+- postal_code
+- city
+- email
+- data_processing_consent (Boolean)
+- created_at
 
 ### SearchLog (Optional, für Analyse)
 - id (Primary Key)
