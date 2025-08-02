@@ -30,7 +30,8 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 - Responsive Design für alle Geräte
 
 ### Technische Besonderheiten
-- **Vektorbasierte Suche**: Moderne Embedding-Technologie für semantische Ähnlichkeit
+- **Hybrid-Suche**: Dynamische Kombination von Keyword- und Vektor-Suche
+- **Positivitäts-Ranking**: LLM-basierte Bewertung für positive, ermutigende Verse
 - **Schlachter 1951**: Gemeinfrei und überraschend effektiv für Vektorsuche (72,7% Genauigkeit)
 - **Optimiertes Modell**: paraphrase-multilingual-mpnet-base-v2 (768 Dimensionen)
 
@@ -346,6 +347,10 @@ Projekt Link: [https://github.com/[ihr-username]/ngue-bvs-app](https://github.co
 
 - [x] Projektplanung
 - [x] User-Feedback und Konzeptanpassung
+- [x] Proof of Concept für Vektor-Suche
+- [x] Umfangreiche Tests mit 100/1.000/11.000 Versen
+- [x] Hybrid-Suche Implementierung
+- [ ] LLM-basiertes Positivitäts-Ranking (nächster Schritt)
 - [ ] Woche 1: Konzeption und Design
 - [ ] Woche 2: Backend-Grundstruktur
 - [ ] Woche 3: Frontend-Entwicklung
@@ -353,5 +358,10 @@ Projekt Link: [https://github.com/[ihr-username]/ngue-bvs-app](https://github.co
 - [ ] Woche 5: Automatisierung
 - [ ] Woche 6: Testing
 - [ ] Woche 7: Deployment
+
+### Aktuelle Erkenntnisse (02.08.2025)
+- **Kritisch**: Nutzer suchen positive Verse, aber Standard-Suche liefert oft negative
+- **Lösung**: Top-1000 positive Verse mit LLM vorranken
+- **Nächste Schritte**: Prompt-Optimierung für Positivitäts-Ranking
 
 Detaillierte Entwicklungsdokumentation finden Sie im [Entwicklungstagebuch](./dev-diary/README.md).

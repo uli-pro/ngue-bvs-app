@@ -1,0 +1,17 @@
+# Requirements für Positivitäts-Scoring
+
+# Für PostgreSQL-Version
+psycopg2-binary==2.9.9
+
+# Für Hybrid-Scoring mit BERT (empfohlen!)
+transformers==4.36.0
+torch==2.1.0
+
+# Für LLM-Scoring (wähle was du brauchst)
+anthropic==0.18.1  # Für Claude API
+openai==1.12.0     # Für GPT API
+requests==2.31.0   # Für Ollama (lokal)
+
+# Optional für erweiterte Analysen
+numpy==1.24.3
+pandas==2.0.3

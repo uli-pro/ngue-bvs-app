@@ -41,62 +41,67 @@ def extract_verses_from_html(html_path):
     
     # Finde Buch und Kapitel aus Dateiname
     filename = os.path.basename(html_path)
-    match = re.match(r'([A-Z]{3})(\d{2,3})\.htm', filename)
+    match = re.match(r'([A-Z]{3})(\d+)\.htm', filename)
     if not match:
         return verses
     
     book = match.group(1)
     chapter = int(match.group(2))
     
-    # Verschiedene mögliche HTML-Strukturen
-    # Option 1: <span class="verse">
-    verse_elements = soup.find_all('span', class_='verse')
+    # Finde alle span elements mit class="verse"
+    verse_spans = soup.find_all('span', class_='verse')
     
-    if not verse_elements:
-        # Option 2: <div class="verse">
-        verse_elements = soup.find_all('div', class_='verse')
+    if not verse_spans:
+        return verses
     
-    if not verse_elements:
-        # Option 3: Verse in <p> Tags mit Versnummern
-        paragraphs = soup.find_all('p')
-        for p in paragraphs:
-            text = p.get_text().strip()
-            # Suche nach Mustern wie "1 Text" oder "1. Text"
-            verse_match = re.match(r'^(\d+)\.?\s+(.+)', text)
-            if verse_match:
-                verse_num = int(verse_match.group(1))
-                verse_text = verse_match.group(2)
+    # Der Text eines Verses ist vom aktuellen span bis zum nächsten span
+    for i, span in enumerate(verse_spans):
+        # Extrahiere Versnummer aus ID (z.B. "V1", "V2", etc.)
+        verse_id = span.get('id', '')
+        if verse_id.startswith('V'):
+            try:
+                verse_num = int(verse_id[1:])
+            except ValueError:
+                continue
+        else:
+            continue
+        
+        # Der Verstext beginnt nach der Versnummer im span
+        # und geht bis zum nächsten verse span
+        if span.parent:
+            parent = span.parent
+            
+            # Sammle allen Text von diesem span bis zum nächsten
+            verse_text_parts = []
+            current = span
+            
+            # Hole den Text aus dem span selbst (enthält die Nummer)
+            span_text = span.get_text().strip()
+            # Entferne die führende Nummer
+            verse_text_match = re.match(r'^\d+\s+(.+)', span_text)
+            if verse_text_match:
+                verse_text_parts.append(verse_text_match.group(1))
+            
+            # Hole den Text nach dem span bis zum nächsten verse span
+            for sibling in span.next_siblings:
+                if isinstance(sibling, str):
+                    verse_text_parts.append(sibling.strip())
+                elif hasattr(sibling, 'name') and sibling.name == 'span' and 'verse' in sibling.get('class', []):
+                    break
+                elif hasattr(sibling, 'get_text'):
+                    verse_text_parts.append(sibling.get_text().strip())
+            
+            verse_text = ' '.join(verse_text_parts).strip()
+            verse_text = ' '.join(verse_text.split())  # Normalize whitespace
+            
+            if verse_text:
                 verses.append({
                     'reference': f"{book}.{chapter}.{verse_num}",
                     'book': book,
                     'chapter': chapter,
                     'verse': verse_num,
-                    'text': verse_text.strip()
+                    'text': verse_text
                 })
-    else:
-        # Verarbeite gefundene verse elements
-        for elem in verse_elements:
-            verse_num_elem = elem.find('span', class_='verse-num')
-            if verse_num_elem:
-                verse_num = int(verse_num_elem.get_text().strip())
-                verse_text = elem.get_text().replace(verse_num_elem.get_text(), '').strip()
-            else:
-                # Versnummer könnte am Anfang des Texts stehen
-                text = elem.get_text().strip()
-                verse_match = re.match(r'^(\d+)\.?\s+(.+)', text)
-                if verse_match:
-                    verse_num = int(verse_match.group(1))
-                    verse_text = verse_match.group(2)
-                else:
-                    continue
-            
-            verses.append({
-                'reference': f"{book}.{chapter}.{verse_num}",
-                'book': book,
-                'chapter': chapter,
-                'verse': verse_num,
-                'text': verse_text.strip()
-            })
     
     return verses
 
@@ -226,7 +231,7 @@ def prepare_extended_test_data():
         return
     
     print("Sammle Testverse...")
-    verses = collect_test_verses(data_dir, 100)
+    verses = collect_test_verses(data_dir, 1000)
     
     print(f"\nGesammelt: {len(verses)} Verse")
     

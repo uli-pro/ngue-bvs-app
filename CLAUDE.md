@@ -30,10 +30,28 @@ The app implements advanced verse search using:
 - **Vector Embeddings**: Each verse is converted to a high-dimensional vector representation
 - **Cosine Similarity**: Mathematical method to find semantically similar verses
 - **pgvector Extension**: PostgreSQL extension for efficient vector operations and similarity searches
+- **Hybrid Search**: Dynamic weighting between keyword and vector search based on query length
+  - 1-2 words: 80% keyword, 20% vector
+  - 3-5 words: 50% keyword, 50% vector
+  - 6+ words: 20% keyword, 80% vector
 - **Use Cases**:
   - Finding alternative verses when desired verse is already sponsored
   - Thematic search based on keywords or phrases
   - Discovering related verses across different books
+
+### Positivity Ranking System (NEW)
+Based on extensive testing, a critical insight emerged: Users search for positive, encouraging verses, but both keyword and semantic searches often return negative or difficult verses as top results.
+
+**Solution**: Curated Top-1000 positive verses
+- Pre-ranked list of 1000 verses by positivity factor using LLM
+- Default: Show top 3 unsponsored positive verses
+- Optional: User can search or enter specific reference
+- Fallback: Return to top 3 if search unsuccessful
+
+**Technical Implementation**:
+- LLM-based positivity scoring for all 11,000 verses
+- Stored positivity index in database
+- Combined with search scores for final ranking
 
 ### Core Data Model
 The application revolves around three main entities:
@@ -111,11 +129,19 @@ The project follows a 7-week development plan documented in `docs/development-pl
 
 1. **Week 0-1**: Concept and design (user feedback incorporated - single pricing model)
 2. **Week 2**: Backend structure and user authentication
-3. **Week 3**: Frontend development and verse search
+3. **Week 3**: Frontend development and verse search implementation
+   - Hybrid search with dynamic weighting
+   - Positivity ranking integration
 4. **Week 4**: Stripe payment integration
 5. **Week 5**: Email automation and certificate generation
 6. **Week 6**: Testing and optimization
 7. **Week 7**: Deployment and launch
+
+### Recent Testing Insights (August 2, 2025)
+- Extensive testing with 100, 1,000, and 11,000 verse datasets
+- Hybrid search implemented combining keyword and vector search
+- Critical discovery: Need for positivity ranking to match user expectations
+- Decision: Implement LLM-based positivity scoring for all verses
 
 ## Development Context
 

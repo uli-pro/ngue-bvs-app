@@ -6,7 +6,8 @@
 ---
 
 ## User-Feedback Session: Preismodell und Vers-Auswahl
-**Datum:** [Heutiges Datum einfügen]  
+
+**Datum:** 1.8.2025  
 **Dauer:** Informelles Gespräch  
 **Art:** Potentielle Nutzerin befragt
 
@@ -368,3 +369,120 @@ Die automatische Generierung und der Versand beider Dokumente zusammen bietet me
 3. Validierung für Adressdaten implementieren
 4. System für fortlaufende Nummerierung entwickeln
 5. Zwei-PDF-Generierung und -Versand implementieren
+
+
+
+---
+
+## Umfangreiche Tests der Suchfunktionen
+**Datum:** 2. August 2025
+**Art:** Technische Tests und Erkenntnisse
+
+### Systematisches Test-Vorgehen
+
+Nach unbefriedigenden ersten Ergebnissen haben wir einen systematischen Ansatz mit drei verschiedenen Datensätzen gewählt:
+1. **100 Verse** - Kleines Test-Dataset für schnelle Iterationen
+2. **1.000 Verse** - Mittleres Test-Dataset für aussagekräftige Tests
+3. **11.000 Verse** - Komplettes reales Dataset (alle unübersetzten Bücher)
+
+### Extended Test mit Vector POC
+
+**Erste Ergebnisse mit 100 Versen:**
+- Performance: Exzellent (0.055s pro Vers, 10 Min für 11.000 Verse)
+- Suchqualität: Enttäuschend
+  - Nur 25% Precision@1
+  - Mean Reciprocal Rank: 0.280 (statt erwarteter 72.7%)
+  - Klagelieder und Daniel überrepräsentiert in Ergebnissen
+
+**Erkenntnisse:**
+- Kleine Testmengen (100 Verse) können Ergebnisse verzerren
+- Biblische Sprache ist Herausforderung für generische Embedding-Modelle
+- Schlachter 1951 verwendet alte deutsche Sprache
+- "Erwartete Treffer" basierend auf Keywords != semantische Treffer
+
+### Hybrid-Suche Entwicklung
+
+**Zwei fundamentale Use Cases identifiziert:**
+
+1. **"Ähnlichste Verse finden"**
+   - Input: Kompletter Vers
+   - Ziel: Semantisch ähnliche Alternativen
+   - Ideale Methode: Reine Vektor-Suche (90% Gewicht)
+
+2. **"Keyword-Suche"**
+   - Input: 1-3 Keywords
+   - Ziel: Verse mit diesen Begriffen
+   - Ideale Methode: Keyword + Vektor kombiniert
+
+**Implementierte Lösung:**
+- Dynamische Gewichtung basierend auf Query-Länge
+- 1-2 Wörter: 80% Keyword, 20% Vektor
+- 3-5 Wörter: 50% Keyword, 50% Vektor  
+- 6+ Wörter: 20% Keyword, 80% Vektor
+
+### Keyword-Tests mit finalen Daten
+
+**Test-Setup:**
+- 50 häufigste biblische Suchbegriffe ("Liebe", "Gott", "Glaube", etc.)
+- 15 Kombinationen aus zwei Keywords
+- 10 Kombinationen aus drei Keywords
+- Volltext-Suche mit PostgreSQL
+
+**Ergebnisse:**
+- Keyword-Suche funktioniert zufriedenstellend
+- AND-Verknüpfung bei Kombinationen sinnvoller als OR
+- Performance auch bei 11.000 Versen sehr gut
+
+### Semantische Suche mit beliebten Versen
+
+**Test mit 15 populären Bibelversen:**
+- Suche nach den 5 ähnlichsten Versen für jeden Testvers
+- Cosine Similarity mit 768-dimensionalen Vektoren
+- Fortschrittsanzeige beim Embedding-Generieren (5-10 Min für 11.000 Verse)
+
+### Die große Erkenntnis: Das Positivitäts-Problem
+
+**Kritisches Problem identifiziert:**
+Sowohl Keyword- als auch semantische Suche liefern oft negative oder schwierige Verse als Top-Ergebnisse, obwohl Nutzer nach positiven, ermutigenden Versen suchen.
+
+**Beispiele aus den Tests:**
+- Suche nach "Hoffnung" → Verse über Verzweiflung und Gericht
+- Suche nach "Liebe" → Verse über Gottes Zorn
+- Semantisch ähnlich zu Trost-Versen → Klage-Verse
+
+### Lösungsansätze für das Positivitäts-Problem
+
+1. **Sentiment-basiertes Ranking** - Positive Verse bevorzugen
+2. **Kategorisierung** - Verse in Kategorien einteilen (Verheißung, Warnung, etc.)
+3. **Kontext-erweiterte Embeddings** - [POSITIV] oder [GERICHT] Tags
+4. **Zwei-Stufen-Suche** - Erst suchen, dann nach Positivität re-ranken
+5. **Gewichtete Scores** - Positive Begriffe boosten, negative penalisieren
+
+### Neue Strategie: Kuratierte Top-1000-Liste
+
+**Konzept:**
+- 1000 positive Verse vorab nach Positivitätsfaktor ranken
+- User bekommt standardmäßig Top 3 ungesponserte positive Verse
+- Optional: Eigene Suche/Referenz-Eingabe möglich
+- Fallback auf Top 3 wenn eigene Suche erfolglos
+
+**Vorteile:**
+- Einfachste User Experience
+- Garantiert positive, ermutigende Verse
+- Realistisches Spendenziel (1000 Verse)
+
+### Wichtigste technische Learnings
+
+1. **Arbeite mit realen Daten** - Auch kleine Testsets sollten aus echten Daten stammen
+2. **Test-Datasets können täuschen** - 100er Subset liefert andere Ergebnisse als 11.000er Set
+3. **Biblische Texte sind speziell** - Generische NLP-Modelle haben Schwierigkeiten
+4. **Sentiment matters** - Technische Ähnlichkeit ≠ emotionale Ähnlichkeit
+5. **LLMs sind überlegen** - Für gutes Positiv-Ranking braucht es große Sprachmodelle
+
+### Nächste Schritte
+
+1. **Prompt-Optimierung** für Positivitäts-Ranking mit LLM
+2. **Datensatz erstellen** mit Positivitäts-Index für alle 11.000 Verse
+3. **Evaluierung** verschiedener LLMs für diese Aufgabe
+4. **Integration** des Rankings in die Suchfunktion 
+
