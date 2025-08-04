@@ -17,13 +17,13 @@
 - [x] Entscheidungspunkte dokumentieren (z.B. "Möchten Sie sich registrieren?")
 
 ### Session 2 - Wireframes erstellen
-- Grobe Wireframes für jede identifizierte Seite skizzieren
-- Homepage mit Projektbeschreibung
-- Vers-Suche und -Auswahl-Seite
-- Checkout-Prozess
-- Registrierung/Login
-- Benutzerdashboard
-- Tools: Figma, draw.io oder Papier
+- [x] Grobe Wireframes für jede identifizierte Seite skizzieren
+- [x] Homepage mit Projektbeschreibung
+- [x] Vers-Suche und -Auswahl-Seite
+- [x] Checkout-Prozess
+- [x] Registrierung/Login
+- [x] Benutzerdashboard
+- [x] Tools: Figma, draw.io oder Papier
 
 ### Session 3 - Texte und Content-Strategie
 - Alle Haupttexte für die Webseite schreiben
