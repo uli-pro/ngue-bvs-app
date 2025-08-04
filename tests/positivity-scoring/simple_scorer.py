@@ -2,6 +2,9 @@
 """
 Einfaches Positivitäts-Scoring für Bibelverse (ohne Datenbank)
 Generiert nur Reports im Markdown-Format.
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

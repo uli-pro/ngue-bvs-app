@@ -4,6 +4,9 @@ Semantische Suche Test für die Bibelvers-Suche - FINALES DATASET
 
 Testet die semantische Ähnlichkeitssuche mit beliebten Bibelversen
 aus dem kompletten Dataset aller unübersetzten Bücher (~11.000 Verse)
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

@@ -2,6 +2,9 @@
 """
 LLM-basiertes Positivitäts-Scoring für Bibelverse
 Test mit 100 Versen - verschiedene APIs unterstützt
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

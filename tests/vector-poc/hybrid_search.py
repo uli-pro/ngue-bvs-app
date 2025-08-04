@@ -4,6 +4,9 @@ Hybrid Search Implementation für die NGÜ Bibelvers-Sponsoring App
 
 Kombiniert Vektor-basierte semantische Suche mit Keyword-Suche
 für optimale Ergebnisse bei verschiedenen Query-Typen.
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 from typing import List, Dict, Optional, Tuple

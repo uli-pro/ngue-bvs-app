@@ -3,6 +3,9 @@
 Positivitäts-Scoring für Bibelverse
 Dieses Skript bewertet Bibelverse nach ihrer emotionalen Valenz
 für die NGÜ Bible Vers Donation App.
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

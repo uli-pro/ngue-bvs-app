@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Debug HTML parser"""
+"""
+Debug HTML parser
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
+"""
 
 from bs4 import BeautifulSoup
 import re

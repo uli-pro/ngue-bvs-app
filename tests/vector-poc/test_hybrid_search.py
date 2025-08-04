@@ -4,6 +4,9 @@ Hybrid Vector + Keyword Search Test
 
 Testet die Kombination von Vektor-Suche und Volltext-Suche
 für verschiedene Query-Typen (ganze Verse vs. Keywords)
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

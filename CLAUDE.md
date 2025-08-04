@@ -6,6 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that enables individual verse sponsoring for the NGÜ (Neue Genfer Übersetzung) Bible translation project. This is a CS50 final project that allows donors to sponsor individual Old Testament verses for €100 each and receive personalized certificates.
 
+### Current Development Status (August 4, 2025)
+- ✅ **Phase 1 - Session 1**: User Journey Mapping completed
+  - Comprehensive user flow documented with Mermaid diagram
+  - 30 routes/pages identified
+  - 12 decision points documented
+- ✅ **Phase 1 - Session 2**: Wireframes completed
+  - All 20+ pages wireframed
+  - Mobile-first approach
+  - Consistent navigation patterns
+- 🚧 **Phase 1 - Sessions 3-6**: In progress
+
 ## Technology Stack
 
 - **Backend**: Python 3.8+ with Flask web framework

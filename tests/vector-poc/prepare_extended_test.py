@@ -7,6 +7,9 @@ Dieses Script:
 2. Erstellt realistische Test-Queries
 3. Führt Performance-Tests durch
 4. Generiert detaillierte Statistiken
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

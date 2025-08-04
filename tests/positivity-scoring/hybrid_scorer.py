@@ -2,6 +2,9 @@
 """
 Verbessertes Positivitäts-Scoring mit vortrainiertem BERT-Modell
 Kombiniert Machine Learning mit domänenspezifischen Keywords
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

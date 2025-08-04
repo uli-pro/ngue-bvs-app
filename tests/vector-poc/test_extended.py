@@ -3,6 +3,9 @@
 Erweiterter Vector Search Test - Nur Schlachter 1951
 
 Testet die Suchqualität mit 100 echten AT-Versen
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

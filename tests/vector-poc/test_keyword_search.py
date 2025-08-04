@@ -3,6 +3,9 @@
 Keyword-basierter Test für die Bibelvers-Suche
 
 Testet die 50 häufigsten Keywords einzeln sowie sinnvolle Kombinationen
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

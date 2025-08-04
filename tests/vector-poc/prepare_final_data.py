@@ -7,6 +7,9 @@ Dieses Script:
 2. Extrahiert ALLE Verse aus diesen Büchern (ca. 11.000 Verse)
 3. Speichert sie in final_verses_data.json
 4. Erstellt zwei Subsets: 1000 und 100 Verse
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

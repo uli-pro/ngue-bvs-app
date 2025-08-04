@@ -351,7 +351,13 @@ Projekt Link: [https://github.com/[ihr-username]/ngue-bvs-app](https://github.co
 - [x] Umfangreiche Tests mit 100/1.000/11.000 Versen
 - [x] Hybrid-Suche Implementierung
 - [ ] LLM-basiertes Positivitäts-Ranking (nächster Schritt)
-- [ ] Woche 1: Konzeption und Design
+- [🚧] **Woche 1: Konzeption und Design**
+  - [x] Session 1: User Journey Mapping (04.08.2025)
+  - [x] Session 2: Wireframes erstellen (04.08.2025)
+  - [ ] Session 3: Texte und Content-Strategie
+  - [ ] Session 4: Grafiken und Visuelles Design
+  - [ ] Session 5: Technische Architektur planen
+  - [ ] Session 6: Frontend-Mockups finalisieren
 - [ ] Woche 2: Backend-Grundstruktur
 - [ ] Woche 3: Frontend-Entwicklung
 - [ ] Woche 4: Zahlungsintegration

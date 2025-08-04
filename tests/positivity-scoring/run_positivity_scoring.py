@@ -3,6 +3,9 @@
 Positivitäts-Scoring für Bibelverse mit PostgreSQL
 Dieses Skript bewertet Bibelverse nach ihrer emotionalen Valenz
 und speichert die Ergebnisse in einer PostgreSQL-Datenbank.
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

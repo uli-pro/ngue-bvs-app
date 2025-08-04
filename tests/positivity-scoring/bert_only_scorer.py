@@ -2,6 +2,9 @@
 """
 BERT-only Sentiment Scoring für Bibelverse
 Verwendet ausschließlich das deutsche BERT-Modell ohne zusätzliche Keywords
+
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
 """
 
 import json

@@ -8,6 +8,9 @@ Dieses Script testet:
 3. Semantische Suche mit Cosine Similarity
 4. Performance-Benchmarks
 
+Dieser Code wurde mit Unterstützung von Claude (Anthropic AI) entwickelt 
+- konzipiert und geprompted von Ulrich Probst
+
 Autor: Ulrich Probst
 Datum: August 2025
 """
