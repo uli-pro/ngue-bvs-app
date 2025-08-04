@@ -486,3 +486,16 @@ Sowohl Keyword- als auch semantische Suche liefern oft negative oder schwierige 
 3. **Evaluierung** verschiedener LLMs für diese Aufgabe
 4. **Integration** des Rankings in die Suchfunktion 
 
+### Zusammenfassende Beschreibung meiner Suchalgorithmen-Reise:
+
+Nach einer eingehenden Analyse der bestehenden Suchfunktionalität wurde eine umfassende Evaluierung verschiedener Ansätze zur Verbesserung der Suchergebnisse durchgeführt. Das Hauptproblem bestand darin, dass technisch korrekte Suchergebnisse oft emotional unpassende oder negative Inhalte lieferten.
+
+**Keyword-Search mit PostgreSQL** Die Implementierung nutzt PostgreSQLs interne Volltextsuche mit automatischer Indexerstellung. Diese Lösung erweist sich als extrem performant und hochakkurat für die Durchsuchung einzelner Bibelverse. Die technische Funktionalität ist einwandfrei - Suchbegriffe und ihre Derivate werden zuverlässig gefunden. Das Problem liegt jedoch auf semantischer Ebene: Verse mit Begriffen wie "Liebe" oder "lieben" können durchaus negative Aussagen enthalten ("Ihr liebt Raub und Mord mehr als Recht und Gerechtigkeit"), die für den Nutzer unpassend sind.
+
+**Semantische Suche mit Vektorindizierung** Für die semantische Suche wurde das Modell paraphrase-multilingual-mpnet-base-v2 mit einer Embedding-Dimension von 768 implementiert. Dieser Ansatz kann die Suche über reine Keywords hinaus abstrahieren und Verse mit ähnlichen Begriffen und Phrasen identifizieren. Allerdings scheitert auch diese Methode daran, zwischen negativen/unschönen und positiven/ermutigenden Aussagen zu unterscheiden. Die gefundenen Verse weisen oft ähnliche Begrifflichkeiten auf, repräsentieren aber emotional das Gegenteil des gewünschten Inhalts.
+
+**BERT-Sentiment-Analyse** Der Einsatz eines BERT-Sentiment-Modells zur emotionalen Klassifizierung (positiv, neutral, negativ) mit Confidence-Faktoren erwies sich als ungeeignet für den spezifischen Anwendungsfall. Nahezu alle Bibelverse wurden als "neutral" klassifiziert. Dies liegt vermutlich daran, dass BERT primär auf deutsche Literatur und Social Media trainiert wurde, wo Emotionen deutlich expliziter ausgedrückt werden als in der biblischen Sprache.
+
+**LLM-basierter Bewertungsansatz** Als vielversprechendste Lösung kristallisierte sich ein LLM-basierter Ansatz heraus. Dabei werden alle 11.000 relevanten Bibelverse einzeln an ein Large Language Model (ChatGPT) gesendet mit der Aufforderung, jeden Vers auf einer Skala von 0-100 zwischen negativ/unschön und positiv/ermutigend zu bewerten. Tests mit einem Sample-Set von 100 Versen zeigten bereits vielversprechende Ergebnisse.
+
+**Geplante Hybrid-Implementierung** Die finale Lösung wird eine Kombination verschiedener Ansätze umfassen: Jeder Bibelvers erhält vom LLM eine Positivitätsbewertung, die in der Datenbank gespeichert wird. Die eigentliche Suche erfolgt weiterhin über Keyword- und semantische Suche. Die gefundenen Ergebnisse werden anschließend nach ihrer Positivitätsbewertung sortiert, wobei nur die drei positivsten Resultate an den Nutzer ausgegeben werden. Dieser Ansatz kombiniert die technische Präzision der bestehenden Suchmethoden mit einer emotionalen Filterung durch das LLM.

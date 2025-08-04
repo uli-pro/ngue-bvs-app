@@ -2,19 +2,19 @@
 
 ## Phase 0: Vorüberlegungen (Woche 0) ✅
 
-- ✅ User-Feedback zu Preismodell einholen
-- ✅ Entscheidung: Kein Premium-Modell - einheitlicher Preis von 100€ mit Vers-Auswahl für alle
-- ✅ Bestätigung: 11.000 noch zu übersetzende Verse im AT
-- [ ] Klärung mit Peter-Schöffer-Stiftung zu Spendenbescheinigungen und benötigten Daten
+- [x] User-Feedback zu Preismodell einholen
+- [x] Entscheidung: Kein Premium-Modell - einheitlicher Preis von 100€ mit Vers-Auswahl für alle
+- [x] Bestätigung: 11.000 noch zu übersetzende Verse im AT
+- [x] Klärung mit Peter-Schöffer-Stiftung zu Spendenbescheinigungen und benötigten Daten
 - [ ] Hintergrund zur 100€-Kalkulation erfragen
 
 ## Phase 1: Konzeption und Design (Woche 1)
 
 ### Session 1 - User Journey Mapping
-- Flussdiagramm der kompletten User Journey erstellen
-- Alle möglichen Pfade definieren (Gastspender, registrierter Nutzer)
-- Alle benötigten Seiten/Routes identifizieren
-- Entscheidungspunkte dokumentieren (z.B. "Möchten Sie sich registrieren?")
+- [x] Flussdiagramm der kompletten User Journey erstellen
+- [x] Alle möglichen Pfade definieren (Gastspender, registrierter Nutzer)
+- [x] Alle benötigten Seiten/Routes identifizieren
+- [x] Entscheidungspunkte dokumentieren (z.B. "Möchten Sie sich registrieren?")
 
 ### Session 2 - Wireframes erstellen
 - Grobe Wireframes für jede identifizierte Seite skizzieren
