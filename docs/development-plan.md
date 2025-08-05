@@ -10,28 +10,32 @@
 
 ## Phase 1: Konzeption und Design (Woche 1)
 
-### Session 1 - User Journey Mapping
+### Session 1 - User Journey Mapping & Wireframes ✅
 - [x] Flussdiagramm der kompletten User Journey erstellen
 - [x] Alle möglichen Pfade definieren (Gastspender, registrierter Nutzer)
 - [x] Alle benötigten Seiten/Routes identifizieren
 - [x] Entscheidungspunkte dokumentieren (z.B. "Möchten Sie sich registrieren?")
-
-### Session 2 - Wireframes erstellen
 - [x] Grobe Wireframes für jede identifizierte Seite skizzieren
 - [x] Homepage mit Projektbeschreibung
 - [x] Vers-Suche und -Auswahl-Seite
 - [x] Checkout-Prozess
 - [x] Registrierung/Login
 - [x] Benutzerdashboard
-- [x] Tools: Figma, draw.io oder Papier
 
-### Session 3 - Texte und Content-Strategie
-- Alle Haupttexte für die Webseite schreiben
-- Projektbeschreibung und Mission
-- FAQ-Bereich
-- Datenschutzerklärung (Vorlage anpassen)
-- E-Mail-Templates für Zertifikat-Versand
-- Fehlermeldungen und Bestätigungstexte
+### Session 2 - Haupttexte für Seiten ✅
+- [x] Homepage-Texte (Hero, Projektinfo, CTA)
+- [x] Vers-Auswahl-Seite (Erklärungen, Philosophie-Text)
+- [x] Über die NGÜ-Seite (Übersetzungsmethode, Erscheinungsdaten)
+- [x] Über die Peter-Schöffer-Stiftung-Seite (Mission, Projekte)
+- [x] Wireframe-Ergänzungen (Größere Sponsorings, Weitere Verse)
+- [x] Content-Struktur und Verzeichnisse angelegt
+
+### Session 3 - Content-Vervollständigung
+- [ ] FAQ-Bereich entwickeln (Schlachter 1951, Steuern, NGÜ, Sponsoring)
+- [ ] E-Mail-Templates für Zertifikat-Versand erstellen
+- [ ] E-Mail-Templates für Spendenbescheinigung erstellen
+- [ ] Fehlermeldungen und Bestätigungstexte schreiben
+- [ ] Datenschutzerklärung anpassen
 
 ### Session 4 - Grafiken und Visuelles Design
 - NGÜ-Logo erstellen/beschaffen

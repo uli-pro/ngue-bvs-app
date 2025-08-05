@@ -48,6 +48,18 @@
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
+│                    GRÖSSERE SPONSORINGS                        │
+│                                                                 │
+│  📖 Möchten Sie ein ganzes Kapitel oder Buch sponsern?        │
+│                                                                 │
+│     Für größere Sponsorings (ab 1.000€) bieten wir           │
+│     individuelle Lösungen und besondere Anerkennungen.        │
+│                                                                 │
+│              [Jetzt persönlich beraten lassen]                │
+│            (Weiterleitung zu Kontaktformular/E-Mail)          │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
 │ FOOTER                                                          │
 │ [Links] [Social Media] [Impressum] [Datenschutz]              │
 └─────────────────────────────────────────────────────────────────┘
@@ -289,6 +301,14 @@
 │                [← Anderen Vers wählen]                         │
 │                                                                 │
 │                   [WEITER ZUR SPENDE]                          │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                   WEITERE SPONSORINGS                          │
+│                                                                 │
+│     💝 Verschenken Sie weitere Bibelvers-Sponsorings!         │
+│                                                                 │
+│              [← Weiteren Vers auswählen]                       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

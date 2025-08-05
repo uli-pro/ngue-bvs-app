@@ -143,47 +143,61 @@ Homepage:
 
 ---
 
-## Session 3: Texte und Content-Strategie
-**Datum:** [Datum]  
-**Dauer:** 1,5 Stunden  
+## Session 3: Haupttexte für Webseiten (Session 2 in neuer Zählung)
+**Datum:** 05.08.2025  
+**Dauer:** 2 Stunden  
 **Woche:** 1 - Konzeption und Design
 
 ### Ziele dieser Session
-- [ ] Alle Haupttexte für die Webseite schreiben
-- [ ] Projektbeschreibung und Mission
-- [ ] FAQ-Bereich
-- [ ] Datenschutzerklärung (Vorlage anpassen)
-- [ ] E-Mail-Templates für Zertifikat-Versand
-- [ ] Fehlermeldungen und Bestätigungstexte
+- [x] Homepage-Texte entwickeln (Hero-Bereich, Projektinfo, CTA)
+- [x] Vers-Auswahl-Seite texten (Erklärungen, Philosophie-Text)
+- [x] "Über die NGÜ"-Seite schreiben 
+- [x] "Über die Peter-Schöffer-Stiftung"-Seite erstellen
+- [x] Wireframe-Ergänzungen für größere Sponsorings
+- [x] Content-Struktur und Verzeichnisse anlegen
 
 ### Was ich gemacht habe
-[Hier Ihre Notizen einfügen]
+Die heutige Session war sehr produktiv und fokussierte sich auf die Entwicklung der Kerntexte für die Webseite. Wir begannen mit einer strategischen Diskussion über den emotionalen Benefit des Bibelvers-Sponsorings: Der zentrale Gedanke ist, dass Spender mit ihrer Unterstützung etwas Zeitloses schaffen - sie ermöglichen eine neue Übersetzung des Wortes Gottes, die über Jahrzehnte hinweg Menschen erreichen wird. Dieser "bleibende Beitrag" wurde zum Leitmotiv für alle Texte. 
 
-### Code-Highlights
-```text
-# Beispiel für E-Mail-Template
-Betreff: Ihr Bibelvers-Zertifikat - Danke für Ihre Unterstützung!
+Bei der Homepage-Entwicklung erarbeiteten wir eine ausgewogene Balance zwischen emotionaler Ansprache und realistischen Erwartungen. Statt übertriebener "Generationen"-Rhetorik fokussierten wir auf "Jahrzehnte" und "über die eigene Lebenszeit hinaus". Die Projektinfo-Sektion wurde strukturiert um drei Kernpunkte: die Übersetzungsqualität, die zeitliche Dimension und das persönliche Zertifikat als Dankeschön.
 
-Liebe/r {name},
+Für die Vers-Auswahl-Seite entwickelten wir einen wichtigen Philosophie-Text, der betont, dass jeder Vers zur Gesamtbotschaft der Bibel beiträgt. Dies war notwendig, um zu vermeiden, dass nur "positive" Verse gesponsert werden - ein strategisch wichtiger Punkt für die Nachhaltigkeit des Projekts. Besonders wichtig war auch die korrekte Terminologie bezüglich der NGÜ: Wir sprechen von "zuverlässiger Übersetzung in zeitgemäße Sprache", nicht von "Übertragung" oder "moderner Sprache", da letztere Begriffe in konservativen christlichen Kreisen negativ konnotiert sind.
 
-vielen Dank für Ihre großzügige Spende...
-```
+Die "Über die NGÜ"-Seite wurde basierend auf umfangreichen Recherchen zur Übersetzungsmethode entwickelt. Der Fokus lag auf den drei Säulen der NGÜ: genaue Übersetzung, natürliche Sprache und überprüfbare Entscheidungen durch das Anmerkungssystem. Wichtig war, die NGÜ als "Die Exakte" zu positionieren (Deutsche Bibelgesellschaft), ohne dabei marktschreierisch zu werden.
+
+Für die Stiftungsseite recherchierten wir die Peter-Schöffer-Stiftung ausführlich und entwickelten Texte, die die NGÜ als "eines der Hauptprojekte" positionieren, mit klarem Bezug zur historischen Tradition der Bibelübersetzung durch Peter Schöffer den Jüngeren.
 
 ### Probleme & Lösungen
-**Problem:** [Beschreibung]  
-**Lösung:** [Lösung]
+**Problem:** Homepage-Texte waren zu emotional/übertrieben ("Generationen")  
+**Lösung:** Realistischere Zeitangaben ("Jahrzehnte", "über die eigene Lebenszeit hinaus") mit subtiler Andeutung der tieferen geistlichen Wirkung
+
+**Problem:** Gefahr der Fokussierung nur auf "positive" Verse durch Positivity-Ranking  
+**Lösung:** Philosophie-Text entwickelt, der betont, dass alle Verse wichtig sind für die vollständige biblische Botschaft
+
+**Problem:** Falsche Terminologie für NGÜ ("Übertragung", "modern")  
+**Lösung:** Korrekte Begriffe verwendet: "zuverlässige Übersetzung", "zeitgemäße Sprache", "Die Exakte"
+
+**Problem:** Wireframes enthielten noch keine Option für größere Sponsorings  
+**Lösung:** Ergänzung in Homepage und Vers-Bestätigung-Seite für Kapitel-/Buch-Sponsorings mit E-Mail-Link-Lösung
 
 ### Gelernt
-- 
+- **Content-Strategie für Spendenprojekte**: Der emotionale Benefit muss authentisch und realistisch sein - zu große Versprechen schaden der Glaubwürdigkeit
+- **Zielgruppen-spezifische Terminologie**: In religiösen Bereichen haben scheinbar neutrale Begriffe oft starke Konnotationen, die man kennen muss
+- **Philosophische Positionierung**: Bei kontroversen Aspekten (hier: nicht nur positive Verse) braucht es einen durchdachten philosophischen Rahmen
+- **Strukturierte Content-Entwicklung**: Ein klares Verzeichnissystem und YAML-Frontmatter erleichtern die spätere Implementierung erheblich
 
 ### TODOs für nächste Session
-- [ ] Grafiken und visuelles Design planen
+- [ ] FAQ-Bereich entwickeln (besonders Schlachter 1951-Erklärung)
+- [ ] E-Mail-Templates für Zertifikat und Spendenbescheinigung
+- [ ] Fehlermeldungen und Bestätigungstexte
 
 ### Hilfreiche Ressourcen
-- 
+- neuegenferuebersetzung.de/die-uebersetzungsmethode/
+- schoeffer.org (Peter-Schöffer-Stiftung)
+- NGÜ Marketing-PDF mit Übersetzungsbeispielen
 
 ### Notizen
-[Persönliche Notizen]
+Sehr wichtige Erkenntnis: Die Balance zwischen emotionaler Ansprache und Sachlichkeit ist entscheidend für die Glaubwürdigkeit. Der "bleibende Beitrag"-Ansatz funktioniert gut, ohne übertrieben zu wirken.
 
 ---
 

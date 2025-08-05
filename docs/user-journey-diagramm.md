@@ -32,6 +32,7 @@
     Geschenk -->|Ja| GeschenkDaten[Geschenkdaten<br/>erfassen]
     Geschenk -->|Nein| Datenerfassung
     GeschenkDaten --> Datenerfassung
+    VersBestaetigung --> VersWahl
     
     Datenerfassung[Datenerfassung<br/>E-Mail + opt. Spendenbescheinigung] --> Spendenbescheinigung{Spenden-<br/>bescheinigung<br/>gewünscht?}
     
