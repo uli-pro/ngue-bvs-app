@@ -28,10 +28,14 @@
     Top3Keyword --> MehrVerse[Weitere Verse<br/>laden]
     MehrVerse --> VersBestaetigung
     
-    VersBestaetigung --> Geschenk{Als Geschenk?}
-    Geschenk -->|Ja| GeschenkDaten[Geschenkdaten<br/>erfassen]
-    Geschenk -->|Nein| Datenerfassung
+    VersBestaetigung --> SpendeArt{Spende-Art<br/>wählen}
+    SpendeArt -->|Einzelperson| Datenerfassung
+    SpendeArt -->|Gruppe| GruppenDaten[Gruppendaten<br/>erfassen:<br/>Artikel + Name]
+    SpendeArt -->|Geschenk| GeschenkDaten[Geschenkdaten<br/>erfassen]
+    
+    GruppenDaten --> KontaktDaten[Kontaktperson-<br/>Daten]
     GeschenkDaten --> Datenerfassung
+    KontaktDaten --> Newsletter
     VersBestaetigung --> VersWahl
     
     Datenerfassung[Datenerfassung<br/>E-Mail + opt. Spendenbescheinigung] --> Spendenbescheinigung{Spenden-<br/>bescheinigung<br/>gewünscht?}

@@ -40,6 +40,12 @@
 - [x] Alle 13 Formulare dokumentiert
 - [x] UI-Texte und Hilfe-Tooltips erstellt
 - [x] Schweiz-Integration für Phase 2 vorbereitet
+- [x] **User Feedback**: Gruppenspende-Feature implementiert
+  - [x] Content für Gruppenspende erstellt (7 Dateien)
+  - [x] Wireframes für 3-Optionen-Flow angepasst
+  - [x] Datenmodell für Gruppenspenden erweitert  
+  - [x] User Journey für Gruppenspenden dokumentiert
+  - [x] Zertifikat-Vorlagen für Gruppen erstellt
 
 ### Session 4 - Grafiken und Visuelles Design
 - NGÜ-Logo erstellen/beschaffen
@@ -76,6 +82,7 @@
 ### Session 8 - Datenbank-Setup
 - PostgreSQL-Datenbank mit pgvector Extension einrichten
 - SQLAlchemy-Models erstellen (User, BibelVerse, VerseVector, Purchase) (Hinweis: organization_id für Phase 2 vorbereiten)
+- **Purchase-Model erweitern für Gruppenspenden**: donation_type, group_article, group_name Felder hinzufügen
 - Datenbank initialisieren
 - Migrations-System einrichten
 - Test-Daten einfügen (ein paar Beispiel-Verse)
@@ -137,6 +144,7 @@
 
 ### Session 17 - Forms und Validierung
 - Client-seitige Validierung mit JavaScript
+- **Gruppenspende-Validierung**: Artikel + Gruppenname (2-80 Zeichen) mit Live-Vorschau
 - Server-seitige Validierung
 - Nutzerfreundliche Fehlermeldungen
 - CSRF-Protection
@@ -196,11 +204,13 @@
 ### Session 26 - Zertifikat-Generierung
 - PDF-Generierung mit ReportLab oder WeasyPrint
 - Zertifikat-Template umsetzen
+- **Gruppenspende-Zertifikate**: Template für "{Artikel} {Gruppenname} hat..." mit dynamischer Schriftgröße
 - Personalisierung implementieren
 - Test-Zertifikate erstellen
 
 ### Session 27 - Automatischer Versand
 - Nach Zahlungsbestätigung Zertifikat generieren
+- **Gruppenspende-E-Mails**: Spezielle Templates mit Hinweis auf manuelle Spendenbescheinigung
 - E-Mail mit Anhang versenden
 - Fehlerbehandlung
 - Backup-Kopien speichern

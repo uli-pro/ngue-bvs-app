@@ -34,6 +34,14 @@ Für größere Sponsorings (ab 1.000€) bieten wir individuelle Lösungen. Bitt
 
 Ja, beim Checkout können Sie angeben, dass die Spende ein Geschenk ist. Sie können die Kontaktdaten des Beschenkten eingeben, der dann das personalisierte Zertifikat erhält, während Sie die Spendenbescheinigung bekommen.
 
+### Kann unsere Gruppe gemeinsam einen Vers sponsern?
+
+Ja! Wählen Sie bei der Spende-Art "Als Gruppe" aus. Sie können dann Ihren Gruppennamen angeben (z.B. "Familie Schmidt", "Jugendgruppe St. Martin" oder "Hauskreis Musterweg"). Das Zertifikat wird auf die Gruppe ausgestellt und an Sie als Kontaktperson gesendet.
+
+### Bekommt unsere Gruppe eine Spendenbestätigung?
+
+Für Gruppenspenden können wir leider keine automatische Spendenbestätigung erstellen, da diese rechtlich komplexer sind. Wenn Sie eine offizielle Spendenbescheinigung für Ihre Gruppe benötigen, setzen Sie sich bitte mit uns in Verbindung: spenden@peter-schoeffer-stiftung.de
+
 ### Erhalte ich eine Bestätigung meiner Spende?
 Ja, unmittelbar nach der erfolgreichen Zahlung erhalten Sie eine E-Mail-Bestätigung. Zusätzlich werden Ihnen das personalisierte Zertifikat und die offizielle Spendenbescheinigung als PDF-Anhänge zugesandt.
 

@@ -258,6 +258,104 @@ Die Schweiz-Integration war eine überraschende Wendung, aber die strukturierte 
 
 ---
 
+## User Feedback Integration: Gruppenspende-Feature
+**Datum:** 06.08.2025  
+**Dauer:** 3 Stunden  
+**Zusätzliche Arbeit nach Session 3**
+
+### Ausgangssituation
+Während der finalen Besprechung erhielt ich wertvolles User Feedback zur bestehenden Spende-Art-Auswahl. Der Nutzer wies darauf hin, dass nur zwei Optionen (für mich selbst / als Geschenk) nicht ausreichend sind für alle Anwendungsfälle.
+
+### User Request
+"Und zwar gibt es bei der Spende-Art-Auswahl nur zwei Optionen: für mich selbst und als Geschenk für jemand anderen. Ich möchte gerne drei Optionen haben: 1) Als Einzelperson 2) Als Gruppe (Familie, Jugendgruppe, etc.) 3) Als Geschenk für jemand anderen"
+
+### Meine Analyse und Vereinfachung
+Der ursprüngliche Plan war komplex mit Kontaktperson vs. Gruppenmitglieder-Verwaltung. Nach Analyse schlug ich eine vereinfachte Lösung vor:
+- Nur Gruppenname + Artikel (Der/Die/Das) erfassen
+- User wird zur "Kontaktperson"
+- Zertifikat-Text: "{Artikel} {Gruppenname} hat durch eine Spende..."
+- Spendenbescheinigung: Manuell auf Anfrage (zu komplex für Automatisierung)
+
+Der Nutzer stimmte dieser eleganten Lösung zu.
+
+### Was ich implementiert habe
+
+#### 1. Content-Dokumente (7 neue/geänderte Dateien)
+- **content/formulare/spende-art-auswahl.md** erweitert um 3. Option
+- **content/formulare/gruppenspende-daten.md** (NEU): Artikel + Gruppenname-Felder
+- **content/ui-texte/gruppenspende.md** (NEU): UI-Texte und Tooltips
+- **content/seiten/faq.md** erweitert um 2 Gruppenspende-FAQs
+- **content/email-templates/gruppenspende-bestaetigung.md** (NEU): Spezielle E-Mail für Gruppen
+- **content/fehler-nachrichten/gruppenspende.md** (NEU): Validierungsfehler
+- **content/meta/zertifikat-vorlagen.md** (NEU): Template-Variationen dokumentiert
+
+#### 2. Wireframe-Updates
+- **docs/wireframes-complete-v1.md** aktualisiert: 3-Optionen-Layout in Vers-Bestätigung
+- **docs/wireframes-gruppenspende-ergaenzung.md** (NEU): Detaillierte Wireframes für Gruppenspende-Flow
+
+#### 3. Datenmodell-Dokumentation
+- **docs/datenmodell-gruppenspende.md** (NEU): Minimale Schema-Erweiterung
+  - Purchase-Tabelle: +3 Felder (donation_type, group_article, group_name)
+  - Keine neuen Tabellen erforderlich!
+  - Constraints und SQLAlchemy-Models dokumentiert
+
+#### 4. User Journey Updates
+- **docs/user-journey-diagramm.md** erweitert um Gruppenspende-Pfad
+- **docs/user-journey-gruppenspende.md** (NEU): Detaillierter Flow für Gruppenspenden
+
+#### 5. Development Plan Updates
+- **docs/development-plan.md** an 4 Stellen erweitert um Gruppenspende-Features
+
+### Probleme & Lösungen
+**Problem:** Ursprünglich zu komplexer Ansatz mit Mitgliederverwaltung  
+**Lösung:** Vereinfachung auf nur 2 Felder: Artikel + Gruppenname
+
+**Problem:** Spendenbescheinigung für Gruppen rechtlich komplex  
+**Lösung:** Manuelle Bearbeitung mit klarem Hinweis und Kontakt-E-Mail
+
+**Problem:** Grammatikalisch korrekte Zertifikate  
+**Lösung:** Artikel-Dropdown für "Der Familie Schmidt", "Die Jugendgruppe", "Das Team"
+
+### Technische Implementierung (Konzept)
+```sql
+-- Minimale Schema-Erweiterung
+ALTER TABLE purchase ADD COLUMN donation_type ENUM('self', 'gift', 'group') DEFAULT 'self';
+ALTER TABLE purchase ADD COLUMN group_article ENUM('der', 'die', 'das') DEFAULT NULL;  
+ALTER TABLE purchase ADD COLUMN group_name VARCHAR(80) DEFAULT NULL;
+```
+
+```python
+# Zertifikat-Logik
+def get_certificate_text(donation_type, **kwargs):
+    if donation_type == 'group':
+        article = kwargs['group_article'].capitalize()  # Der/Die/Das
+        group_name = kwargs['group_name']
+        return f"{article} {group_name} hat durch eine Spende..."
+```
+
+### Gelernt
+- **User Feedback Integration**: Echtes User Feedback kann zu wichtigen Feature-Erweiterungen führen, die man selbst nicht bedacht hätte
+- **Vereinfachungs-Prinzip**: Komplexe Anforderungen lassen sich oft durch clevere Vereinfachung elegant lösen
+- **Minimal Viable Feature**: Statt kompletter Gruppenverwaltung reichen 2 Felder für 80% der Anwendungsfälle
+- **Dokumentations-Workflow**: Systematische Dokumentation aller Aspekte verhindert, dass man etwas vergisst
+
+### Impact Assessment
+- **Entwicklungszeit**: +2-3 Stunden für Implementierung
+- **Datenbank**: Nur 3 neue Felder, keine neuen Tabellen
+- **UI-Komplexität**: Minimal (ein Dropdown, ein Textfeld)
+- **User Value**: Hoch - deckt wichtigen Use Case ab
+
+### TODOs für Implementation
+- [ ] JavaScript für Conditional Fields (Session 17)
+- [ ] Datenbank-Migration (Session 8)  
+- [ ] Zertifikat-Templates (Session 26)
+- [ ] E-Mail-Templates (Session 27)
+
+### Notizen
+Dieses Feature zeigt perfekt, warum User Feedback so wertvoll ist. Die Gruppenspende-Option war nie auf meinem Radar, aber sie macht total Sinn für den Anwendungsfall. Die vereinfachte Lösung ist elegant und gut umsetzbar.
+
+---
+
 ## Session 4: Grafiken und Visuelles Design
 **Datum:** [Datum]  
 **Dauer:** 1,5 Stunden  

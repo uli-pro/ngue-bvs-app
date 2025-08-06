@@ -278,8 +278,19 @@
 │                                                                 │
 │  Für wen möchten Sie diesen Vers sponsern?                    │
 │                                                                 │
-│  ○ Für mich selbst                                            │
+│  ○ Als Einzelperson (für mich selbst)                         │
+│  ○ Als Gruppe (Familie, Jugendgruppe, Verein, etc.)           │
 │  ○ Als Geschenk für jemand anderen                            │
+│                                                                 │
+│  [Bei Gruppe: Zusätzliche Felder einblenden]                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Artikel: [Der ▼]                                          │ │
+│  │ Gruppenname: [________________]                            │ │
+│  │                                                             │ │
+│  │ ℹ️ Sie sind die Kontaktperson für diese Gruppenspende.    │ │
+│  │ ⚠️ Hinweis: Für Gruppenspenden können wir keine           │ │
+│  │    automatische Spendenbestätigung erstellen.             │ │
+│  └─────────────────────────────────────────────────────────────┘ │
 │                                                                 │
 │  [Bei Geschenk: Zusätzliche Felder einblenden]                │
 │  ┌─────────────────────────────────────────────────────────────┐ │
