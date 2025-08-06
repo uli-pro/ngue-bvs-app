@@ -201,6 +201,63 @@ Sehr wichtige Erkenntnis: Die Balance zwischen emotionaler Ansprache und Sachlic
 
 ---
 
+## Session 3 (Alt 4): Content-Vervollständigung
+**Datum:** 06.08.2025  
+**Dauer:** 4 Stunden  
+**Woche:** 1 - Konzeption und Design
+
+### Ziele dieser Session
+- [x] FAQ-Bereich entwickeln (Schlachter 1951, Steuern, NGÜ, Sponsoring)
+- [x] E-Mail-Templates für Zertifikat-Versand erstellen
+- [x] E-Mail-Templates für Spendenbescheinigung erstellen
+- [x] Fehlermeldungen und Bestätigungstexte schreiben
+- [x] Datenschutzerklärung anpassen
+
+### Was ich gemacht habe
+Diese Session war eine intensive Content-Entwicklung, bei der wir systematisch alle Texte und Inhalte für die Web-Applikation erstellt haben. Wir begannen mit einem umfassenden FAQ-Bereich mit 18 Einträgen in 5 Kategorien, der alle wichtigen Fragen zum Projekt, zur Vers-Suche, zu Schlachter 1951, zur Steuerlichen Absetzbarkeit und zu technischen Aspekten abdeckt.
+
+Nach den FAQs entwickelten wir die Zertifikat-Vorlagen. Hier war wichtig, die richtige Balance zwischen emotionaler Ansprache und Sachlichkeit zu finden. Der Nutzer half, übertrieben schwülstige Formulierungen zu vermeiden und stattdessen den Fokus auf den "bleibenden Beitrag" zu legen. Wir erstellten separate Templates für Standard-Zertifikate und Geschenk-Zertifikate.
+
+Die E-Mail-Templates wurden in vier Varianten erstellt: Standard-Spender, Geschenk-Empfänger, Geschenk-Schenker mit Versand und Geschenk-Schenker ohne Versand (für persönliche Übergabe). Diese Differenzierung war eine wichtige Erkenntnis aus der Geschenk-Option-Diskussion.
+
+Anschließend dokumentierten wir alle 13 benötigten Formulare der Applikation, von Such-Formularen über Checkout bis zu Benutzerkonten. Dabei wurde klar, dass eine strukturierte Herangehensweise wichtig ist, um nichts zu vergessen.
+
+Ein kritischer Moment war die Entdeckung, dass auch Schweizer Spender berücksichtigt werden müssen. Die Genfer Bibelgesellschaft ist sogar der Senior-Partner, während die Peter-Schöffer-Stiftung der Junior-Partner für Deutschland ist. Wir entschieden uns für "Option B": Einfacher Start mit Deutschland, strukturierte Erweiterung für die Schweiz später. Dies führte zu umfangreichen Vorbereitungen für Phase 2.
+
+### Probleme & Lösungen
+**Problem:** Zertifikat-Texte waren zu emotional und redundant  
+**Lösung:** Überarbeitung mit Fokus auf "bleibenden Beitrag" und Vermeidung von Wiederholungen
+
+**Problem:** Geschenk-Option hatte Logikfehler  
+**Lösung:** Separate Zertifikat-Templates und differenzierte E-Mail-Workflows für verschiedene Geschenk-Szenarien
+
+**Problem:** Schweizer Spender müssen berücksichtigt werden  
+**Lösung:** Phase-2-Vorbereitung mit Template-Variablen statt Hardcoding, strukturierte Dokumentation für spätere Erweiterung
+
+**Problem:** Datenschutzerklärung muss DSGVO-konform sein  
+**Lösung:** Umfassende 15-Punkte-Datenschutzerklärung nach deutschem Recht mit Stripe-spezifischen Anforderungen
+
+### Gelernt
+- **Content-First-Entwicklung**: Es ist sehr wichtig, den ganzen Inhalt der Webseiten einer Web-Applikation fertigzustellen, bevor man sich an die eigentliche Applikation macht. Beim Ausarbeiten aller Details stößt man auf Entscheidungspunkte und neue Routes, die später etabliert werden müssen und oft sogar auf strategische Entscheidungen (wie die mit den Schweizer Spendern), die man vorher nicht bedacht hat, die aber die gesamte Entwicklung der App beeinflussen können.
+- **Template-Variablen**: Hardcoding von organisationsspezifischen Daten vermeiden, um spätere Erweiterungen zu erleichtern
+- **Geschenk-Workflows**: Komplexe User-Flows wie Geschenk-Optionen brauchen durchdachte Varianten für alle Szenarien
+- **Internationale Perspektive**: Auch bei scheinbar nationalen Projekten frühzeitig an internationale Erweiterungen denken
+
+### TODOs für nächste Session
+- [ ] Grafiken und Visuelles Design
+- [ ] NGÜ-Logo beschaffen
+- [ ] Farbschema definieren
+
+### Hilfreiche Ressourcen
+- DSGVO-Gesetzestext
+- Stripe-Dokumentation zu Datenschutz
+- Beispiel-Datenschutzerklärungen anderer Spendenplattformen
+
+### Notizen
+Die Schweiz-Integration war eine überraschende Wendung, aber die strukturierte Vorbereitung für Phase 2 wird sich auszahlen. Die Content-First-Methode hat sich als sehr wertvoll erwiesen.
+
+---
+
 ## Session 4: Grafiken und Visuelles Design
 **Datum:** [Datum]  
 **Dauer:** 1,5 Stunden  

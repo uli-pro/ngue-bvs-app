@@ -58,6 +58,7 @@
 | **Vers-Auswahl-Methode**     | Vers-Auswahl-Seite   | 1. Top 3 wählen<br/>2. Nach Referenz suchen<br/>3. Nach Keyword suchen | Verschiedene Such-Interfaces                              |
 | **Vers verfügbar?**          | Referenz-Suche       | 1. Ja<br/>2. Nein                                            | Ja: Vers anzeigen<br/>Nein: 3 Alternativen                |
 | **Als Geschenk?**            | Vers-Bestätigung     | 1. Für mich<br/>2. Als Geschenk                              | Geschenk: Zusätzliche Empfängerdaten                      |
+| **Geschenk-Versand?**        | Checkout-Daten (bei Geschenk) | 1. Direkt an Empfänger senden<br/>2. An mich (persönliche Übergabe) | Bestimmt E-Mail-Versand und Template-Auswahl            |
 | **Spendenbescheinigung?**    | Datenerfassung       | 1. Ja (Default)<br/>2. Nein                                  | Ja: Vollständige Adressdaten<br/>Nein: Nur E-Mail         |
 | **Newsletter?**              | Datenerfassung       | 1. Ja<br/>2. Nein                                            | Newsletter-Anmeldung                                      |
 | **Datenschutz akzeptieren?** | Datenerfassung       | 1. Ja<br/>2. Nein                                            | Nein: Kann nicht fortfahren                               |

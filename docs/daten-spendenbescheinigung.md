@@ -7,7 +7,7 @@
 - PLZ
 - Ort
 - E-Mail-Adresse
+- Einverständnis zur Datenverbaritung
 - Spendenbetrag
 - Spendendatum
 - Spenden-Projekt: NGÜ
-- Einverständnis zur Verarbeitung der Daten

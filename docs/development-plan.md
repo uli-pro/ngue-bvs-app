@@ -30,12 +30,16 @@
 - [x] Wireframe-Ergänzungen (Größere Sponsorings, Weitere Verse)
 - [x] Content-Struktur und Verzeichnisse angelegt
 
-### Session 3 - Content-Vervollständigung
-- [ ] FAQ-Bereich entwickeln (Schlachter 1951, Steuern, NGÜ, Sponsoring)
-- [ ] E-Mail-Templates für Zertifikat-Versand erstellen
-- [ ] E-Mail-Templates für Spendenbescheinigung erstellen
-- [ ] Fehlermeldungen und Bestätigungstexte schreiben
-- [ ] Datenschutzerklärung anpassen
+### Session 3 - Content-Vervollständigung ✅
+- [x] FAQ-Bereich entwickeln (Schlachter 1951, Steuern, NGÜ, Sponsoring)
+- [x] E-Mail-Templates für Zertifikat-Versand erstellen
+- [x] E-Mail-Templates für Spendenbescheinigung erstellen
+- [x] Fehlermeldungen und Bestätigungstexte schreiben
+- [x] Datenschutzerklärung anpassen
+- [x] Vers- und Geschenk-Zertifikat-Templates erstellt
+- [x] Alle 13 Formulare dokumentiert
+- [x] UI-Texte und Hilfe-Tooltips erstellt
+- [x] Schweiz-Integration für Phase 2 vorbereitet
 
 ### Session 4 - Grafiken und Visuelles Design
 - NGÜ-Logo erstellen/beschaffen
@@ -46,12 +50,12 @@
 - Konzept für Vers-Animation entwickeln
 
 ### Session 5 - Technische Architektur planen
-- Datenbankschema-Diagramm erstellen
+- Datenbankschema-Diagramm erstellen (Hinweis: Multi-Org-Struktur vorbereiten, siehe docs/phase-2-schweiz-vorbereitung.md)
 - Alle API-Endpoints auflisten
 - Ordnerstruktur des Projekts definieren
 - Session-Verwaltung planen
 - Suchfunktionalität konzipieren
-- Alle benötigten Umgebungsvariablen dokumentieren
+- Alle benötigten Umgebungsvariablen dokumentieren (Hinweis: Variablen statt Hardcoding verwenden)
 
 ### Session 6 - Frontend-Mockups finalisieren
 - Detaillierte Mockups mit realem Content erstellen
@@ -71,7 +75,7 @@
 
 ### Session 8 - Datenbank-Setup
 - PostgreSQL-Datenbank mit pgvector Extension einrichten
-- SQLAlchemy-Models erstellen (User, BibelVerse, VerseVector, Purchase)
+- SQLAlchemy-Models erstellen (User, BibelVerse, VerseVector, Purchase) (Hinweis: organization_id für Phase 2 vorbereiten)
 - Datenbank initialisieren
 - Migrations-System einrichten
 - Test-Daten einfügen (ein paar Beispiel-Verse)

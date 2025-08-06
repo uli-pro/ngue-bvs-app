@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that enables individual verse sponsoring for the NGÜ (Neue Genfer Übersetzung) Bible translation project. This is a CS50 final project that allows donors to sponsor individual Old Testament verses for €100 each and receive personalized certificates.
 
-### Current Development Status (August 4, 2025)
+### Current Development Status (August 6, 2025)
 - ✅ **Phase 1 - Session 1**: User Journey Mapping completed
   - Comprehensive user flow documented with Mermaid diagram
   - 30 routes/pages identified
@@ -15,7 +15,17 @@ This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that ena
   - All 20+ pages wireframed
   - Mobile-first approach
   - Consistent navigation patterns
-- 🚧 **Phase 1 - Sessions 3-6**: In progress
+- ✅ **Phase 1 - Session 2b**: Content for main pages completed
+  - Homepage, verse selection, about pages
+  - Content structure established
+- ✅ **Phase 1 - Session 3**: Content completion finished
+  - FAQ with 18 entries in 5 categories
+  - Email templates (4 variants)
+  - All 13 forms documented
+  - Error messages and UI texts
+  - GDPR-compliant privacy policy
+  - Switzerland Phase 2 preparations
+- 🚧 **Phase 1 - Sessions 4-6**: To be continued
 
 ## Technology Stack
 
@@ -126,10 +136,25 @@ ngue-bvs-app/
 │   ├── routes.py          # Flask routes
 │   ├── forms.py           # WTForms
 │   └── utils.py           # Helper functions
+├── content/                # Website content (Phase 1 Session 3)
+│   ├── seiten/            # Page content
+│   │   ├── homepage.md
+│   │   ├── vers-auswahl.md
+│   │   ├── ueber-ngue.md
+│   │   ├── ueber-stiftung.md
+│   │   └── faq.md
+│   ├── formulare/         # Form templates
+│   ├── email-templates/   # Email templates
+│   ├── meta/              # Certificates, privacy policy
+│   ├── fehler-nachrichten/# Error messages
+│   └── ui-texte/          # UI text and tooltips
 ├── static/                # CSS, JS, images
 ├── templates/             # Jinja2 HTML templates
 ├── tests/                 # Test suite
 ├── docs/                  # Project documentation
+│   ├── development-plan.md
+│   ├── phase-2-schweiz-vorbereitung.md
+│   └── user-journey/      # User flow documentation
 ├── dev-diary/             # Development diary and sessions
 └── migrations/            # Database migrations (to be created)
 ```
@@ -207,3 +232,30 @@ This application is designed to integrate with the existing NGÜ WordPress websi
 ## CS50 Context
 
 This serves as the final project for Harvard's CS50 course, balancing educational objectives with real-world application for the Peter-Schöffer-Stiftung's Bible translation funding initiative.
+
+## Future Extensions (Phase 2)
+
+### Switzerland Integration Planned
+The project is designed with future expansion in mind:
+- **Phase 1**: Germany only (Peter-Schöffer-Stiftung)
+- **Phase 2**: Switzerland integration (Genfer Bibelgesellschaft)
+
+For detailed planning and architectural preparations, see `docs/phase-2-schweiz-vorbereitung.md`.
+
+### Development Guidelines for Extensibility
+When developing features, follow these principles to ensure smooth Phase 2 integration:
+- **Use template variables** instead of hardcoding organization names, currencies, etc.
+- **Structure the database** with multi-organization support in mind
+- **Keep templates modular** for easy localization
+- **Use configuration files** for organization-specific settings
+
+Example:
+```python
+# Good: Using variables
+org_name = config.get('ORGANIZATION_NAME')
+amount = f"{config.get('AMOUNT')} {config.get('CURRENCY_SYMBOL')}"
+
+# Bad: Hardcoding
+org_name = "Peter-Schöffer-Stiftung"
+amount = "100€"
+```

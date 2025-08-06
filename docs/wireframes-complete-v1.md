@@ -284,6 +284,11 @@
 │  [Bei Geschenk: Zusätzliche Felder einblenden]                │
 │  ┌─────────────────────────────────────────────────────────────┐ │
 │  │ Empfänger-Name: [________________]                         │ │
+│  │ Empfänger-E-Mail: [________________]                       │ │
+│  │                                                             │ │
+│  │ Versand-Option:                                            │ │
+│  │ ☑️ Zertifikat direkt an Empfänger senden                  │ │
+│  │ ☐ Zertifikat an mich (für persönliche Übergabe)          │ │
 │  │                                                             │ │
 │  │ Persönliche Nachricht (optional):                          │ │
 │  │ ┌─────────────────────────────────────────────────────────┐ │ │
@@ -304,11 +309,11 @@
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                   WEITERE SPONSORINGS                          │
+│                   WEITERE SPONSORINGS                           │
 │                                                                 │
-│     💝 Verschenken Sie weitere Bibelvers-Sponsorings!         │
+│         💝 Möchten Sie einen weiteren Bibelvers sponsorn?       │
 │                                                                 │
-│              [← Weiteren Vers auswählen]                       │
+│                [← Weiteren Vers auswählen]                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

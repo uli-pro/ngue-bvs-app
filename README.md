@@ -8,6 +8,10 @@ Dieses Projekt ermöglicht es Unterstützern, einzelne Verse des Alten Testament
 
 **CS50 Final Project** - Dies ist mein Abschlussprojekt für Harvard's CS50 Kurs.
 
+### Projektphasen
+- **Phase 1**: Deutschland-Launch mit der Peter-Schöffer-Stiftung (aktuell in Entwicklung)
+- **Phase 2**: Schweiz-Integration mit der Genfer Bibelgesellschaft (geplant)
+
 ## Features
 
 ### Kernfunktionen
@@ -354,7 +358,10 @@ Projekt Link: [https://github.com/[ihr-username]/ngue-bvs-app](https://github.co
 - [🚧] **Woche 1: Konzeption und Design**
   - [x] Session 1: User Journey Mapping (04.08.2025)
   - [x] Session 2: Wireframes erstellen (04.08.2025)
-  - [ ] Session 3: Texte und Content-Strategie
+  - [x] Session 2b: Haupttexte für Seiten (05.08.2025)
+  - [x] Session 3: Content-Vervollständigung (06.08.2025)
+    - FAQ, Email-Templates, Formulare, Fehler/UI-Texte, Datenschutz
+    - Phase 2 Schweiz-Vorbereitung dokumentiert
   - [ ] Session 4: Grafiken und Visuelles Design
   - [ ] Session 5: Technische Architektur planen
   - [ ] Session 6: Frontend-Mockups finalisieren
