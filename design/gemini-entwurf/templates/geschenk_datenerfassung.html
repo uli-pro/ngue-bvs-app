@@ -1,0 +1,42 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Geschenk-Spende{% endblock %}
+
+{% block main %}
+<div class="container section">
+    <h1 class="section-title">Als Geschenk spenden</h1>
+    <p class="text-center lead mb-5">Geben Sie hier die Daten des Beschenkten und Ihre Daten für die Spendenbescheinigung ein.</p>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <form>
+                <h4>Daten des Empfängers (für das Zertifikat)</h4>
+                <div class="mb-3">
+                    <label for="recipient_name" class="form-label">Name des Empfängers *</label>
+                    <input type="text" class="form-control" id="recipient_name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="recipient_email" class="form-label">E-Mail des Empfängers *</label>
+                    <input type="email" class="form-control" id="recipient_email" required>
+                </div>
+
+                <hr class="my-4">
+
+                <h4>Ihre Daten (für die Spendenbescheinigung)</h4>
+                <div class="mb-3">
+                    <label for="donor_email" class="form-label">Ihre E-Mail-Adresse *</label>
+                    <input type="email" class="form-control" id="donor_email" required>
+                </div>
+                <!-- Placeholder for address form -->
+                <p>Ihre Adresse wird für die Spendenbescheinigung benötigt.</p>
+
+                <div class="d-flex justify-content-between mt-5">
+                    <a href="{{ url_for('bestaetigung') }}" class="btn btn-link">Zurück</a>
+                    <a href="{{ url_for('geschenk_zusammenfassung') }}" class="btn btn-primary btn-lg">Weiter zur Zusammenfassung</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

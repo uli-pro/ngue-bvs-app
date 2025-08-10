@@ -1,0 +1,198 @@
+{% extends "layout.html" %}
+
+{% block title %}Vielen Dank für Ihre Spende!{% endblock %}
+
+{% block main %}
+
+<!-- Success Message -->
+<section class="hero-section">
+    <div class="container">
+        <div class="text-center">
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+            </div>
+            <h1 class="display-4 mb-4">Vielen Dank für Ihre Spende!</h1>
+            <p class="lead">
+                Sie haben erfolgreich den Vers <strong class="text-primary">{{ verse_reference or 'Jeremia 29,11' }}</strong> gesponsert<br>
+                und tragen zur Finanzierung der NGÜ bei.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Documents Section -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white text-center">
+                        <h3 class="mb-0">Ihre Dokumente</h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-center lead mb-4">Ihre Dokumente stehen sofort zum Download bereit:</p>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
+                                        <h5>Personalisiertes Zertifikat</h5>
+                                        <p class="text-muted">Ihr offizielles Sponsoring-Zertifikat</p>
+                                        <a href="/downloads/zertifikat-demo.pdf" class="btn btn-primary" target="_blank">
+                                            <i class="fas fa-download me-2"></i>
+                                            Zertifikat herunterladen
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-file-invoice fa-3x text-secondary mb-3"></i>
+                                        <h5>Spendenbescheinigung</h5>
+                                        <p class="text-muted">Für Ihre Steuererklärung</p>
+                                        <a href="/downloads/spendenbescheinigung-demo.pdf" class="btn btn-secondary" target="_blank">
+                                            <i class="fas fa-download me-2"></i>
+                                            Bescheinigung herunterladen
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-4 text-center">
+                            <i class="fas fa-envelope me-2"></i>
+                            Beide Dokumente wurden auch an Ihre E-Mail-Adresse 
+                            <strong>{{ user_email or 'max.mustermann@example.com' }}</strong> versendet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Registration Offer -->
+<section class="bg-light-custom section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-primary">
+                    <div class="card-body p-4 text-center">
+                        <h3 class="mb-3">
+                            <i class="fas fa-user-plus text-primary me-2"></i>
+                            Registrieren Sie sich jetzt kostenlos!
+                        </h3>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h5>Vorteile eines Benutzerkontos:</h5>
+                                <ul class="list-unstyled text-start">
+                                    <li><i class="fas fa-check text-success me-2"></i>Jederzeit Zugriff auf alle Ihre gesponserten Verse</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Dokumente wiederholt herunterladen</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Übersicht über Ihre Spendenhistorie</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Schnellerer Checkout bei weiteren Spenden</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-grid gap-2">
+                                    <a href="/register" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-user-plus me-2"></i>
+                                        JETZT REGISTRIEREN
+                                    </a>
+                                    <a href="/" class="btn btn-outline-secondary">Später</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Continue Actions -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="row g-4">
+                    
+                    <!-- Gift Another Verse -->
+                    <div class="col-lg-6">
+                        <div class="card h-100 text-center">
+                            <div class="card-body p-4">
+                                <i class="fas fa-gift fa-3x text-primary mb-3"></i>
+                                <h4>Verschenken Sie ein Bibelvers-Sponsoring!</h4>
+                                <p>Machen Sie anderen eine Freude mit einem sinnvollen Geschenk.</p>
+                                <a href="/vers-auswaehlen" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Weiteren Vers als Geschenk auswählen
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Share Project -->
+                    <div class="col-lg-6">
+                        <div class="card h-100 text-center">
+                            <div class="card-body p-4">
+                                <i class="fas fa-share-alt fa-3x text-secondary mb-3"></i>
+                                <h4>Teilen Sie das Projekt</h4>
+                                <p>Helfen Sie uns, weitere Unterstützer zu finden!</p>
+                                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://ngue-sponsoring.de" 
+                                       target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="fab fa-facebook-f me-1"></i>Facebook
+                                    </a>
+                                    <a href="https://wa.me/?text=Ich%20habe%20einen%20Bibelvers%20für%20die%20NGÜ-Übersetzung%20gesponsert!" 
+                                       target="_blank" class="btn btn-outline-success btn-sm">
+                                        <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                                    </a>
+                                    <a href="mailto:?subject=NGÜ Bibelvers-Sponsoring&body=Ich habe gerade einen Bibelvers für die NGÜ-Übersetzung gesponsert. Schauen Sie auch mal rein: https://ngue-sponsoring.de" 
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-envelope me-1"></i>E-Mail
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="/" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-home me-2"></i>
+                        Zurück zur Startseite
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Update -->
+<section class="bg-light-custom py-4">
+    <div class="container">
+        <div class="text-center">
+            <div class="row">
+                <div class="col-md-4">
+                    <h3 class="text-primary">{{ total_sponsored or '358' }}</h3>
+                    <p class="mb-0">Verse gesponsert</p>
+                </div>
+                <div class="col-md-4">
+                    <h3 class="text-primary">{{ total_amount or '35.800' }} €</h3>
+                    <p class="mb-0">Gespendet</p>
+                </div>
+                <div class="col-md-4">
+                    <h3 class="text-secondary">{{ remaining_verses or '10.640' }}</h3>
+                    <p class="mb-0">Verse verbleibend</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

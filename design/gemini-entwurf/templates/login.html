@@ -1,0 +1,32 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block main %}
+<div class="container section">
+    <h1 class="section-title">Anmelden</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form>
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="email" placeholder="name@example.com">
+                    <label for="email">E-Mail-Adresse</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" placeholder="Passwort">
+                    <label for="password">Passwort</label>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Anmelden</button>
+                </div>
+            </form>
+            <div class="text-center mt-3">
+                <a href="#">Passwort vergessen?</a>
+            </div>
+            <hr class="my-4">
+            <p class="text-center">Noch kein Konto? <a href="{{ url_for('registrieren') }}">Jetzt kostenlos registrieren</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

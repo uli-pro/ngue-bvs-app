@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGÜ Vers-Sponsoring Zertifikat</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .certificate {
+            background: white;
+            width: 800px;
+            padding: 60px;
+            border: 10px solid #dd3333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            position: relative;
+        }
+        
+        .certificate::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            border: 2px solid #dd3333;
+            opacity: 0.3;
+        }
+        
+        .header {
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dd3333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #323334;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            color: #323334;
+            margin: 30px 0;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .recipient {
+            font-size: 1.8rem;
+            color: #dd3333;
+            margin: 30px 0;
+            font-weight: bold;
+        }
+        
+        .verse {
+            background: #f8f9fa;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 5px solid #dd3333;
+            font-style: italic;
+        }
+        
+        .verse-ref {
+            font-size: 1.3rem;
+            color: #dd3333;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .verse-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #323334;
+            margin-bottom: 10px;
+        }
+        
+        .verse-source {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .message {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin: 30px 0;
+            color: #323334;
+        }
+        
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            align-items: end;
+        }
+        
+        .signature {
+            text-align: center;
+            width: 300px;
+        }
+        
+        .signature-line {
+            border-bottom: 2px solid #323334;
+            margin-bottom: 10px;
+            height: 50px;
+        }
+        
+        .date {
+            text-align: right;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <div class="header">
+            <div class="logo">NGÜ BIBELVERS-SPONSORING</div>
+            <div class="subtitle">Peter-Schöffer-Stiftung</div>
+        </div>
+        
+        <div class="title">Zertifikat</div>
+        
+        <div class="message">
+            Hiermit bestätigen wir dankend, dass
+        </div>
+        
+        <div class="recipient">Max Mustermann</div>
+        
+        <div class="message">
+            mit einer Spende von <strong>100,00 €</strong> die Übersetzung des folgenden Bibelverses<br>
+            für die Neue Genfer Übersetzung (NGÜ) gesponsert hat:
+        </div>
+        
+        <div class="verse">
+            <div class="verse-ref">Jeremia 29,11</div>
+            <div class="verse-text">
+                "Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, 
+                Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben."
+            </div>
+            <div class="verse-source">— Schlachter 1951 (Referenztext zur Orientierung)</div>
+        </div>
+        
+        <div class="message">
+            Diese Spende trägt direkt zur Vollendung der NGÜ-Bibelübersetzung bei.<br>
+            Vielen Dank für Ihren wertvollen Beitrag!
+        </div>
+        
+        <div class="signature-section">
+            <div class="signature">
+                <div class="signature-line"></div>
+                <div>Daniel Weninger<br>Vorsitzender des Vorstands<br>Peter-Schöffer-Stiftung</div>
+            </div>
+            <div class="date">
+                Biebertal, den {{ current_date or '10. August 2025' }}
+            </div>
+        </div>
+        
+        <div class="footer">
+            Peter-Schöffer-Stiftung | Max-Müller-Str. 36-38 | 35444 Biebertal<br>
+            kontakt@peter-schoeffer-stiftung.de | www.schoeffer.org<br>
+            Stiftungsregister AG Gießen | Registernummer: St 12/345
+        </div>
+    </div>
+</body>
+</html>

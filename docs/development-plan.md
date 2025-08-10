@@ -8,7 +8,7 @@
 - [x] Klärung mit Peter-Schöffer-Stiftung zu Spendenbescheinigungen und benötigten Daten
 - [ ] Hintergrund zur 100€-Kalkulation erfragen
 
-## Phase 1: Konzeption und Design (Woche 1)
+## Phase 1: Konzeption und Design (Woche 1) ✅
 
 ### Session 1 - User Journey Mapping & Wireframes ✅
 - [x] Flussdiagramm der kompletten User Journey erstellen
@@ -47,10 +47,16 @@
   - [x] User Journey für Gruppenspenden dokumentiert
   - [x] Zertifikat-Vorlagen für Gruppen erstellt
 
-### Session 4 - Grafiken und Visuelles Design
+## Phase 2: Grafiken, Architektur und Mockups (Woche 2 - real)
+
+### Session 4a - Grafiken und Visuelles Design (Teil 1)
 - NGÜ-Logo erstellen/beschaffen
-- Farbschema und Schriftarten definieren
-- Zertifikat-Vorlage gestalten
+- Farbschema definieren (Basis-Farben)
+- Schriftarten auswählen
+- Erste Zertifikat-Vorlage skizzieren
+
+### Session 4b - Grafiken und Visuelles Design (Teil 2)
+- Zertifikat-Vorlage finalisieren
 - Passende Bilder sammeln (lizenzfrei)
 - Moodboard für visuellen Stil erstellen
 - Konzept für Vers-Animation entwickeln
@@ -69,7 +75,7 @@
 - Mobile-Responsiveness planen
 - Style-Guide-Seite erstellen
 
-## Phase 2: Backend-Grundstruktur (Woche 2)
+## Phase 3: Backend-Grundstruktur (Woche 3)
 
 ### Session 7 - Projekt-Setup
 - Flask-Projekt initialisieren
@@ -113,7 +119,7 @@
 - E-Mail-Verifikation
 - User-Dashboard Grundstruktur
 
-## Phase 3: Frontend-Entwicklung (Woche 3)
+## Phase 4: Frontend-Entwicklung (Woche 4)
 
 ### Session 13 - CSS-Framework und Basis-Styling
 - Bootstrap oder Tailwind einbinden
@@ -155,7 +161,7 @@
 - Profil-Einstellungen
 - Newsletter-Verwaltung
 
-## Phase 4: Zahlungsintegration (Woche 4)
+## Phase 5: Zahlungsintegration (Woche 5)
 
 ### Session 19 - Stripe-Grundlagen lernen
 - Stripe-Dokumentation studieren
@@ -193,7 +199,7 @@
 - Rate-Limiting implementieren
 - Logging für Zahlungen
 
-## Phase 5: Automatisierung und E-Mail (Woche 5)
+## Phase 6: Automatisierung und E-Mail (Woche 6)
 
 ### Session 25 - E-Mail-System einrichten
 - Flask-Mail konfigurieren
@@ -233,7 +239,7 @@
 - Personalisierte Geschenk-E-Mail
 - Geschenk-Zertifikat
 
-## Phase 6: Testing und Optimierung (Woche 6)
+## Phase 7: Testing und Optimierung (Woche 7)
 
 ### Session 31 - Unit-Tests schreiben
 - Test-Framework einrichten (pytest)
@@ -273,7 +279,7 @@
 - Ladeanimationen
 - Accessibility-Checks
 
-## Phase 7: Deployment und Launch (Woche 7)
+## Phase 8: Deployment und Launch (Woche 8)
 
 ### Session 37 - Production-Setup
 - Server einrichten (DigitalOcean/Heroku)
@@ -314,11 +320,13 @@
 ## Wichtige Meilensteine
 
 - **Ende Woche 0**: Konzept basierend auf User-Feedback finalisiert
-- **Ende Woche 2**: Funktionierendes Backend mit User-System
-- **Ende Woche 3**: Vollständige Such- und Auswahlfunktion
-- **Ende Woche 4**: Vollständige Zahlungsintegration
-- **Ende Woche 6**: Feature-complete und getestet
-- **Ende Woche 7**: Live und einsatzbereit
+- **Ende Woche 1**: Phase 1 (Sessions 1-3) abgeschlossen ✅
+- **Ende Woche 2 (real)**: Grafiken, Architektur und Mockups fertig
+- **Ende Woche 3**: Funktionierendes Backend mit User-System
+- **Ende Woche 4**: Vollständige Such- und Auswahlfunktion
+- **Ende Woche 5**: Vollständige Zahlungsintegration
+- **Ende Woche 7**: Feature-complete und getestet
+- **Ende Woche 8**: Live und einsatzbereit
 
 ## Tipps für die Umsetzung
 

@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+
+{% block title %}FAQ{% endblock %}
+
+{% block main %}
+
+<!-- FAQ Header -->
+<section class="hero-section py-5">
+    <div class="container">
+        <h1 class="text-center mb-3">Häufig gestellte Fragen</h1>
+        <p class="lead text-center text-secondary">Alles was Sie über das NGÜ Bibelvers-Sponsoring wissen müssen</p>
+    </div>
+</section>
+
+<!-- FAQ Content -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 mb-4">
+                <!-- FAQ Navigation -->
+                <div class="list-group sticky-top" style="top: 100px;">
+                    <a href="#projekt" class="list-group-item list-group-item-action">Über das NGÜ-Projekt</a>
+                    <a href="#sponsoring" class="list-group-item list-group-item-action">Vers-Sponsoring</a>
+                    <a href="#schlachter" class="list-group-item list-group-item-action">Schlachter 1951</a>
+                    <a href="#spenden" class="list-group-item list-group-item-action">Spenden und Steuern</a>
+                    <a href="#technisches" class="list-group-item list-group-item-action">Technisches</a>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <!-- Über das NGÜ-Projekt -->
+                <div id="projekt" class="mb-5">
+                    <h2 class="mb-4">Über das NGÜ-Projekt</h2>
+                    
+                    <div class="accordion" id="accordionProjekt">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#projekt1">
+                                    Was ist die NGÜ (Neue Genfer Übersetzung)?
+                                </button>
+                            </h2>
+                            <div id="projekt1" class="accordion-collapse collapse show" data-bs-parent="#accordionProjekt">
+                                <div class="accordion-body">
+                                    Die NGÜ ist eine moderne, wissenschaftlich fundierte Bibelübersetzung ins Deutsche. Sie verbindet sprachliche Genauigkeit mit zeitgemäßer Verständlichkeit und wird von einem Team von Sprachwissenschaftlern und Theologen erstellt.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#projekt2">
+                                    Wann wird die NGÜ vollständig erscheinen?
+                                </button>
+                            </h2>
+                            <div id="projekt2" class="accordion-collapse collapse" data-bs-parent="#accordionProjekt">
+                                <div class="accordion-body">
+                                    Das Neue Testament der NGÜ ist bereits erschienen. Das Alte Testament wird schrittweise veröffentlicht - die Bücher Genesis bis 2.Samuel sowie die Psalmen und die Sprüche sind bereits verfügbar. Die verbleibenden 11.000 Verse des Alten Testaments sollen durch das Sponsoring-Projekt finanziert und bis 2029 vollständig übersetzt werden.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#projekt3">
+                                    Warum braucht die NGÜ finanzielle Unterstützung?
+                                </button>
+                            </h2>
+                            <div id="projekt3" class="accordion-collapse collapse" data-bs-parent="#accordionProjekt">
+                                <div class="accordion-body">
+                                    Die Übersetzung der Bibel ist ein aufwändiger Prozess, der hochqualifizierte Sprachwissenschaftler, Theologen und Lektoren erfordert. Jeder Vers durchläuft mehrere Überarbeitungszyklen. Die Finanzierung durch Vers-Sponsoring ermöglicht es, diese wichtige Arbeit unabhängig und in der gewohnt hohen Qualität fortzusetzen.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vers-Sponsoring -->
+                <div id="sponsoring" class="mb-5">
+                    <h2 class="mb-4">Vers-Sponsoring</h2>
+                    
+                    <div class="accordion" id="accordionSponsoring">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sponsoring1">
+                                    Wie funktioniert das Vers-Sponsoring?
+                                </button>
+                            </h2>
+                            <div id="sponsoring1" class="accordion-collapse collapse" data-bs-parent="#accordionSponsoring">
+                                <div class="accordion-body">
+                                    Sie wählen einen der noch zu übersetzenden 11.000 Verse aus dem Alten Testament aus und sponsern ihn mit einer Spende von 100€. Nach der Zahlung erhalten Sie automatisch ein personalisiertes Zertifikat sowie eine offizielle Spendenbescheinigung per E-Mail.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sponsoring2">
+                                    Warum kostet jeder Vers genau 100€?
+                                </button>
+                            </h2>
+                            <div id="sponsoring2" class="accordion-collapse collapse" data-bs-parent="#accordionSponsoring">
+                                <div class="accordion-body">
+                                    Der einheitliche Preis von 100€ pro Vers basiert auf den kalkulierten Kosten für Übersetzung, Lektorat, Korrektur und Qualitätssicherung eines Verses. Dieses einfache Preismodell macht das Sponsoring transparent und für alle Spender gleich zugänglich.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sponsoring3">
+                                    Kann ich einen Vers als Geschenk sponsern?
+                                </button>
+                            </h2>
+                            <div id="sponsoring3" class="accordion-collapse collapse" data-bs-parent="#accordionSponsoring">
+                                <div class="accordion-body">
+                                    Ja, beim Checkout können Sie angeben, dass die Spende ein Geschenk ist. Sie können die Kontaktdaten des Beschenkten eingeben, der dann das personalisierte Zertifikat erhält, während Sie die Spendenbescheinigung bekommen.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sponsoring4">
+                                    Kann unsere Gruppe gemeinsam einen Vers sponsern?
+                                </button>
+                            </h2>
+                            <div id="sponsoring4" class="accordion-collapse collapse" data-bs-parent="#accordionSponsoring">
+                                <div class="accordion-body">
+                                    Ja! Wählen Sie bei der Spende-Art "Als Gruppe" aus. Sie können dann Ihren Gruppennamen angeben (z.B. "Familie Schmidt", "Jugendgruppe St. Martin" oder "Hauskreis Musterweg"). Das Zertifikat wird auf die Gruppe ausgestellt und an Sie als Kontaktperson gesendet.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weitere Kategorien würden hier folgen... -->
+                
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-light-custom section-padding">
+    <div class="container text-center">
+        <h3 class="mb-4">Haben Sie noch Fragen?</h3>
+        <p class="lead mb-4">Wir helfen Ihnen gerne weiter!</p>
+        <a href="/kontakt" class="btn btn-primary btn-lg">Kontakt aufnehmen</a>
+    </div>
+</section>
+
+{% endblock %}

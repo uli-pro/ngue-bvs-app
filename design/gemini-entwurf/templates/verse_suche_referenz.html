@@ -1,0 +1,47 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Suche nach Bibelstelle{% endblock %}
+
+{% block main %}
+<div class="container section">
+    <h1 class="section-title">Suchen Sie nach einer bestimmten Bibelstelle</h1>
+    <p class="text-center lead mb-5">Wählen Sie Buch, Kapitel und Vers aus den Dropdown-Menüs.</p>
+    
+    <!-- Suchformular Platzhalter -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="input-group mb-3">
+                <select class="form-select" id="book">
+                    <option selected>Buch wählen...</option>
+                    <option value="1">1. Mose</option>
+                    <option value="2">2. Mose</option>
+                    <option value="3">...</option>
+                </select>
+                <select class="form-select" id="chapter">
+                    <option selected>Kapitel...</option>
+                    <option value="1">1</option>
+                </select>
+                <select class="form-select" id="verse">
+                    <option selected>Vers...</option>
+                    <option value="1">1</option>
+                </select>
+                <button class="btn btn-primary" type="button">Suchen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suchergebnis Platzhalter -->
+    <div class="mt-5">
+        <h3 class="text-center">Suchergebnis</h3>
+        <div class="card w-75 mx-auto">
+            <div class="card-body text-center">
+                <h5 class="card-title">1. Mose 1,1</h5>
+                <p class="card-text">"Am Anfang schuf Gott Himmel und Erde."</p>
+                <p class="text-muted"><small>- Schlachter 1951 -</small></p>
+                <a href="{{ url_for('bestaetigung') }}" class="btn btn-primary">Diesen Vers wählen</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

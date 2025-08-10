@@ -1,0 +1,61 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Ihre Daten{% endblock %}
+
+{% block main %}
+<div class="container section">
+    <h1 class="section-title">Ihre Kontaktdaten</h1>
+    <p class="text-center lead mb-5">Für den Versand Ihres Zertifikats per E-Mail und die Spendenbescheinigung.</p>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <form>
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-Mail-Adresse *</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="wants_receipt">
+                    <label class="form-check-label" for="wants_receipt">Ich möchte eine Spendenbescheinigung erhalten</label>
+                </div>
+
+                <!-- Placeholder for address form that appears on check -->
+                <div id="address-form" class="border p-3 mb-3">
+                    <h5>Adresse für die Spendenbescheinigung</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="firstname" class="form-label">Vorname *</label>
+                            <input type="text" class="form-control" id="firstname">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lastname" class="form-label">Nachname *</label>
+                            <input type="text" class="form-control" id="lastname">
+                        </div>
+                    </div>
+                     <div class="mb-3">
+                        <label for="street" class="form-label">Straße & Hausnummer *</label>
+                        <input type="text" class="form-control" id="street">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="zip" class="form-label">PLZ *</label>
+                            <input type="text" class="form-control" id="zip">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="city" class="form-label">Ort *</label>
+                            <input type="text" class="form-control" id="city">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-5">
+                    <a href="{{ url_for('bestaetigung') }}" class="btn btn-link">Zurück</a>
+                    <a href="{{ url_for('zusammenfassung') }}" class="btn btn-primary btn-lg">Weiter zur Zusammenfassung</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

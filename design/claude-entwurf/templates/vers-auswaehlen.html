@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+
+{% block title %}Bibelvers auswählen{% endblock %}
+
+{% block main %}
+
+<!-- Breadcrumb -->
+<section class="bg-light-custom py-2">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Vers auswählen</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Header Section -->
+<section class="hero-section py-5">
+    <div class="container">
+        <h1 class="text-center mb-3">Wählen Sie Ihren Bibelvers</h1>
+        <p class="lead text-center text-secondary mb-4">Hier sind drei Verse aus dem Alten Testament für Sie</p>
+        
+        <!-- Info Banner -->
+        <div class="alert alert-info text-center" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Da das Alte Testament der NGÜ noch nicht übersetzt ist, zeigen wir Ihnen die Verse in der bewährten Schlachter-Übersetzung von 1951.</strong>
+        </div>
+    </div>
+</section>
+
+<!-- Top 3 Verses Section -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100 verse-card">
+                    <div class="card-body text-center p-4">
+                        <h4 class="text-primary mb-3">Jeremia 29,11</h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-4">"Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben."</p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <a href="/vers/jeremia-29-11/bestaetigung" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 verse-card">
+                    <div class="card-body text-center p-4">
+                        <h4 class="text-primary mb-3">Psalm 23,1</h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-4">"Der HERR ist mein Hirte; mir wird nichts mangeln."</p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <a href="/vers/psalm-23-1/bestaetigung" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 verse-card">
+                    <div class="card-body text-center p-4">
+                        <h4 class="text-primary mb-3">Sprüche 3,5-6</h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-4">"Vertraue auf den HERRN von ganzem Herzen und verlaß dich nicht auf deinen Verstand; erkenne ihn auf allen deinen Wegen, so wird er deine Pfade ebnen!"</p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <a href="/vers/sprueche-3-5-6/bestaetigung" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Philosophy Section -->
+<section class="bg-light-custom section-padding">
+    <div class="container">
+        <div class="text-center">
+            <h2 class="mb-4">Jeder Vers trägt zur Gesamtbotschaft bei</h2>
+            <p class="lead">
+                Alle Verse des Alten Testaments sind wichtig für das Verständnis der biblischen Botschaft - von den bekannten Hoffnungstexten bis zu den herausfordernden Passagen. Mit Ihrem Sponsoring helfen Sie dabei, die vollständige Botschaft der Bibel zuverlässig in zeitgemäße deutsche Sprache zu übersetzen.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Search Options Section -->
+<section class="section-padding">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2>Oder suchen Sie gezielt:</h2>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-search fa-3x text-primary"></i>
+                        </div>
+                        <h4>Nach bestimmter Bibelstelle suchen</h4>
+                        <p class="mb-4">Kennen Sie bereits eine konkrete Bibelstelle? Suchen Sie gezielt nach Buch, Kapitel und Vers.</p>
+                        <a href="/vers-suche/referenz" class="btn btn-outline-primary">Bibelstelle suchen</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-tags fa-3x text-primary"></i>
+                        </div>
+                        <h4>Nach Thema oder Stichwort suchen</h4>
+                        <p class="mb-4">Finden Sie Verse zu bestimmten Themen oder mit bestimmten Begriffen.</p>
+                        <a href="/vers-suche/keyword" class="btn btn-outline-primary">Thema suchen</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Larger Projects Section -->
+<section class="bg-light-custom section-padding">
+    <div class="container">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <h3 class="mb-4">Grössere Projekte</h3>
+                <p class="lead mb-4">
+                    <i class="fas fa-book me-2"></i>
+                    <strong>Ganzes Kapitel oder Buch sponsern?</strong>
+                </p>
+                <p class="mb-4">Sprechen Sie uns für individuelle Lösungen an:</p>
+                <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
+                    <a href="mailto:grossspenden@peter-schoeffer-stiftung.de" class="btn btn-secondary">
+                        <i class="fas fa-envelope me-2"></i>
+                        grossspenden@peter-schoeffer-stiftung.de
+                    </a>
+                    <span class="text-muted">oder</span>
+                    <a href="tel:+4901234567890" class="btn btn-outline-secondary">
+                        <i class="fas fa-phone me-2"></i>
+                        +49 (0) 123 456789
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Navigation -->
+<section class="py-3">
+    <div class="container">
+        <div class="text-center">
+            <a href="/" class="btn btn-link">
+                <i class="fas fa-arrow-left me-2"></i>
+                Zurück zur Startseite
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

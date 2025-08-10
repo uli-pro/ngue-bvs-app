@@ -1,0 +1,351 @@
+{% extends "layout.html" %}
+
+{% block title %}Transparenz - Wohin fließt Ihre Spende?{% endblock %}
+
+{% block main %}
+
+<!-- Header -->
+<section class="hero-section">
+    <div class="container">
+        <h1 class="text-center mb-3">Wohin fließt Ihre Spende?</h1>
+        <p class="lead text-center text-secondary">Vollständige Transparenz über die Mittelverwendung</p>
+    </div>
+</section>
+
+<!-- Cost Breakdown -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card border-primary mb-5">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h2 class="mb-0">Mittelverwendung pro 100€ Spende</h2>
+                    </div>
+                    <div class="card-body p-5">
+                        <div class="row text-center mb-4">
+                            <div class="col-md-4">
+                                <div class="bg-success text-white p-4 rounded mb-3">
+                                    <h3 class="mb-2">80%</h3>
+                                    <h4>80,00€</h4>
+                                    <p class="mb-0">Direkte Übersetzungskosten</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="bg-warning text-dark p-4 rounded mb-3">
+                                    <h3 class="mb-2">15%</h3>
+                                    <h4>15,00€</h4>
+                                    <p class="mb-0">Projektmanagement & Lektorat</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="bg-secondary text-white p-4 rounded mb-3">
+                                    <h3 class="mb-2">5%</h3>
+                                    <h4>5,00€</h4>
+                                    <p class="mb-0">Verwaltung & Infrastruktur</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar Visualization -->
+                        <div class="progress mb-4" style="height: 40px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 80%" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100">
+                                <strong>80% Übersetzung</strong>
+                            </div>
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 15%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100">
+                                <strong>15% Lektorat</strong>
+                            </div>
+                            <div class="progress-bar bg-secondary" role="progressbar" style="width: 5%" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100">
+                                <strong>5% Verwaltung</strong>
+                            </div>
+                        </div>
+                        
+                        <p class="text-center text-muted">
+                            <strong>95% Ihrer Spende</strong> fließen direkt in die Übersetzungsarbeit.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Detailed Breakdown -->
+<section class="bg-light-custom section-padding">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2>Detaillierte Aufschlüsselung</h2>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-language me-2"></i>
+                            Direkte Übersetzungskosten (80,00€)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Honorare für Übersetzer
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Biblische Fachberatung
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Sprachliche Überarbeitung
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Wissenschaftliche Recherche
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-success me-2"></i>
+                                Exegetische Arbeit am Grundtext
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 border-warning">
+                    <div class="card-header bg-warning">
+                        <h4 class="mb-0">
+                            <i class="fas fa-edit me-2"></i>
+                            Projektmanagement & Lektorat (15,00€)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-warning me-2"></i>
+                                Redaktionelle Betreuung
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-warning me-2"></i>
+                                Koordination der Übersetzerteams
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-warning me-2"></i>
+                                Qualitätssicherung
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-warning me-2"></i>
+                                Theologische Begutachtung
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-warning me-2"></i>
+                                Projektplanung und -steuerung
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-building me-2"></i>
+                            Verwaltung & Infrastruktur (5,00€)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-secondary me-2"></i>
+                                Stiftungsverwaltung
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-secondary me-2"></i>
+                                Buchführung und Steuerberatung
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-secondary me-2"></i>
+                                IT-Infrastruktur
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-secondary me-2"></i>
+                                Spendenbescheinigungen
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-secondary me-2"></i>
+                                Rechtliche Beratung
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Impact Section -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card bg-light-custom">
+                    <div class="card-body p-5 text-center">
+                        <h2 class="mb-4">Was bewirkt Ihre Spende konkret?</h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <h4>Mit 100€ ermöglichen Sie:</h4>
+                                <ul class="list-unstyled text-start">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Die professionelle Übersetzung eines kompletten Bibelverses
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Mehrere Korrektur- und Lektoratsdurchgänge
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Theologische und sprachliche Qualitätsprüfung
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Einen dauerhaften Beitrag zur deutschen Bibellandschaft
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="bg-primary text-white p-4 rounded">
+                                    <h4 class="mb-3">Durchschnittlicher Arbeitsaufwand pro Vers:</h4>
+                                    <div class="mb-2">
+                                        <strong>2-3 Stunden</strong><br>
+                                        <small>Erstübersetzung</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>1-2 Stunden</strong><br>
+                                        <small>Revision & Lektorat</small>
+                                    </div>
+                                    <div>
+                                        <strong>30 Minuten</strong><br>
+                                        <small>Qualitätskontrolle</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="mt-4 text-primary">Gemeinsam schaffen wir die NGÜ!</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Project Status -->
+<section class="bg-light-custom section-padding">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2>Aktueller Finanzierungsstand</h2>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h3 class="text-primary">3% finanziert</h3>
+                            <div class="progress mb-3" style="height: 30px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 3%" aria-valuenow="3" aria-valuemin="0" aria-valuemax="100">
+                                    3%
+                                </div>
+                            </div>
+                            <p class="lead">
+                                <strong>35.700€</strong> von <strong>1.100.000€</strong> finanziert
+                            </p>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h4 class="text-primary">357</h4>
+                                <p>von 11.000 Versen gesponsert</p>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-secondary">10.643</h4>
+                                <p>Verse warten noch auf Ihren Sponsor</p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <a href="/vers-auswaehlen" class="btn btn-primary btn-lg">
+                                <i class="fas fa-heart me-2"></i>
+                                JETZT VERS SPONSERN
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust & Accountability -->
+<section class="section-padding">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2>Vertrauen durch Transparenz</h2>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-certificate fa-3x text-success mb-3"></i>
+                        <h5>Gemeinnützigkeitsbescheinigung</h5>
+                        <p class="small mb-0">Anerkannte gemeinnützige Stiftung</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                        <h5>Jährliche Tätigkeitsberichte</h5>
+                        <p class="small mb-0">Vollständige Dokumentation unserer Arbeit</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-balance-scale fa-3x text-warning mb-3"></i>
+                        <h5>Externe Wirtschaftsprüfung</h5>
+                        <p class="small mb-0">Unabhängige Kontrolle der Finanzen</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-shield-alt fa-3x text-secondary mb-3"></i>
+                        <h5>Steuerliche Absetzbarkeit</h5>
+                        <p class="small mb-0">Ihre Spenden sind voll absetzbar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <div class="alert alert-success">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>95% aller Spenden</strong> fließen direkt in die Übersetzungsarbeit - ein überdurchschnittlich hoher Wert für gemeinnützige Organisationen.
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

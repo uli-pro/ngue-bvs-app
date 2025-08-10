@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+
+{% block title %}Nach Thema suchen{% endblock %}
+
+{% block main %}
+
+<!-- Breadcrumb -->
+<section class="bg-light-custom py-2">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/vers-auswaehlen">Vers auswählen</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Nach Thema suchen</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Header -->
+<section class="hero-section py-5">
+    <div class="container">
+        <h1 class="text-center mb-3">Suchen Sie nach Thema oder Stichwort</h1>
+        <p class="lead text-center text-secondary">Geben Sie ein Wort oder Thema ein (z.B. "Hoffnung", "Vertrauen", "Kraft", "Liebe")</p>
+    </div>
+</section>
+
+<!-- Search Form -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <form id="keywordSearchForm">
+                            <div class="row g-3">
+                                <div class="col">
+                                    <div class="input-group input-group-lg">
+                                        <input type="text" class="form-control" id="keyword" name="keyword" 
+                                               placeholder="Suchbegriff eingeben..." required>
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-search me-2"></i>SUCHEN
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <small class="text-muted">Beliebte Suchbegriffe:</small>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 keyword-tag" data-keyword="Hoffnung">Hoffnung</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 keyword-tag" data-keyword="Liebe">Liebe</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 keyword-tag" data-keyword="Kraft">Kraft</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 keyword-tag" data-keyword="Trost">Trost</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 keyword-tag" data-keyword="Frieden">Frieden</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 keyword-tag" data-keyword="Vertrauen">Vertrauen</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Results -->
+<section class="section-padding" id="searchResults" style="display: none;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2>Ergebnisse für "<span id="searchTerm">Hoffnung</span>"</h2>
+            <p class="text-muted">(Schlachter 1951 zur Orientierung)</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100 verse-card">
+                    <div class="card-body text-center p-4">
+                        <h4 class="text-primary mb-3">Jeremia 29,11</h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-4">"Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und <mark>Hoffnung</mark> zu geben."</p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <a href="/vers/jeremia-29-11/bestaetigung" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 verse-card">
+                    <div class="card-body text-center p-4">
+                        <h4 class="text-primary mb-3">Römer 15,13</h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-4">"Der Gott der <mark>Hoffnung</mark> aber erfülle euch mit aller Freude und allem Frieden im Glauben, dass ihr überströmt in der <mark>Hoffnung</mark> durch die Kraft des Heiligen Geistes!"</p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <a href="/vers/roemer-15-13/bestaetigung" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100 verse-card">
+                    <div class="card-body text-center p-4">
+                        <h4 class="text-primary mb-3">Psalm 42,6</h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-4">"Was betrübst du dich, meine Seele, und bist so unruhig in mir? Harre auf Gott! Denn ich werde ihm noch danken für die Rettung seines Angesichts!"</p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <a href="/vers/psalm-42-6/bestaetigung" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <button class="btn btn-outline-primary btn-lg">WEITERE VERSE ANZEIGEN</button>
+        </div>
+    </div>
+</section>
+
+<!-- Navigation -->
+<section class="py-3">
+    <div class="container">
+        <div class="text-center">
+            <a href="/vers-auswaehlen" class="btn btn-link">
+                <i class="fas fa-arrow-left me-2"></i>
+                Zurück zur Vers-Auswahl
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Demo functionality for keyword search
+    document.getElementById('keywordSearchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const keyword = document.getElementById('keyword').value.trim();
+        
+        if (keyword) {
+            document.getElementById('searchTerm').textContent = keyword;
+            document.getElementById('searchResults').style.display = 'block';
+            document.getElementById('searchResults').scrollIntoView({behavior: 'smooth'});
+        }
+    });
+    
+    // Handle keyword tag clicks
+    document.querySelectorAll('.keyword-tag').forEach(button => {
+        button.addEventListener('click', function() {
+            const keyword = this.getAttribute('data-keyword');
+            document.getElementById('keyword').value = keyword;
+            document.getElementById('searchTerm').textContent = keyword;
+            document.getElementById('searchResults').style.display = 'block';
+            document.getElementById('searchResults').scrollIntoView({behavior: 'smooth'});
+        });
+    });
+</script>
+{% endblock %}

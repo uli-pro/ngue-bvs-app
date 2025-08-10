@@ -1,0 +1,39 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Zusammenfassung{% endblock %}
+
+{% block main %}
+<div class="container section">
+    <h1 class="section-title">Zusammenfassung Ihrer Spende</h1>
+    <p class="text-center lead mb-5">Prüfen Sie Ihre Angaben vor der Zahlung.</p>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">Ihr gewählter Vers</div>
+                <div class="card-body">
+                    <h5 class="card-title">Jeremia 29,11</h5>
+                    <p>Spendenbetrag: 100,00 €</p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Ihre Daten</div>
+                <div class="card-body">
+                    <p>Herr Max Mustermann<br>
+                    max.mustermann@example.com<br>
+                    Musterstraße 123<br>
+                    12345 Musterstadt</p>
+                    <p>✓ Spendenbescheinigung gewünscht</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-5">
+                <a href="{{ url_for('datenerfassung') }}" class="btn btn-link">Daten ändern</a>
+                <a href="{{ url_for('erfolg') }}" class="btn btn-primary btn-lg">Jetzt verbindlich spenden</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

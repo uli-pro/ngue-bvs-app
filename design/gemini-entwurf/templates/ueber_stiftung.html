@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}Über die Peter-Schöffer-Stiftung{% endblock %}
+
+{% block main %}
+<div class="container section">
+    <h1 class="section-title">Peter-Schöffer-Stiftung – Bildung im Geist der Renaissance</h1>
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <p class="lead text-center">Wir unterstützen führende Köpfe in Wissenschaft, Wirtschaft und Kultur dabei, ein Vermächtnis zum Wohl der Menschen weltweit zu schaffen. Die NGÜ-Übersetzung ist eines unserer Hauptprojekte.</p>
+            
+            <h3 class="mt-5">Unsere Hauptprojekte</h3>
+            <ul>
+                <li><b>Neue Genfer Übersetzung:</b> Fortsetzung der historischen Bibelübersetzungsarbeit Peter Schöffers im 16. Jahrhundert.</li>
+                <li><b>Oxford Thought Leaders Scholarships:</b> Unterstützung von Oxford-Absolventen in christlich-humanistischer Forschung.</li>
+                <li><b>Historische Ausstellung in Worms:</b> William Tyndale und die Täuferbewegung (1526-2026).</li>
+            </ul>
+
+            <h3 class="mt-5">Warum die NGÜ?</h3>
+            <p>Die Bibelübersetzung steht im Zentrum unserer Arbeit, weil sie das historische Erbe Peter Schöffers fortsetzt und gleichzeitig moderne wissenschaftliche Standards mit zeitgemäßer Sprache verbindet.</p>
+
+            <div class="text-center mt-5">
+                <a href="{{ url_for('verse_auswahl') }}" class="btn btn-primary btn-lg">Jetzt Vers sponsern</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

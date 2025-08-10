@@ -1,0 +1,207 @@
+{% extends "layout.html" %}
+
+{% block title %}Ihre Kontaktdaten{% endblock %}
+
+{% block main %}
+
+<!-- Breadcrumb -->
+<section class="bg-light-custom py-2">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/vers-auswaehlen">Vers auswählen</a></li>
+                <li class="breadcrumb-item"><a href="/vers/demo/bestaetigung">Bestätigen</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Ihre Daten</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Header -->
+<section class="hero-section py-5">
+    <div class="container">
+        <h1 class="text-center mb-3">Ihre Kontaktdaten</h1>
+        <p class="lead text-center text-secondary">Für den Versand Ihres Zertifikats per E-Mail</p>
+    </div>
+</section>
+
+<!-- Form -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <form id="checkoutForm" class="needs-validation" novalidate>
+                            
+                            <!-- Basic Data -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Basis-Daten</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">E-Mail-Adresse <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                        <div class="form-text">Für Zertifikat-Versand erforderlich</div>
+                                        <div class="invalid-feedback">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="wantReceipt" name="wantReceipt" checked>
+                                        <label class="form-check-label" for="wantReceipt">
+                                            <strong>Ich möchte eine Spendenbescheinigung erhalten</strong>
+                                            <small class="d-block text-muted">(Für steuerliche Absetzbarkeit empfohlen)</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Data for Receipt -->
+                            <div id="receiptData" class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Zusätzliche Daten für Spendenbescheinigung</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="salutation" class="form-label">Anrede <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="salutation" name="salutation" required>
+                                                <option value="">Anrede wählen...</option>
+                                                <option value="herr">Herr</option>
+                                                <option value="frau">Frau</option>
+                                                <option value="eheleute">Eheleute</option>
+                                                <option value="firma">Firma</option>
+                                            </select>
+                                            <div class="invalid-feedback">Bitte wählen Sie eine Anrede.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="firstName" class="form-label">Vorname <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                            <div class="invalid-feedback">Bitte geben Sie Ihren Vornamen ein.</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="lastName" class="form-label">Nachname <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                            <div class="invalid-feedback">Bitte geben Sie Ihren Nachnamen ein.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label for="street" class="form-label">Straße <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="street" name="street" required>
+                                            <div class="invalid-feedback">Bitte geben Sie Ihre Straße ein.</div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="houseNumber" class="form-label">Hausnummer <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="houseNumber" name="houseNumber" required>
+                                            <div class="invalid-feedback">Bitte geben Sie Ihre Hausnummer ein.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="postalCode" class="form-label">PLZ <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="postalCode" name="postalCode" required>
+                                            <div class="invalid-feedback">Bitte geben Sie Ihre PLZ ein.</div>
+                                        </div>
+                                        <div class="col-md-8 mb-3">
+                                            <label for="city" class="form-label">Ort <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="city" name="city" required>
+                                            <div class="invalid-feedback">Bitte geben Sie Ihren Ort ein.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Further Options -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Weitere Optionen</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                                        <label class="form-check-label" for="newsletter">
+                                            Newsletter der Peter-Schöffer-Stiftung abonnieren
+                                            <small class="d-block text-muted">(Neuigkeiten zum NGÜ-Projekt, ca. 4x jährlich)</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="privacy" name="privacy" required>
+                                        <label class="form-check-label" for="privacy">
+                                            Ich stimme der <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> zu <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="invalid-feedback">Bitte akzeptieren Sie die Datenschutzerklärung.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Info Box -->
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Ihre Spende geht an die Peter-Schöffer-Stiftung
+                                <div class="mt-2">
+                                    <a href="/ueber-stiftung" class="btn btn-outline-info btn-sm me-2">Mehr zur Stiftung</a>
+                                    <a href="/transparenz" class="btn btn-outline-info btn-sm">Wohin fließt meine Spende?</a>
+                                </div>
+                            </div>
+
+                            <!-- Navigation -->
+                            <div class="d-flex justify-content-between">
+                                <a href="/vers/demo/bestaetigung" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Zurück
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    WEITER ZUR ZAHLUNG
+                                    <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle receipt checkbox
+    document.getElementById('wantReceipt').addEventListener('change', function() {
+        const receiptData = document.getElementById('receiptData');
+        const requiredFields = receiptData.querySelectorAll('[required]');
+        
+        if (this.checked) {
+            receiptData.style.display = 'block';
+        } else {
+            receiptData.style.display = 'none';
+            // Remove required attribute when hidden
+            requiredFields.forEach(field => {
+                field.removeAttribute('required');
+            });
+        }
+    });
+
+    // Form submission
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (this.checkValidity()) {
+            // Redirect to summary page
+            window.location.href = '/checkout/zusammenfassung';
+        }
+        
+        this.classList.add('was-validated');
+    });
+</script>
+{% endblock %}
