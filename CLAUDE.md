@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that enables individual verse sponsoring for the NGÜ (Neue Genfer Übersetzung) Bible translation project. This is a CS50 final project that allows donors to sponsor individual Old Testament verses for €100 each and receive personalized certificates.
 
-### Current Development Status (August 6, 2025)
+### Current Development Status (August 10, 2025)
 - ✅ **Phase 1 - Session 1**: User Journey Mapping completed
   - Comprehensive user flow documented with Mermaid diagram
   - 30 routes/pages identified
@@ -25,7 +25,14 @@ This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that ena
   - Error messages and UI texts
   - GDPR-compliant privacy policy
   - Switzerland Phase 2 preparations
-- 🚧 **Phase 1 - Sessions 4-6**: To be continued
+- ✅ **Design Phase**: Website Demos completed (August 10, 2025)
+  - Complete design system with NGÜ branding established
+  - Two functional website prototypes created:
+    - **Claude-Entwurf**: 17 templates, Bootstrap 5.3, mobile-first
+    - **Gemini-Entwurf**: 26 templates, comprehensive features including group donations
+  - NGÜ logo files integrated (multiple sizes)
+  - Official NGÜ sponsoring documentation included
+- 🚧 **Phase 1 - Sessions 4-6**: Backend implementation to continue
 
 ## Technology Stack
 
@@ -130,7 +137,7 @@ pytest --cov=app tests/
 
 ```
 ngue-bvs-app/
-├── app/                    # Main Flask application
+├── app/                    # Main Flask application (to be implemented)
 │   ├── __init__.py
 │   ├── models.py          # SQLAlchemy models
 │   ├── routes.py          # Flask routes
@@ -148,6 +155,12 @@ ngue-bvs-app/
 │   ├── meta/              # Certificates, privacy policy
 │   ├── fehler-nachrichten/# Error messages
 │   └── ui-texte/          # UI text and tooltips
+├── design/                # Design prototypes and system
+│   ├── claude-entwurf/    # Claude's Flask demo (17 templates)
+│   ├── gemini-entwurf/    # Gemini's Flask demo (26 templates)
+│   ├── design-system-preliminary.md  # Complete design system
+│   ├── Logo NGU [sizes]/  # NGÜ logos in various sizes
+│   └── NGÜ Sponsoring[3720].pdf     # Official documentation
 ├── static/                # CSS, JS, images
 ├── templates/             # Jinja2 HTML templates
 ├── tests/                 # Test suite

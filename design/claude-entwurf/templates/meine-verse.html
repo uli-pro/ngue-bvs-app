@@ -1,0 +1,591 @@
+{% extends "layout.html" %}
+
+{% block title %}Meine gesponserten Verse{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-book-open text-primary me-2"></i>Meine gesponserten Verse</h1>
+                    <p class="text-muted">Ihre Beiträge zur NGÜ-Übersetzung im Überblick</p>
+                </div>
+                <div>
+                    <a href="/vers-auswaehlen" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Weiteren Vers sponsern
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-gradient text-white h-100" style="background: linear-gradient(135deg, #dd3333, #ff6b6b);">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-0">3</h2>
+                            <p class="mb-0">Gesponserte Verse</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-heart fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-gradient text-white h-100" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-0">300€</h2>
+                            <p class="mb-0">Gesamt investiert</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-euro-sign fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-gradient text-white h-100" style="background: linear-gradient(135deg, #007bff, #0056b3);">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-0">2</h2>
+                            <p class="mb-0">Bibelbücher</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-book fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-gradient text-white h-100" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-0">6</h2>
+                            <p class="mb-0">Downloads</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-download fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-4">
+                            <label for="search-verses" class="form-label">Nach Vers suchen</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="search-verses" placeholder="Referenz oder Stichwort...">
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <label for="filter-type" class="form-label">Spende-Typ</label>
+                            <select class="form-select" id="filter-type">
+                                <option value="">Alle Typen</option>
+                                <option value="einzelperson">Einzelspende</option>
+                                <option value="gruppe">Gruppenspende</option>
+                                <option value="geschenk">Geschenk</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3">
+                            <label for="filter-book" class="form-label">Bibelbuch</label>
+                            <select class="form-select" id="filter-book">
+                                <option value="">Alle Bücher</option>
+                                <option value="jeremia">Jeremia</option>
+                                <option value="psalm">Psalmen</option>
+                                <option value="sprueche">Sprüche</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-2">
+                            <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                                <i class="fas fa-undo me-1"></i>Zurücksetzen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verses Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Ihre Verse</h4>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" onclick="toggleView('table')" id="table-view-btn">
+                            <i class="fas fa-table"></i> Tabelle
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm active" onclick="toggleView('cards')" id="cards-view-btn">
+                            <i class="fas fa-th-large"></i> Karten
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Cards View (Default) -->
+                    <div id="cards-view">
+                        <div class="row" id="verses-container">
+                            <!-- Vers 1 -->
+                            <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="einzelperson" data-book="jeremia">
+                                <div class="card h-100 border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">Jeremia 29,11</h5>
+                                            <span class="badge bg-light text-primary">Einzelspende</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <blockquote class="mb-3">
+                                            <p class="fst-italic">"Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben."</p>
+                                        </blockquote>
+                                        
+                                        <div class="row small text-muted mb-3">
+                                            <div class="col-6">
+                                                <strong>Gespendet:</strong><br>08.08.2025
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>Betrag:</strong><br>100,00 €
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="progress mb-3" style="height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: 75%" title="Übersetzung zu 75% abgeschlossen"></div>
+                                        </div>
+                                        <small class="text-success">
+                                            <i class="fas fa-check-circle me-1"></i>Übersetzung: 75% abgeschlossen
+                                        </small>
+                                    </div>
+                                    <div class="card-footer bg-light">
+                                        <div class="btn-group w-100">
+                                            <button class="btn btn-primary btn-sm" onclick="downloadCertificate('jeremia-29-11')">
+                                                <i class="fas fa-certificate"></i> Zertifikat
+                                            </button>
+                                            <button class="btn btn-success btn-sm" onclick="downloadReceipt('jeremia-29-11')">
+                                                <i class="fas fa-receipt"></i> Bescheinigung
+                                            </button>
+                                            <button class="btn btn-info btn-sm" onclick="shareVerse('jeremia-29-11')">
+                                                <i class="fas fa-share"></i> Teilen
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vers 2 -->
+                            <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="geschenk" data-book="psalm">
+                                <div class="card h-100 border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">Psalm 23,1</h5>
+                                            <span class="badge bg-light text-info">Geschenk</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <blockquote class="mb-3">
+                                            <p class="fst-italic">"Der HERR ist mein Hirte; mir wird nichts mangeln."</p>
+                                        </blockquote>
+                                        
+                                        <div class="alert alert-info py-2">
+                                            <small>
+                                                <i class="fas fa-gift me-1"></i>
+                                                <strong>Geschenk für:</strong> Anna Mustermann
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="row small text-muted mb-3">
+                                            <div class="col-6">
+                                                <strong>Gespendet:</strong><br>05.08.2025
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>Versandt:</strong><br>Direkt
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="progress mb-3" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" style="width: 45%" title="Übersetzung zu 45% abgeschlossen"></div>
+                                        </div>
+                                        <small class="text-warning">
+                                            <i class="fas fa-clock me-1"></i>Übersetzung: 45% abgeschlossen
+                                        </small>
+                                    </div>
+                                    <div class="card-footer bg-light">
+                                        <div class="btn-group w-100">
+                                            <button class="btn btn-primary btn-sm" onclick="downloadCertificate('psalm-23-1')">
+                                                <i class="fas fa-certificate"></i> Zertifikat
+                                            </button>
+                                            <button class="btn btn-success btn-sm" onclick="downloadReceipt('psalm-23-1')">
+                                                <i class="fas fa-receipt"></i> Bescheinigung
+                                            </button>
+                                            <button class="btn btn-secondary btn-sm" onclick="resendGift('psalm-23-1')">
+                                                <i class="fas fa-envelope"></i> Erneut senden
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vers 3 -->
+                            <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="gruppe" data-book="sprueche">
+                                <div class="card h-100 border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">Sprüche 3,5-6</h5>
+                                            <span class="badge bg-light text-success">Gruppe</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <blockquote class="mb-3">
+                                            <p class="fst-italic">"Vertraue auf den HERRN von ganzem Herzen und verlaß dich nicht auf deinen Verstand; erkenne ihn auf allen deinen Wegen, so wird er deine Pfade ebnen!"</p>
+                                        </blockquote>
+                                        
+                                        <div class="alert alert-success py-2">
+                                            <small>
+                                                <i class="fas fa-users me-1"></i>
+                                                <strong>Gruppe:</strong> Die Familie Schmidt
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="row small text-muted mb-3">
+                                            <div class="col-6">
+                                                <strong>Gespendet:</strong><br>01.08.2025
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>Betrag:</strong><br>100,00 €
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="progress mb-3" style="height: 8px;">
+                                            <div class="progress-bar bg-info" style="width: 20%" title="Übersetzung zu 20% abgeschlossen"></div>
+                                        </div>
+                                        <small class="text-info">
+                                            <i class="fas fa-play me-1"></i>Übersetzung: 20% abgeschlossen
+                                        </small>
+                                    </div>
+                                    <div class="card-footer bg-light">
+                                        <div class="btn-group w-100">
+                                            <button class="btn btn-primary btn-sm" onclick="downloadCertificate('sprueche-3-5-6')">
+                                                <i class="fas fa-certificate"></i> Zertifikat
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm" disabled title="Spendenbescheinigung auf Anfrage">
+                                                <i class="fas fa-receipt"></i> Kontakt nötig
+                                            </button>
+                                            <button class="btn btn-info btn-sm" onclick="shareVerse('sprueche-3-5-6')">
+                                                <i class="fas fa-share"></i> Teilen
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table View (Hidden by default) -->
+                    <div id="table-view" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Vers</th>
+                                        <th>Typ</th>
+                                        <th>Datum</th>
+                                        <th>Status</th>
+                                        <th>Aktionen</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body">
+                                    <tr>
+                                        <td>
+                                            <strong>Jeremia 29,11</strong><br>
+                                            <small class="text-muted">Denn ich weiß die Gedanken...</small>
+                                        </td>
+                                        <td><span class="badge bg-primary">Einzelspende</span></td>
+                                        <td>08.08.2025</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-success" style="width: 75%">75%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="downloadCertificate('jeremia-29-11')">
+                                                    <i class="fas fa-certificate"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" onclick="downloadReceipt('jeremia-29-11')">
+                                                    <i class="fas fa-receipt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <strong>Psalm 23,1</strong><br>
+                                            <small class="text-muted">Der HERR ist mein Hirte...</small>
+                                        </td>
+                                        <td><span class="badge bg-info">Geschenk</span></td>
+                                        <td>05.08.2025</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-warning" style="width: 45%">45%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="downloadCertificate('psalm-23-1')">
+                                                    <i class="fas fa-certificate"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" onclick="downloadReceipt('psalm-23-1')">
+                                                    <i class="fas fa-receipt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <strong>Sprüche 3,5-6</strong><br>
+                                            <small class="text-muted">Vertraue auf den HERRN...</small>
+                                        </td>
+                                        <td><span class="badge bg-success">Gruppe</span></td>
+                                        <td>01.08.2025</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-info" style="width: 20%">20%</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="downloadCertificate('sprueche-3-5-6')">
+                                                    <i class="fas fa-certificate"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary" disabled title="Kontakt erforderlich">
+                                                    <i class="fas fa-receipt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State (hidden by default) -->
+    <div class="row" id="empty-state" style="display: none;">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                <h4>Keine Verse gefunden</h4>
+                <p class="text-muted">Ihre Suche ergab keine Treffer. Versuchen Sie andere Suchbegriffe oder setzen Sie die Filter zurück.</p>
+                <button class="btn btn-primary" onclick="resetFilters()">Filter zurücksetzen</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let currentView = 'cards';
+let allVerses = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Store verse data for filtering
+    allVerses = Array.from(document.querySelectorAll('.verse-card')).map(card => ({
+        element: card,
+        type: card.dataset.type,
+        book: card.dataset.book,
+        text: card.textContent.toLowerCase()
+    }));
+
+    // Add event listeners
+    document.getElementById('search-verses').addEventListener('input', filterVerses);
+    document.getElementById('filter-type').addEventListener('change', filterVerses);
+    document.getElementById('filter-book').addEventListener('change', filterVerses);
+});
+
+function toggleView(view) {
+    const cardsView = document.getElementById('cards-view');
+    const tableView = document.getElementById('table-view');
+    const cardsBtn = document.getElementById('cards-view-btn');
+    const tableBtn = document.getElementById('table-view-btn');
+    
+    if (view === 'table') {
+        cardsView.style.display = 'none';
+        tableView.style.display = 'block';
+        cardsBtn.classList.remove('active');
+        tableBtn.classList.add('active');
+        currentView = 'table';
+    } else {
+        cardsView.style.display = 'block';
+        tableView.style.display = 'none';
+        cardsBtn.classList.add('active');
+        tableBtn.classList.remove('active');
+        currentView = 'cards';
+    }
+}
+
+function filterVerses() {
+    const searchTerm = document.getElementById('search-verses').value.toLowerCase();
+    const typeFilter = document.getElementById('filter-type').value;
+    const bookFilter = document.getElementById('filter-book').value;
+    
+    let visibleCount = 0;
+    
+    allVerses.forEach(verse => {
+        let show = true;
+        
+        // Search term filter
+        if (searchTerm && !verse.text.includes(searchTerm)) {
+            show = false;
+        }
+        
+        // Type filter
+        if (typeFilter && verse.type !== typeFilter) {
+            show = false;
+        }
+        
+        // Book filter
+        if (bookFilter && verse.book !== bookFilter) {
+            show = false;
+        }
+        
+        // Show/hide verse
+        if (show) {
+            verse.element.style.display = 'block';
+            visibleCount++;
+        } else {
+            verse.element.style.display = 'none';
+        }
+    });
+    
+    // Show/hide empty state
+    const emptyState = document.getElementById('empty-state');
+    const versesContainer = document.getElementById('cards-view');
+    
+    if (visibleCount === 0) {
+        emptyState.style.display = 'block';
+        versesContainer.style.display = 'none';
+    } else {
+        emptyState.style.display = 'none';
+        versesContainer.style.display = 'block';
+    }
+}
+
+function resetFilters() {
+    document.getElementById('search-verses').value = '';
+    document.getElementById('filter-type').value = '';
+    document.getElementById('filter-book').value = '';
+    filterVerses();
+}
+
+function downloadCertificate(verseId) {
+    // Simulate download
+    showToast(`Zertifikat für ${verseId.replace('-', ' ')} wird heruntergeladen...`, 'success');
+    
+    // In real app, this would trigger actual download
+    const link = document.createElement('a');
+    link.href = `/downloads/zertifikat-${verseId}.pdf`;
+    link.download = `NGU-Zertifikat-${verseId}.pdf`;
+    link.click();
+}
+
+function downloadReceipt(verseId) {
+    // Simulate download
+    showToast(`Spendenbescheinigung für ${verseId.replace('-', ' ')} wird heruntergeladen...`, 'success');
+    
+    // In real app, this would trigger actual download
+    const link = document.createElement('a');
+    link.href = `/downloads/spendenbescheinigung-${verseId}.pdf`;
+    link.download = `Spendenbescheinigung-${verseId}.pdf`;
+    link.click();
+}
+
+function shareVerse(verseId) {
+    // Simple social sharing
+    const url = window.location.origin + `/vers/${verseId}`;
+    const text = `Ich habe einen Bibelvers für die NGÜ-Übersetzung gesponsert! ${url}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'NGÜ Vers-Sponsoring',
+            text: text,
+            url: url
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Link in Zwischenablage kopiert!', 'success');
+        });
+    }
+}
+
+function resendGift(verseId) {
+    showToast('Geschenk-Zertifikat wird erneut versendet...', 'info');
+    
+    // Simulate API call
+    setTimeout(() => {
+        showToast('Zertifikat erfolgreich erneut versendet!', 'success');
+    }, 2000);
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+// Animations on load
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.verse-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 150);
+    });
+});
+</script>
+{% endblock %}

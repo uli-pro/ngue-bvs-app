@@ -137,7 +137,7 @@ def checkout_zusammenfassung():
     # Demo data - would normally come from session
     donation_data = {
         'verse_reference': 'Jeremia 29,11',
-        'verse_text': 'Denn ich weiß die Gedanken...',
+        'verse_text': 'Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.',
         'donor_name': 'Max Mustermann',
         'donor_email': 'max.mustermann@example.com',
         'amount': 100.00
@@ -200,7 +200,41 @@ def meine_verse():
     if not session.get("user_id"):
         flash("Bitte melden Sie sich an, um Ihre Verse zu sehen.", "warning")
         return redirect(url_for("login"))
-    return render_template("meine-verse.html")
+    
+    # Demo verse data
+    verses = [
+        {
+            'id': 'jeremia-29-11',
+            'reference': 'Jeremia 29,11',
+            'text': 'Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.',
+            'type': 'einzelperson',
+            'date': '2025-08-08',
+            'progress': 75,
+            'book': 'jeremia'
+        },
+        {
+            'id': 'psalm-23-1',
+            'reference': 'Psalm 23,1',
+            'text': 'Der HERR ist mein Hirte; mir wird nichts mangeln.',
+            'type': 'geschenk',
+            'date': '2025-08-05',
+            'progress': 45,
+            'book': 'psalm',
+            'gift_recipient': 'Anna Mustermann'
+        },
+        {
+            'id': 'sprueche-3-5-6',
+            'reference': 'Sprüche 3,5-6',
+            'text': 'Vertraue auf den HERRN von ganzem Herzen und verlaß dich nicht auf deinen Verstand; erkenne ihn auf allen deinen Wegen, so wird er deine Pfade ebnen!',
+            'type': 'gruppe',
+            'date': '2025-08-01',
+            'progress': 20,
+            'book': 'sprueche',
+            'group_name': 'Die Familie Schmidt'
+        }
+    ]
+    
+    return render_template("meine-verse.html", verses=verses)
 
 @app.route("/profil")
 def profil():
@@ -289,8 +323,9 @@ def download_spendenbescheinigung():
 
 @app.route("/spende/einzelperson")
 def spende_einzelperson():
-    """Individual donation page"""
-    return render_template("spende-einzelperson.html")
+    """Individual donation page - redirect to checkout"""
+    session['donation_type'] = 'einzelperson'
+    return redirect(url_for("checkout_daten", donation_type='einzelperson'))
 
 @app.route("/spende/gruppe")
 def spende_gruppe():
@@ -301,6 +336,42 @@ def spende_gruppe():
 def spende_geschenk():
     """Gift donation page"""
     return render_template("spende-geschenk.html")
+
+# ==========================================
+# GROUP DONATION ROUTES
+# ==========================================
+
+@app.route("/checkout/gruppe/daten", methods=["GET", "POST"])
+def checkout_gruppe_daten():
+    """Group donation contact data"""
+    if request.method == "POST":
+        # Store group contact data in session
+        session['group_contact'] = {
+            'email': request.form.get('email'),
+            'newsletter': request.form.get('newsletter') == 'on',
+            'privacy': request.form.get('privacy') == 'on'
+        }
+        return redirect(url_for("checkout_zusammenfassung"))
+    
+    return render_template("checkout-daten.html", donation_type='gruppe')
+
+@app.route("/checkout/geschenk/daten", methods=["GET", "POST"])
+def checkout_geschenk_daten():
+    """Gift donation donor data"""
+    if request.method == "POST":
+        # Store gift donor data in session
+        session['gift_donor'] = {
+            'email': request.form.get('email'),
+            'salutation': request.form.get('salutation'),
+            'first_name': request.form.get('firstName'),
+            'last_name': request.form.get('lastName'),
+            'want_receipt': request.form.get('wantReceipt') == 'on',
+            'newsletter': request.form.get('newsletter') == 'on',
+            'privacy': request.form.get('privacy') == 'on'
+        }
+        return redirect(url_for("checkout_zusammenfassung"))
+    
+    return render_template("checkout-daten.html", donation_type='geschenk')
 
 # ==========================================
 # ERROR HANDLERS

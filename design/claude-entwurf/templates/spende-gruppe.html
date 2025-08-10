@@ -1,0 +1,299 @@
+{% extends "layout.html" %}
+
+{% block title %}Gruppenspende{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 60%"></div>
+            </div>
+            <nav aria-label="Checkout Fortschritt">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">Vers auswählen</li>
+                    <li class="breadcrumb-item active" aria-current="page">Gruppendaten</li>
+                    <li class="breadcrumb-item text-muted">Kontaktperson</li>
+                    <li class="breadcrumb-item text-muted">Zahlung</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-users text-primary me-2"></i>
+                        Ihre Gruppendaten
+                    </h3>
+                    <p class="text-muted mb-0">Geben Sie die Details Ihrer Gruppe ein</p>
+                </div>
+                <div class="card-body">
+                    <!-- Info Box -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle me-2"></i>Kontaktperson</h6>
+                                <p class="small mb-0">Sie sind die Kontaktperson für diese Gruppenspende. Das Zertifikat wird an Ihre E-Mail-Adresse gesendet.</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Spendenbescheinigung</h6>
+                                <p class="small mb-0">Für Gruppenspenden können wir keine automatische Spendenbescheinigung erstellen. Kontaktieren Sie uns bei Bedarf unter: <a href="mailto:spenden@peter-schoeffer-stiftung.de">spenden@peter-schoeffer-stiftung.de</a></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="groupForm" class="needs-validation" novalidate>
+                        <!-- Artikel Auswahl -->
+                        <div class="mb-4">
+                            <label for="group_article" class="form-label">
+                                <strong>Artikel für das Zertifikat *</strong>
+                            </label>
+                            <select class="form-select" id="group_article" name="group_article" required>
+                                <option value="">Bitte wählen...</option>
+                                <option value="der">Der</option>
+                                <option value="die" selected>Die</option>
+                                <option value="das">Das</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Bitte wählen Sie einen Artikel aus.
+                            </div>
+                            <div class="form-text">
+                                Wählen Sie den passenden Artikel für Ihren Gruppennamen. Dieser wird für die grammatikalisch korrekte Formulierung auf dem Zertifikat benötigt.
+                            </div>
+                        </div>
+
+                        <!-- Gruppenname -->
+                        <div class="mb-4">
+                            <label for="group_name" class="form-label">
+                                <strong>Gruppenname *</strong>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="group_name" 
+                                       name="group_name" 
+                                       placeholder="z.B. Bibelkreis Musterhausen" 
+                                       minlength="2" 
+                                       maxlength="80" 
+                                       required>
+                                <span class="input-group-text" id="character-count">0/80</span>
+                            </div>
+                            <div class="invalid-feedback" id="groupname-feedback">
+                                Der Gruppenname muss mindestens 2 Zeichen haben.
+                            </div>
+                            <div class="form-text">
+                                Geben Sie den Namen Ihrer Gruppe ein, wie er auf dem Zertifikat erscheinen soll.
+                            </div>
+                        </div>
+
+                        <!-- Live Preview -->
+                        <div class="mb-4">
+                            <div class="card bg-light" id="certificate-preview" style="display: none;">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="fas fa-eye me-2"></i>Zertifikat-Vorschau:</h6>
+                                    <div class="preview-text fst-italic">
+                                        <span id="preview-content"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Beispiele -->
+                        <div class="mb-4">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Beispiele für Artikel + Gruppennamen:</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul class="list-unstyled mb-0">
+                                                <li class="mb-1"><strong>Die</strong> Jungschar Musterstadt</li>
+                                                <li class="mb-1"><strong>Der</strong> Bibelclub Musterhausen</li>
+                                                <li class="mb-1"><strong>Das</strong> Volleyball-Team Musterdorf</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul class="list-unstyled mb-0">
+                                                <li class="mb-1"><strong>Die</strong> Familie Schmidt</li>
+                                                <li class="mb-1"><strong>Der</strong> Hauskreis Musterweg</li>
+                                                <li class="mb-1"><strong>Die</strong> Ehrenamtlichen von St. Maria</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="goBack()">
+                                <i class="fas fa-arrow-left me-2"></i>Zurück
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="continueBtn" disabled>
+                                Weiter zur Kontaktperson
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const articleSelect = document.getElementById('group_article');
+    const nameInput = document.getElementById('group_name');
+    const characterCount = document.getElementById('character-count');
+    const continueBtn = document.getElementById('continueBtn');
+    const previewCard = document.getElementById('certificate-preview');
+    const previewContent = document.getElementById('preview-content');
+    const feedback = document.getElementById('groupname-feedback');
+    const form = document.getElementById('groupForm');
+
+    // Character counter
+    nameInput.addEventListener('input', function() {
+        const length = this.value.length;
+        characterCount.textContent = `${length}/80`;
+        
+        // Update character counter color
+        if (length > 80) {
+            characterCount.classList.add('text-danger');
+            characterCount.classList.remove('text-muted');
+        } else if (length > 70) {
+            characterCount.classList.add('text-warning');
+            characterCount.classList.remove('text-muted', 'text-danger');
+        } else {
+            characterCount.classList.add('text-muted');
+            characterCount.classList.remove('text-warning', 'text-danger');
+        }
+        
+        updatePreview();
+        validateForm();
+    });
+
+    // Article selection
+    articleSelect.addEventListener('change', function() {
+        updatePreview();
+        validateForm();
+    });
+
+    // Live preview update
+    function updatePreview() {
+        const article = articleSelect.value;
+        const name = nameInput.value;
+        
+        if (article && name.length >= 2) {
+            const articleCapitalized = article.charAt(0).toUpperCase() + article.slice(1);
+            previewContent.innerHTML = `
+                "<strong>${articleCapitalized} ${name}</strong> hat durch eine Spende von 100€ 
+                die Übersetzung von <strong>Jeremia 29,11</strong> in der Neuen Genfer Übersetzung ermöglicht."
+            `;
+            previewCard.style.display = 'block';
+            previewCard.classList.add('border-success');
+        } else {
+            previewCard.style.display = 'none';
+            previewCard.classList.remove('border-success');
+        }
+    }
+
+    // Form validation
+    function validateForm() {
+        const article = articleSelect.value;
+        const name = nameInput.value.trim();
+        
+        let isValid = true;
+        
+        // Article validation
+        if (!article) {
+            articleSelect.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            articleSelect.classList.remove('is-invalid');
+            articleSelect.classList.add('is-valid');
+        }
+        
+        // Name validation
+        if (name.length < 2) {
+            nameInput.classList.add('is-invalid');
+            feedback.textContent = 'Der Gruppenname muss mindestens 2 Zeichen haben.';
+            isValid = false;
+        } else if (name.length > 80) {
+            nameInput.classList.add('is-invalid');
+            feedback.textContent = 'Der Gruppenname darf maximal 80 Zeichen haben.';
+            isValid = false;
+        } else if (!/[a-zA-ZäöüÄÖÜß]/.test(name)) {
+            nameInput.classList.add('is-invalid');
+            feedback.textContent = 'Der Gruppenname muss mindestens einen Buchstaben enthalten.';
+            isValid = false;
+        } else {
+            nameInput.classList.remove('is-invalid');
+            nameInput.classList.add('is-valid');
+        }
+        
+        continueBtn.disabled = !isValid;
+        
+        return isValid;
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (validateForm()) {
+            // Store group data in session storage (simulate backend)
+            const groupData = {
+                article: articleSelect.value,
+                name: nameInput.value.trim(),
+                donation_type: 'gruppe'
+            };
+            
+            sessionStorage.setItem('ngue_group_data', JSON.stringify(groupData));
+            
+            // Show loading state
+            continueBtn.disabled = true;
+            continueBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Speichere Daten...';
+            
+            setTimeout(() => {
+                window.location.href = '/checkout/gruppe/daten';
+            }, 1000);
+        }
+    });
+
+    // Auto-fill from session storage if available
+    const savedData = sessionStorage.getItem('ngue_group_data');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        articleSelect.value = data.article || '';
+        nameInput.value = data.name || '';
+        updatePreview();
+        validateForm();
+    }
+});
+
+function goBack() {
+    // Clear session data
+    sessionStorage.removeItem('ngue_group_data');
+    window.history.back();
+}
+
+// Warning on page leave
+window.addEventListener('beforeunload', function(e) {
+    const name = document.getElementById('group_name').value;
+    const article = document.getElementById('group_article').value;
+    
+    if (name || article) {
+        e.preventDefault();
+        e.returnValue = 'Ihre Gruppendaten gehen verloren, wenn Sie die Seite verlassen.';
+    }
+});
+</script>
+{% endblock %}

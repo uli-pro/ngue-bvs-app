@@ -1,207 +1,459 @@
 {% extends "layout.html" %}
 
-{% block title %}Ihre Kontaktdaten{% endblock %}
+{% block title %}
+    {% if donation_type == 'gruppe' %}Kontaktperson-Daten{% elif donation_type == 'geschenk' %}Ihre Daten{% else %}Ihre Kontaktdaten{% endif %}
+{% endblock %}
 
 {% block main %}
-
-<!-- Breadcrumb -->
-<section class="bg-light-custom py-2">
-    <div class="container">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                <li class="breadcrumb-item"><a href="/vers-auswaehlen">Vers auswählen</a></li>
-                <li class="breadcrumb-item"><a href="/vers/demo/bestaetigung">Bestätigen</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Ihre Daten</li>
-            </ol>
-        </nav>
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 70%"></div>
+            </div>
+            <nav aria-label="Checkout Fortschritt">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">Vers auswählen</li>
+                    <li class="breadcrumb-item">
+                        {% if donation_type == 'gruppe' %}
+                            Gruppendaten
+                        {% elif donation_type == 'geschenk' %}
+                            Geschenk-Details
+                        {% else %}
+                            Spende-Art
+                        {% endif %}
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {% if donation_type == 'gruppe' %}
+                            Kontaktperson
+                        {% else %}
+                            Ihre Daten
+                        {% endif %}
+                    </li>
+                    <li class="breadcrumb-item text-muted">Zahlung</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-</section>
 
-<!-- Header -->
-<section class="hero-section py-5">
-    <div class="container">
-        <h1 class="text-center mb-3">Ihre Kontaktdaten</h1>
-        <p class="lead text-center text-secondary">Für den Versand Ihres Zertifikats per E-Mail</p>
-    </div>
-</section>
-
-<!-- Form -->
-<section class="section-padding">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <form id="checkoutForm" class="needs-validation" novalidate>
-                            
-                            <!-- Basic Data -->
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Basis-Daten</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label for="email" class="form-label">E-Mail-Adresse <span class="text-danger">*</span></label>
-                                        <input type="email" class="form-control" id="email" name="email" required>
-                                        <div class="form-text">Für Zertifikat-Versand erforderlich</div>
-                                        <div class="invalid-feedback">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Step 1: Donation Type Selection (only if not already selected) -->
+            {% if not donation_type %}
+            <div class="card mb-4" id="donation-type-selection">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-hand-holding-heart text-primary me-2"></i>
+                        Für wen möchten Sie diesen Vers sponsern?
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="donation-type-card" data-type="einzelperson">
+                                <input class="form-check-input visually-hidden" type="radio" name="donation_type" id="type_einzelperson" value="einzelperson" checked>
+                                <label class="card h-100 text-center donation-type-label" for="type_einzelperson">
+                                    <div class="card-body">
+                                        <i class="fas fa-user fa-3x text-primary mb-3"></i>
+                                        <h5>Als Einzelperson</h5>
+                                        <p class="text-muted mb-0">(für mich selbst)</p>
+                                        <small class="text-muted">Sie erhalten das Zertifikat und die Spendenbescheinigung</small>
                                     </div>
-                                    
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="donation-type-card" data-type="gruppe">
+                                <input class="form-check-input visually-hidden" type="radio" name="donation_type" id="type_gruppe" value="gruppe">
+                                <label class="card h-100 text-center donation-type-label" for="type_gruppe">
+                                    <div class="card-body">
+                                        <i class="fas fa-users fa-3x text-success mb-3"></i>
+                                        <h5>Als Gruppe</h5>
+                                        <p class="text-muted mb-0">(Familie, Verein, etc.)</p>
+                                        <small class="text-muted">Das Zertifikat wird auf Ihre Gruppe ausgestellt</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="donation-type-card" data-type="geschenk">
+                                <input class="form-check-input visually-hidden" type="radio" name="donation_type" id="type_geschenk" value="geschenk">
+                                <label class="card h-100 text-center donation-type-label" for="type_geschenk">
+                                    <div class="card-body">
+                                        <i class="fas fa-gift fa-3x text-info mb-3"></i>
+                                        <h5>Als Geschenk</h5>
+                                        <p class="text-muted mb-0">(für jemand anderen)</p>
+                                        <small class="text-muted">Der Empfänger erhält das Zertifikat, Sie die Spendenbescheinigung</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="proceedWithType()" id="proceed-type-btn">
+                            Weiter mit ausgewählter Option
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Step 2: Contact Data Form -->
+            <div class="card{% if not donation_type %} d-none{% endif %}" id="contact-form">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-edit text-primary me-2"></i>
+                        {% if donation_type == 'gruppe' %}
+                            Kontaktperson-Daten
+                        {% elif donation_type == 'geschenk' %}
+                            Ihre Daten (als Spender)
+                        {% else %}
+                            Ihre Kontaktdaten
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted mb-0">
+                        {% if donation_type == 'gruppe' %}
+                            Sie sind die Kontaktperson für diese Gruppenspende.
+                        {% elif donation_type == 'geschenk' %}
+                            Sie erhalten die Spendenbescheinigung, der Empfänger das Zertifikat.
+                        {% else %}
+                            Für den Versand Ihres Zertifikats und der Spendenbescheinigung.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-body">
+                    <form id="contactForm" class="needs-validation" novalidate>
+                        <!-- Basic Contact Data -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Kontaktdaten</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">E-Mail-Adresse *</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <div class="form-text">
+                                        {% if donation_type == 'gruppe' %}
+                                            Das Gruppenzertifikat wird an diese Adresse gesendet.
+                                        {% else %}
+                                            Zertifikat und Spendenbescheinigung werden per E-Mail versendet.
+                                        {% endif %}
+                                    </div>
+                                    <div class="invalid-feedback">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spendenbescheinigung Section -->
+                        {% if donation_type != 'gruppe' %}
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Spendenbescheinigung</h5>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="wantReceipt" name="wantReceipt" checked>
-                                        <label class="form-check-label" for="wantReceipt">
-                                            <strong>Ich möchte eine Spendenbescheinigung erhalten</strong>
-                                            <small class="d-block text-muted">(Für steuerliche Absetzbarkeit empfohlen)</small>
+                                        <label class="form-check-label text-white" for="wantReceipt">
+                                            <strong>Gewünscht</strong>
                                         </label>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Additional Data for Receipt -->
-                            <div id="receiptData" class="card mb-4">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0">Zusätzliche Daten für Spendenbescheinigung</h5>
+                            <div class="card-body" id="receipt-form">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Empfohlen:</strong> Die Spendenbescheinigung macht Ihre Spende steuerlich absetzbar.
                                 </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="salutation" class="form-label">Anrede <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="salutation" name="salutation" required>
-                                                <option value="">Anrede wählen...</option>
-                                                <option value="herr">Herr</option>
-                                                <option value="frau">Frau</option>
-                                                <option value="eheleute">Eheleute</option>
-                                                <option value="firma">Firma</option>
-                                            </select>
-                                            <div class="invalid-feedback">Bitte wählen Sie eine Anrede.</div>
-                                        </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="salutation" class="form-label">Anrede *</label>
+                                        <select class="form-select" id="salutation" name="salutation" required>
+                                            <option value="">Bitte wählen...</option>
+                                            <option value="Herr">Herr</option>
+                                            <option value="Frau">Frau</option>
+                                            <option value="Eheleute">Eheleute</option>
+                                            <option value="Firma">Firma</option>
+                                        </select>
+                                        <div class="invalid-feedback">Bitte wählen Sie eine Anrede.</div>
                                     </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="firstName" class="form-label">Vorname <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="firstName" name="firstName" required>
-                                            <div class="invalid-feedback">Bitte geben Sie Ihren Vornamen ein.</div>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="lastName" class="form-label">Nachname <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="lastName" name="lastName" required>
-                                            <div class="invalid-feedback">Bitte geben Sie Ihren Nachnamen ein.</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-8 mb-3">
-                                            <label for="street" class="form-label">Straße <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="street" name="street" required>
-                                            <div class="invalid-feedback">Bitte geben Sie Ihre Straße ein.</div>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label for="houseNumber" class="form-label">Hausnummer <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="houseNumber" name="houseNumber" required>
-                                            <div class="invalid-feedback">Bitte geben Sie Ihre Hausnummer ein.</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label for="postalCode" class="form-label">PLZ <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="postalCode" name="postalCode" required>
-                                            <div class="invalid-feedback">Bitte geben Sie Ihre PLZ ein.</div>
-                                        </div>
-                                        <div class="col-md-8 mb-3">
-                                            <label for="city" class="form-label">Ort <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="city" name="city" required>
-                                            <div class="invalid-feedback">Bitte geben Sie Ihren Ort ein.</div>
-                                        </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="title" class="form-label">Titel (optional)</label>
+                                        <input type="text" class="form-control" id="title" name="title" placeholder="z.B. Dr., Prof.">
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Further Options -->
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Weitere Optionen</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
-                                        <label class="form-check-label" for="newsletter">
-                                            Newsletter der Peter-Schöffer-Stiftung abonnieren
-                                            <small class="d-block text-muted">(Neuigkeiten zum NGÜ-Projekt, ca. 4x jährlich)</small>
-                                        </label>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="firstName" class="form-label">Vorname *</label>
+                                        <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                        <div class="invalid-feedback">Bitte geben Sie Ihren Vornamen ein.</div>
                                     </div>
-                                    
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="privacy" name="privacy" required>
-                                        <label class="form-check-label" for="privacy">
-                                            Ich stimme der <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> zu <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="invalid-feedback">Bitte akzeptieren Sie die Datenschutzerklärung.</div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="lastName" class="form-label">Nachname *</label>
+                                        <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                        <div class="invalid-feedback">Bitte geben Sie Ihren Nachnamen ein.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="street" class="form-label">Straße *</label>
+                                        <input type="text" class="form-control" id="street" name="street" required>
+                                        <div class="invalid-feedback">Bitte geben Sie Ihre Straße ein.</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="houseNumber" class="form-label">Hausnummer *</label>
+                                        <input type="text" class="form-control" id="houseNumber" name="houseNumber" required>
+                                        <div class="invalid-feedback">Bitte geben Sie Ihre Hausnummer ein.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="postalCode" class="form-label">PLZ *</label>
+                                        <input type="text" class="form-control" id="postalCode" name="postalCode" required maxlength="5" pattern="[0-9]{5}">
+                                        <div class="invalid-feedback">Bitte geben Sie eine gültige deutsche PLZ ein.</div>
+                                    </div>
+                                    <div class="col-md-8 mb-3">
+                                        <label for="city" class="form-label">Ort *</label>
+                                        <input type="text" class="form-control" id="city" name="city" required>
+                                        <div class="invalid-feedback">Bitte geben Sie Ihren Ort ein.</div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        {% else %}
+                        <!-- Group-specific info -->
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Hinweis für Gruppenspenden</h6>
+                            <p class="mb-0">Für Gruppenspenden können wir keine automatische Spendenbescheinigung erstellen. Bei Bedarf kontaktieren Sie uns bitte unter: 
+                            <a href="mailto:spenden@peter-schoeffer-stiftung.de">spenden@peter-schoeffer-stiftung.de</a></p>
+                        </div>
+                        {% endif %}
 
-                            <!-- Info Box -->
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Ihre Spende geht an die Peter-Schöffer-Stiftung
-                                <div class="mt-2">
-                                    <a href="/ueber-stiftung" class="btn btn-outline-info btn-sm me-2">Mehr zur Stiftung</a>
-                                    <a href="/transparenz" class="btn btn-outline-info btn-sm">Wohin fließt meine Spende?</a>
+                        <!-- Additional Options -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Weitere Optionen</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                                    <label class="form-check-label" for="newsletter">
+                                        <strong>Newsletter der Peter-Schöffer-Stiftung abonnieren</strong>
+                                        <div class="text-muted small">Neuigkeiten zum NGÜ-Projekt, ca. 4x jährlich</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="privacy" name="privacy" required>
+                                    <label class="form-check-label" for="privacy">
+                                        Ich habe die <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> gelesen und stimme ihr zu *
+                                    </label>
+                                    <div class="invalid-feedback">Bitte akzeptieren Sie die Datenschutzerklärung.</div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Navigation -->
-                            <div class="d-flex justify-content-between">
-                                <a href="/vers/demo/bestaetigung" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Zurück
-                                </a>
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    WEITER ZUR ZAHLUNG
-                                    <i class="fas fa-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="goBack()">
+                                <i class="fas fa-arrow-left me-2"></i>Zurück
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Weiter zur Zusammenfassung
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</section>
+</div>
 
+<style>
+.donation-type-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.donation-type-label {
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.donation-type-label:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.15);
+    transform: translateY(-2px);
+}
+
+input[name="donation_type"]:checked + .donation-type-label {
+    border-color: #007bff;
+    background-color: rgba(0,123,255,0.1);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.2);
+}
+
+input[name="donation_type"]:checked + .donation-type-label i {
+    color: #007bff !important;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Handle receipt checkbox
-    document.getElementById('wantReceipt').addEventListener('change', function() {
-        const receiptData = document.getElementById('receiptData');
-        const requiredFields = receiptData.querySelectorAll('[required]');
-        
-        if (this.checked) {
-            receiptData.style.display = 'block';
-        } else {
-            receiptData.style.display = 'none';
-            // Remove required attribute when hidden
-            requiredFields.forEach(field => {
-                field.removeAttribute('required');
-            });
-        }
-    });
+let currentDonationType = '{{ donation_type or "" }}';
 
-    // Form submission
-    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle donation type selection
+    if (!currentDonationType) {
+        setupDonationTypeSelection();
+    } else {
+        setupContactForm();
+    }
+});
+
+function setupDonationTypeSelection() {
+    const typeCards = document.querySelectorAll('.donation-type-card');
+    const proceedBtn = document.getElementById('proceed-type-btn');
+    
+    typeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            updateSelectedType();
+        });
+    });
+    
+    document.querySelectorAll('input[name="donation_type"]').forEach(radio => {
+        radio.addEventListener('change', updateSelectedType);
+    });
+    
+    function updateSelectedType() {
+        const selected = document.querySelector('input[name="donation_type"]:checked');
+        if (selected) {
+            currentDonationType = selected.value;
+            proceedBtn.style.display = 'inline-block';
+        }
+    }
+}
+
+function proceedWithType() {
+    const selectedType = document.querySelector('input[name="donation_type"]:checked');
+    if (!selectedType) return;
+    
+    currentDonationType = selectedType.value;
+    
+    // Store in session storage
+    sessionStorage.setItem('ngue_donation_type', currentDonationType);
+    
+    // Handle different donation types
+    if (currentDonationType === 'gruppe') {
+        window.location.href = '/spende/gruppe';
+    } else if (currentDonationType === 'geschenk') {
+        window.location.href = '/spende/geschenk';
+    } else {
+        // Show contact form for individual donation
+        document.getElementById('donation-type-selection').style.display = 'none';
+        document.getElementById('contact-form').classList.remove('d-none');
+        setupContactForm();
+    }
+}
+
+function setupContactForm() {
+    const form = document.getElementById('contactForm');
+    const wantReceiptCheckbox = document.getElementById('wantReceipt');
+    const receiptForm = document.getElementById('receipt-form');
+    
+    // Handle receipt checkbox (only for non-group donations)
+    if (wantReceiptCheckbox) {
+        wantReceiptCheckbox.addEventListener('change', function() {
+            const requiredFields = receiptForm.querySelectorAll('[required]');
+            
+            if (this.checked) {
+                receiptForm.style.display = 'block';
+                requiredFields.forEach(field => field.setAttribute('required', 'required'));
+            } else {
+                receiptForm.style.display = 'none';
+                requiredFields.forEach(field => field.removeAttribute('required'));
+            }
+        });
+    }
+    
+    // Form validation and submission
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
         
         if (this.checkValidity()) {
-            // Redirect to summary page
-            window.location.href = '/checkout/zusammenfassung';
+            // Store form data
+            const formData = new FormData(this);
+            const contactData = Object.fromEntries(formData.entries());
+            contactData.donation_type = currentDonationType;
+            
+            sessionStorage.setItem('ngue_contact_data', JSON.stringify(contactData));
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Speichere Daten...';
+            
+            setTimeout(() => {
+                window.location.href = '/checkout/zusammenfassung';
+            }, 1000);
         }
         
         this.classList.add('was-validated');
     });
+    
+    // Auto-fill from session storage if available
+    const savedData = sessionStorage.getItem('ngue_contact_data');
+    if (savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            Object.keys(data).forEach(key => {
+                const field = document.getElementById(key);
+                if (field) {
+                    if (field.type === 'checkbox') {
+                        field.checked = data[key] === 'on' || data[key] === true;
+                    } else {
+                        field.value = data[key];
+                    }
+                }
+            });
+            
+            // Trigger receipt checkbox change event if loaded
+            if (wantReceiptCheckbox) {
+                wantReceiptCheckbox.dispatchEvent(new Event('change'));
+            }
+        } catch (e) {
+            console.log('Could not load saved contact data');
+        }
+    }
+}
+
+function goBack() {
+    if (currentDonationType === 'gruppe') {
+        window.location.href = '/spende/gruppe';
+    } else if (currentDonationType === 'geschenk') {
+        window.location.href = '/spende/geschenk';
+    } else {
+        window.history.back();
+    }
+}
+
+// Prevent data loss warning
+window.addEventListener('beforeunload', function(e) {
+    const email = document.getElementById('email');
+    if (email && email.value) {
+        e.preventDefault();
+        e.returnValue = 'Ihre eingegebenen Daten gehen verloren, wenn Sie die Seite verlassen.';
+    }
+});
 </script>
 {% endblock %}

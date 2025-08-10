@@ -1,0 +1,308 @@
+{% extends "layout.html" %}
+
+{% block title %}Einzelspende - Als Privatperson spenden{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 50%"></div>
+            </div>
+            <nav aria-label="Spende Fortschritt">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">Vers auswählen</li>
+                    <li class="breadcrumb-item active" aria-current="page">Spende-Art</li>
+                    <li class="breadcrumb-item text-muted">Ihre Daten</li>
+                    <li class="breadcrumb-item text-muted">Zahlung</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <i class="fas fa-user fa-4x text-primary mb-3"></i>
+                <h1>Spende als Einzelperson</h1>
+                <p class="lead text-muted">Sie spenden für sich selbst und erhalten das Zertifikat sowie die Spendenbescheinigung</p>
+            </div>
+
+            <!-- Selected Verse Display -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-bookmark text-primary me-2"></i>Ihr ausgewählter Vers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong class="text-primary">Jeremia 29,11</strong>
+                        </div>
+                        <div class="col-md-9">
+                            <blockquote class="mb-0 fst-italic">
+                                "Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben."
+                            </blockquote>
+                            <div class="mt-2">
+                                <small class="text-muted">Schlachter 1951 (Referenztext für die Vers-Auswahl)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Individual Donation Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>Was Sie erhalten</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <i class="fas fa-certificate fa-2x text-primary me-3 mt-1"></i>
+                                <div>
+                                    <h6>Persönliches Zertifikat</h6>
+                                    <p class="mb-0 text-muted">
+                                        Ein individuelles PDF-Zertifikat mit Ihrem Namen, dem gesponserten Vers und einem Dankestext. 
+                                        Sofort nach der Zahlung per E-Mail.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <i class="fas fa-receipt fa-2x text-success me-3 mt-1"></i>
+                                <div>
+                                    <h6>Spendenbescheinigung</h6>
+                                    <p class="mb-0 text-muted">
+                                        Offizielle Spendenbescheinigung der Peter-Schöffer-Stiftung für Ihre Steuererklärung. 
+                                        Ebenfalls per E-Mail zugestellt.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-euro-sign text-success me-2"></i>Spendenbetrag</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 class="text-success mb-2">100,00 € pro Vers</h3>
+                            <p class="mb-0">
+                                Dieser Betrag deckt die kompletten Kosten für die professionelle Übersetzung, 
+                                Revision und Qualitätssicherung eines Bibelverses durch unser Expertenteam.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="bg-light p-3 rounded">
+                                <small class="text-muted">Steuerlich absetzbar</small><br>
+                                <i class="fas fa-check-circle text-success fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How it works -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list-ol text-info me-2"></i>So funktioniert's</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ol class="list-unstyled">
+                                <li class="d-flex mb-3">
+                                    <span class="badge bg-primary rounded-circle me-3 mt-1" style="width: 2em;">1</span>
+                                    <span>Sie geben Ihre Kontaktdaten ein</span>
+                                </li>
+                                <li class="d-flex mb-3">
+                                    <span class="badge bg-primary rounded-circle me-3 mt-1" style="width: 2em;">2</span>
+                                    <span>Sie wählen Ihre Zahlungsmethode</span>
+                                </li>
+                                <li class="d-flex mb-3">
+                                    <span class="badge bg-primary rounded-circle me-3 mt-1" style="width: 2em;">3</span>
+                                    <span>Nach erfolgreicher Zahlung erhalten Sie sofort beide PDFs per E-Mail</span>
+                                </li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-light p-3 rounded">
+                                <h6><i class="fas fa-shield-alt text-success me-2"></i>Sicherheit</h6>
+                                <ul class="mb-0 small">
+                                    <li>Sichere Zahlungsabwicklung über Stripe</li>
+                                    <li>Keine Speicherung Ihrer Kartendaten</li>
+                                    <li>SSL-Verschlüsselung aller Daten</li>
+                                    <li>DSGVO-konforme Datenverarbeitung</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center">
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <button class="btn btn-outline-secondary" onclick="history.back()">
+                        <i class="fas fa-arrow-left me-2"></i>Zurück zur Auswahl
+                    </button>
+                    <button class="btn btn-primary btn-lg" onclick="proceedToContactData()" id="proceedBtn">
+                        <i class="fas fa-arrow-right me-2"></i>Weiter zu meinen Daten
+                    </button>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Sie haben noch <span id="reservation-timer">14:47</span> für diesen reservierten Vers
+                    </small>
+                </div>
+            </div>
+
+            <!-- Alternative Options -->
+            <div class="mt-5">
+                <hr>
+                <div class="text-center">
+                    <h6 class="text-muted mb-3">Andere Spende-Optionen</h6>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a href="/spende/gruppe" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-users me-1"></i>Als Gruppe spenden
+                        </a>
+                        <a href="/spende/geschenk" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-gift me-1"></i>Als Geschenk spenden
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Store donation type
+    sessionStorage.setItem('ngue_donation_type', 'einzelperson');
+    
+    // Start reservation countdown
+    startReservationTimer();
+    
+    // Load verse data if available
+    loadVerseData();
+});
+
+function startReservationTimer() {
+    let timeLeft = 15 * 60; // 15 minutes in seconds
+    const timerElement = document.getElementById('reservation-timer');
+    
+    const timer = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            showTimeoutWarning();
+        }
+        
+        // Warning at 2 minutes
+        if (timeLeft === 120) {
+            showTimeoutSoonWarning();
+        }
+        
+        timeLeft--;
+    }, 1000);
+}
+
+function loadVerseData() {
+    const savedVerse = sessionStorage.getItem('ngue_selected_verse');
+    if (savedVerse) {
+        try {
+            const verse = JSON.parse(savedVerse);
+            // Update verse display if needed
+            console.log('Selected verse:', verse);
+        } catch (e) {
+            console.log('Could not load saved verse data');
+        }
+    }
+}
+
+function proceedToContactData() {
+    const proceedBtn = document.getElementById('proceedBtn');
+    proceedBtn.disabled = true;
+    proceedBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Laden...';
+    
+    // Store current selection
+    const donationData = {
+        type: 'einzelperson',
+        verse: {
+            reference: 'Jeremia 29,11',
+            text: 'Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.'
+        },
+        amount: 100.00,
+        timestamp: new Date().toISOString()
+    };
+    
+    sessionStorage.setItem('ngue_donation_data', JSON.stringify(donationData));
+    
+    // Proceed to contact form
+    setTimeout(() => {
+        window.location.href = '/checkout/einzelperson/daten';
+    }, 1000);
+}
+
+function showTimeoutSoonWarning() {
+    const warning = document.createElement('div');
+    warning.className = 'alert alert-warning mt-3';
+    warning.innerHTML = `
+        <i class="fas fa-clock me-2"></i>
+        <strong>Nur noch 2 Minuten!</strong> Ihre Vers-Reservierung läuft bald ab.
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.querySelector('.text-center').appendChild(warning);
+}
+
+function showTimeoutWarning() {
+    const error = document.createElement('div');
+    error.className = 'alert alert-danger mt-3';
+    error.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Reservierung abgelaufen:</strong> Ihr Vers ist nicht mehr reserviert. 
+        <div class="mt-2">
+            <a href="/vers-auswaehlen" class="btn btn-danger btn-sm">Vers neu auswählen</a>
+        </div>
+    `;
+    document.querySelector('.text-center').appendChild(error);
+    
+    // Disable proceed button
+    const proceedBtn = document.getElementById('proceedBtn');
+    proceedBtn.disabled = true;
+    proceedBtn.innerHTML = '<i class="fas fa-clock me-2"></i>Reservierung abgelaufen';
+}
+
+// Handle page visibility for timer accuracy
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        // Page became visible again - you might want to refresh timer or check status
+        console.log('Page visible again - checking reservation status...');
+    }
+});
+
+// Prevent accidental navigation
+window.addEventListener('beforeunload', function(e) {
+    if (sessionStorage.getItem('ngue_donation_data')) {
+        e.preventDefault();
+        e.returnValue = 'Ihre Vers-Reservierung könnte verloren gehen. Sind Sie sicher?';
+    }
+});
+</script>
+{% endblock %}

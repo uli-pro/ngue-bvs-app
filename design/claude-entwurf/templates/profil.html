@@ -1,0 +1,360 @@
+{% extends "layout.html" %}
+
+{% block title %}Mein Profil{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-user-circle text-primary me-2"></i>Mein Profil</h1>
+                    <p class="text-muted mb-0">Verwalten Sie Ihre persönlichen Daten und Einstellungen</p>
+                </div>
+                <div>
+                    <a href="/meine-verse" class="btn btn-outline-primary">
+                        <i class="fas fa-book-open me-2"></i>Meine Verse
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Personal Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-user me-2"></i>Persönliche Daten</h4>
+                </div>
+                <div class="card-body">
+                    <form id="profileForm" class="needs-validation" novalidate>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="salutation" class="form-label">Anrede *</label>
+                                <select class="form-select" id="salutation" name="salutation" required>
+                                    <option value="">Bitte wählen...</option>
+                                    <option value="Herr" selected>Herr</option>
+                                    <option value="Frau">Frau</option>
+                                    <option value="Eheleute">Eheleute</option>
+                                    <option value="Firma">Firma</option>
+                                </select>
+                                <div class="invalid-feedback">Bitte wählen Sie eine Anrede.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="title" class="form-label">Titel (optional)</label>
+                                <input type="text" class="form-control" id="title" name="title" placeholder="z.B. Dr., Prof.">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">Vorname *</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" value="Max" required>
+                                <div class="invalid-feedback">Bitte geben Sie Ihren Vornamen ein.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Nachname *</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" value="Mustermann" required>
+                                <div class="invalid-feedback">Bitte geben Sie Ihren Nachnamen ein.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-Mail-Adresse *</label>
+                            <input type="email" class="form-control" id="email" name="email" value="max.mustermann@example.com" required>
+                            <div class="form-text">Ihre E-Mail-Adresse wird für Login und wichtige Mitteilungen verwendet.</div>
+                            <div class="invalid-feedback">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6>Adresse (für Spendenbescheinigungen)</h6>
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="street" class="form-label">Straße</label>
+                                <input type="text" class="form-control" id="street" name="street" value="Musterstraße">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="houseNumber" class="form-label">Hausnummer</label>
+                                <input type="text" class="form-control" id="houseNumber" name="houseNumber" value="123">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="postalCode" class="form-label">PLZ</label>
+                                <input type="text" class="form-control" id="postalCode" name="postalCode" value="12345" maxlength="5" pattern="[0-9]{5}">
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label for="city" class="form-label">Ort</label>
+                                <input type="text" class="form-control" id="city" name="city" value="Musterstadt">
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Änderungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Password Change -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-lock me-2"></i>Passwort ändern</h5>
+                </div>
+                <div class="card-body">
+                    <form id="passwordForm" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Aktuelles Passwort *</label>
+                            <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+                            <div class="invalid-feedback">Bitte geben Sie Ihr aktuelles Passwort ein.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Neues Passwort *</label>
+                            <input type="password" class="form-control" id="newPassword" name="newPassword" required minlength="8">
+                            <div class="form-text">Mindestens 8 Zeichen</div>
+                            <div class="invalid-feedback">Das Passwort muss mindestens 8 Zeichen lang sein.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Passwort bestätigen *</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                            <div class="invalid-feedback">Die Passwörter stimmen nicht überein.</div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-key me-2"></i>Passwort ändern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Preferences -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Einstellungen</h5>
+                </div>
+                <div class="card-body">
+                    <form id="preferencesForm">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter" checked>
+                                <label class="form-check-label" for="newsletter">
+                                    <strong>Newsletter abonnieren</strong>
+                                    <div class="text-muted small">Neuigkeiten zum NGÜ-Projekt, ca. 4x jährlich</div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="emailNotifications" name="emailNotifications" checked>
+                                <label class="form-check-label" for="emailNotifications">
+                                    <strong>E-Mail-Benachrichtigungen</strong>
+                                    <div class="text-muted small">Updates zu Ihren gesponserten Versen</div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-check me-2"></i>Einstellungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Account Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Ihr Konto</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h4 class="text-primary mb-0">3</h4>
+                            <small class="text-muted">Gesponserte Verse</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-success mb-0">300€</h4>
+                            <small class="text-muted">Gesamt gespendet</small>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="small text-muted">
+                        <div class="d-flex justify-content-between">
+                            <span>Mitglied seit:</span>
+                            <span>08.08.2025</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Letzte Anmeldung:</span>
+                            <span>Heute</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-tools me-2"></i>Konto-Aktionen</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-info btn-sm" onclick="downloadData()">
+                            <i class="fas fa-download me-2"></i>Meine Daten herunterladen
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="requestAccountDeletion()">
+                            <i class="fas fa-user-times me-2"></i>Konto löschen beantragen
+                        </button>
+                    </div>
+                    
+                    <small class="text-muted mt-2 d-block">
+                        Alle Aktionen entsprechen der DSGVO
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setupForms();
+});
+
+function setupForms() {
+    // Profile form
+    const profileForm = document.getElementById('profileForm');
+    profileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (this.checkValidity()) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Speichere...';
+            
+            // Simulate API call
+            setTimeout(() => {
+                showToast('Ihre Änderungen wurden gespeichert.', 'success');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Änderungen speichern';
+            }, 1500);
+        }
+        
+        this.classList.add('was-validated');
+    });
+    
+    // Password form
+    const passwordForm = document.getElementById('passwordForm');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    
+    // Password confirmation validation
+    confirmPasswordInput.addEventListener('input', function() {
+        if (this.value !== newPasswordInput.value) {
+            this.setCustomValidity('Die Passwörter stimmen nicht überein.');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    passwordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (this.checkValidity()) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Ändere Passwort...';
+            
+            // Simulate API call
+            setTimeout(() => {
+                showToast('Ihr Passwort wurde erfolgreich geändert.', 'success');
+                this.reset();
+                this.classList.remove('was-validated');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-key me-2"></i>Passwort ändern';
+            }, 2000);
+        }
+        
+        this.classList.add('was-validated');
+    });
+    
+    // Preferences form
+    const preferencesForm = document.getElementById('preferencesForm');
+    preferencesForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Speichere...';
+        
+        setTimeout(() => {
+            showToast('Ihre Einstellungen wurden aktualisiert.', 'success');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Einstellungen speichern';
+        }, 1000);
+    });
+}
+
+function downloadData() {
+    showToast('Ihr Datenexport wird vorbereitet. Sie erhalten eine E-Mail, wenn er fertig ist.', 'info');
+    
+    // Simulate data preparation
+    setTimeout(() => {
+        showToast('Datenexport bereit! Check your email.', 'success');
+    }, 3000);
+}
+
+function requestAccountDeletion() {
+    if (confirm('Sind Sie sicher, dass Sie Ihr Konto löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+        showToast('Ihre Anfrage zur Kontolöschung wurde eingereicht. Wir werden uns in Kürze bei Ihnen melden.', 'warning');
+    }
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 4000);
+}
+
+// Auto-save functionality (optional)
+let autoSaveTimeout;
+document.querySelectorAll('#profileForm input, #profileForm select').forEach(field => {
+    field.addEventListener('input', function() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            // Could implement auto-save here
+            console.log('Auto-saving profile data...');
+        }, 2000);
+    });
+});
+</script>
+{% endblock %}

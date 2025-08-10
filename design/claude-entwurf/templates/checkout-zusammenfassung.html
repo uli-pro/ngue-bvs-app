@@ -1,0 +1,354 @@
+{% extends "layout.html" %}
+
+{% block title %}Zusammenfassung{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 90%"></div>
+            </div>
+            <nav aria-label="Checkout Fortschritt">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">Vers auswählen</li>
+                    <li class="breadcrumb-item">Daten eingeben</li>
+                    <li class="breadcrumb-item active" aria-current="page">Zusammenfassung</li>
+                    <li class="breadcrumb-item text-muted">Zahlung</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Summary Details -->
+        <div class="col-lg-8 mb-4">
+            <!-- Verse Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-book-open text-primary me-2"></i>
+                        Ihr gesponserterer Vers
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="verse-display bg-light p-3 border-start border-primary border-4 mb-3">
+                        <blockquote class="mb-2" style="font-size: 1.1em; font-style: italic;">
+                            "{{ data.verse_text or 'Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.' }}"
+                        </blockquote>
+                        <cite class="text-end d-block">
+                            <strong>{{ data.verse_reference or 'Jeremia 29,11' }}</strong>
+                        </cite>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Bibelbereich:</strong></p>
+                            <p class="text-muted">Altes Testament - Prophetische Bücher</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Übersetzungsstatus:</strong></p>
+                            <p class="text-success"><i class="fas fa-check-circle me-1"></i>Verfügbar für Sponsoring</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donor Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user text-primary me-2"></i>
+                        {% if session.get('donation_type') == 'gruppe' %}
+                            Gruppenspende
+                        {% elif session.get('donation_type') == 'geschenk' %}
+                            Geschenk-Spende
+                        {% else %}
+                            Ihre Angaben
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if session.get('donation_type') == 'gruppe' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Gruppenname:</strong></p>
+                                <p>{{ session.get('group_article', 'Die') }} {{ session.get('group_name', 'Beispielgruppe') }}</p>
+                                
+                                <p class="mb-1"><strong>Kontaktperson:</strong></p>
+                                <p>{{ data.donor_name or 'Max Mustermann' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>E-Mail:</strong></p>
+                                <p>{{ data.donor_email or 'max.mustermann@example.com' }}</p>
+                                
+                                <div class="alert alert-info mt-2">
+                                    <small>
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Das Zertifikat wird auf die Gruppe ausgestellt. Für eine Spendenbescheinigung kontaktieren Sie uns bitte unter: 
+                                        <a href="mailto:spenden@peter-schoeffer-stiftung.de">spenden@peter-schoeffer-stiftung.de</a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    {% elif session.get('donation_type') == 'geschenk' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Geschenk für:</strong></p>
+                                <p>{{ session.get('gift_recipient_name', 'Anna Mustermann') }}</p>
+                                <p class="text-muted">{{ session.get('gift_recipient_email', 'anna.mustermann@example.com') }}</p>
+                                
+                                <p class="mb-1 mt-3"><strong>Spender:</strong></p>
+                                <p>{{ data.donor_name or 'Max Mustermann' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Versandart:</strong></p>
+                                <p>
+                                    {% if session.get('gift_direct_send') %}
+                                        <i class="fas fa-envelope text-success me-1"></i>Direkt an Empfänger
+                                    {% else %}
+                                        <i class="fas fa-hand-holding-heart text-primary me-1"></i>An mich (persönliche Übergabe)
+                                    {% endif %}
+                                </p>
+                                
+                                <p class="mb-1 mt-3"><strong>Nachricht:</strong></p>
+                                <p class="text-muted">"{{ session.get('gift_message', 'Möge dieser Vers dir Kraft und Hoffnung schenken.') }}"</p>
+                            </div>
+                        </div>
+                        
+                    {% else %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Name:</strong></p>
+                                <p>{{ data.donor_name or 'Max Mustermann' }}</p>
+                                
+                                <p class="mb-1"><strong>E-Mail:</strong></p>
+                                <p>{{ data.donor_email or 'max.mustermann@example.com' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                {% if session.get('wants_receipt', True) %}
+                                <p class="mb-1"><strong>Adresse:</strong></p>
+                                <p>
+                                    Musterstraße 123<br>
+                                    12345 Musterstadt<br>
+                                    Deutschland
+                                </p>
+                                {% endif %}
+                                
+                                <p class="mb-1"><strong>Newsletter:</strong></p>
+                                <p>
+                                    {% if session.get('newsletter', False) %}
+                                        <i class="fas fa-check text-success me-1"></i>Ja, NGÜ-Updates erwünscht
+                                    {% else %}
+                                        <i class="fas fa-times text-muted me-1"></i>Nein
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="text-end">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="editData()">
+                            <i class="fas fa-edit me-1"></i>Daten ändern
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What happens next -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-arrow-right text-primary me-2"></i>
+                        Was passiert nach der Zahlung?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Sofort</h6>
+                                <p class="mb-0 small">Ihr Vers wird reserviert und Sie erhalten eine Bestätigung</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Binnen 5 Minuten</h6>
+                                <p class="mb-0 small">Zertifikat und Spendenbescheinigung per E-Mail</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">In den kommenden Monaten</h6>
+                                <p class="mb-0 small">Ihr Vers wird professionell übersetzt und lektoriert</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-receipt text-primary me-2"></i>
+                        Spende
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>1 Bibelvers</span>
+                        <span>100,00 €</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Bearbeitungsgebühren</span>
+                        <span class="text-success">0,00 €</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-4">
+                        <strong>Gesamtbetrag</strong>
+                        <strong class="h4 text-primary">100,00 €</strong>
+                    </div>
+                    
+                    <!-- Payment Method -->
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Zahlungsart:</strong></label>
+                        <div class="border rounded p-3 text-center">
+                            <img src="https://js.stripe.com/v3/fingerprinted/img/payment-methods/card-outline-24px.png" alt="Karte" class="me-2">
+                            <span>Kredit-/Debitkarte</span>
+                            <div class="mt-2">
+                                <small class="text-muted">Sicher über Stripe bezahlen</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" onclick="processPayment()">
+                            <i class="fas fa-lock me-2"></i>
+                            Sicher spenden - 100,00 €
+                        </button>
+                        <small class="text-center text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            SSL-verschlüsselt & DSGVO-konform
+                        </small>
+                    </div>
+                    
+                    <!-- Security Icons -->
+                    <div class="text-center mt-3">
+                        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
+                            <img src="https://js.stripe.com/v3/fingerprinted/img/visa-365725566f9578a9589553aa9296c178.svg" alt="Visa" height="20">
+                            <img src="https://js.stripe.com/v3/fingerprinted/img/mastercard-4d8844094130711885b5e41b28c9848f.svg" alt="Mastercard" height="20">
+                            <img src="https://js.stripe.com/v3/fingerprinted/img/amex-a49b82f46c5cd31dc8da3f4f4fedacd7.svg" alt="American Express" height="20">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Support -->
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    <h6><i class="fas fa-question-circle text-primary me-2"></i>Fragen?</h6>
+                    <p class="small text-muted mb-2">
+                        Wir helfen gerne bei Problemen oder Fragen zum Spendenprozess.
+                    </p>
+                    <a href="/kontakt" class="btn btn-outline-primary btn-sm">
+                        Kontakt aufnehmen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -23px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content h6 {
+    color: #495057;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editData() {
+    // Go back to data entry page
+    const donationType = '{{ session.get("donation_type", "einzelperson") }}';
+    window.location.href = `/checkout/${donationType}/daten`;
+}
+
+function processPayment() {
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verarbeitung...';
+    
+    // Simulate payment processing
+    setTimeout(() => {
+        // In real app, this would redirect to Stripe
+        window.location.href = '/checkout/erfolg';
+    }, 2000);
+}
+
+// Auto-save form data in case user navigates back
+document.addEventListener('DOMContentLoaded', function() {
+    // Store current summary data in session storage for debugging
+    const summaryData = {
+        verse: '{{ data.verse_reference or "Jeremia 29,11" }}',
+        amount: 100,
+        donationType: '{{ session.get("donation_type", "einzelperson") }}',
+        timestamp: new Date().toISOString()
+    };
+    
+    sessionStorage.setItem('ngue_checkout_summary', JSON.stringify(summaryData));
+});
+
+// Prevent accidental navigation away
+window.addEventListener('beforeunload', function(e) {
+    e.preventDefault();
+    e.returnValue = 'Möchten Sie den Checkout-Prozess wirklich verlassen? Ihre Daten gehen dabei verloren.';
+});
+</script>
+{% endblock %}
