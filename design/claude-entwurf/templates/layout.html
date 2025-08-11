@@ -48,8 +48,6 @@
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="/ueber-ngue">Über die NGÜ</a></li>
                             <li><a class="dropdown-item" href="/ueber-stiftung">Peter-Schöffer-Stiftung</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/projektpartner">Projektpartner</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
@@ -61,16 +59,28 @@
                     {% if session.get("user_id") %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle"></i> Mein Konto
+                            <i class="fas fa-user-circle"></i> 
+                            {% if current_user %}
+                                {{ current_user.first_name }}
+                            {% else %}
+                                Mein Konto
+                            {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
-                            <li><a class="dropdown-item" href="/meine-verse">Meine Verse</a></li>
-                            <li><a class="dropdown-item" href="/profil">Profil</a></li>
+                            <li><a class="dropdown-item" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/meine-verse"><i class="fas fa-bible me-2"></i>Meine Verse</a></li>
+                            <li><a class="dropdown-item" href="/profil"><i class="fas fa-user-edit me-2"></i>Profil bearbeiten</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/logout">Abmelden</a></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Abmelden</a></li>
                         </ul>
                     </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-primary ms-2" href="/vers-auswaehlen">Weiteren Vers sponsern</a>
+                    </li>
                     {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Anmelden</a>
+                    </li>
                     <li class="nav-item">
                         <a class="btn btn-primary ms-2" href="/vers-auswaehlen">Jetzt spenden</a>
                     </li>
@@ -136,10 +146,9 @@
                 <div class="col-lg-4 mb-4">
                     <h6 class="mb-3">Peter-Schöffer-Stiftung</h6>
                     <address class="text-white-50">
-                        Max-Müller-Str. 36-38<br>
-                        35444 Biebertal<br>
-                        <i class="fas fa-phone"></i> +49 (0)6409 / 810-200<br>
-                        <i class="fas fa-envelope"></i> info@peter-schoeffer-stiftung.de
+                        Wormser Weg 17<br>
+                        67574 Osthofen<br>
+                        <i class="fas fa-envelope"></i> info@schoeffer.org
                     </address>
                 </div>
             </div>

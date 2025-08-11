@@ -9,9 +9,9 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1>Willkommen zurück!</h1>
+                    <h1>Willkommen zurück{% if current_user %}, {{ current_user.first_name }}{% endif %}!</h1>
                     <p class="text-muted mb-0">
-                        Schön, Sie wieder zu sehen, {{ session.get('user_email', 'max.mustermann@example.com') }}
+                        Hier ist die Übersicht Ihrer gesponserten Verse
                     </p>
                 </div>
                 <div>
@@ -255,9 +255,9 @@
                 <div class="card-body text-center">
                     <div class="mb-3">
                         <i class="fas fa-heart fa-3x text-danger mb-2"></i>
-                        <p class="mb-2">Ihre Spenden haben bereits</p>
+                        <p class="mb-2">Ihre Spenden haben bereits ermöglicht</p>
                         <h4 class="text-primary">3 Verse</h4>
-                        <p class="mb-0">für die Ewigkeit übersetzt</p>
+                        <p class="mb-0">zu übersetzen</p>
                     </div>
                     
                     <hr>
@@ -265,7 +265,7 @@
                     <div class="small text-muted">
                         <p class="mb-1">📖 Diese Verse werden von Tausenden gelesen</p>
                         <p class="mb-1">⏰ Ihre Investition wirkt über Jahrzehnte</p>
-                        <p class="mb-0">🌍 Weltweite Verbreitung der NGÜ</p>
+                        <p class="mb-0">🌍 Gottes Wort verändert Leben</p>
                     </div>
                 </div>
             </div>
