@@ -66,3 +66,8 @@ Beachte:
 - Bitte vergiss nicht erstelle die Unterseiten und Unter-Unterseiten für die verschiedenen Spendenarten: Als Einzelperson, Als Gruppe und Als Geschenk. 
 - Bitte erstelle Dummy-zertifikate und Spendenbescheinigungen für jeden Use-Case (Einzelspende, Gruppespende, Geschenk-Spende) und stelle sie auf den enstprechenden Unterseiten zur Verfügung. 
 - Bitte erstelle Seiten für jeden deiner Links im Footer. Nutze dazu die Inhalte in /content.
+
+
+
+## 3.Prompt
+
