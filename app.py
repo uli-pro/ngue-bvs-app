@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_session import Session
 from datetime import datetime, timedelta
 import secrets
@@ -569,12 +569,6 @@ def spendenbedingungen():
     flash("Die Spendenbedingungen sind noch in Entwicklung.", "info")
     return redirect(url_for("datenschutz"))
 
-@app.route("/widerruf")
-def widerruf():
-    """Revocation page"""
-    flash("Die Widerrufsbelehrung ist noch in Entwicklung.", "info")
-    return redirect(url_for("datenschutz"))
-
 @app.route("/transparenz")
 def transparenz():
     """Transparency page"""
@@ -591,9 +585,8 @@ def download_zertifikat():
 
 @app.route("/downloads/spendenbescheinigung-demo.pdf")
 def download_spendenbescheinigung():
-    """Download demo donation receipt"""
-    flash("Demo-Spendenbescheinigung: In der echten Anwendung würde hier ein PDF generiert.", "info")
-    return redirect(url_for("checkout_erfolg"))
+    """View demo donation receipt"""
+    return render_template("dummy-spendenbescheinigung.html")
 
 # ==========================================
 # DONATION TYPE SPECIFIC ROUTES

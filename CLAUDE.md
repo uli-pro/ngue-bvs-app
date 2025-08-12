@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that enables individual verse sponsoring for the NGÜ (Neue Genfer Übersetzung) Bible translation project. This is a CS50 final project that allows donors to sponsor individual Old Testament verses for €100 each and receive personalized certificates.
 
-### Current Development Status (August 10, 2025)
+### Current Development Status (August 12, 2025)
 - ✅ **Phase 1 - Session 1**: User Journey Mapping completed
   - Comprehensive user flow documented with Mermaid diagram
   - 30 routes/pages identified
@@ -27,9 +27,7 @@ This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that ena
   - Switzerland Phase 2 preparations
 - ✅ **Design Phase**: Website Demos completed (August 10, 2025)
   - Complete design system with NGÜ branding established
-  - Two functional website prototypes created:
-    - **Claude-Entwurf**: 17 templates, Bootstrap 5.3, mobile-first
-    - **Gemini-Entwurf**: 26 templates, comprehensive features including group donations
+  - Functional website prototype created with Claude-Entwurf (17 templates, Bootstrap 5.3, mobile-first)
   - NGÜ logo files integrated (multiple sizes)
   - Official NGÜ sponsoring documentation included
 - ✅ **Phase 1 - Session 4A**: Account-System implementiert (August 11, 2025)
@@ -47,6 +45,10 @@ This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that ena
   - Account-Templates erstellt und integriert
   - UI/UX-Konsistenz über alle Seiten sichergestellt
   - Content-Anpassungen basierend auf finalen Anforderungen
+- ✅ **Project Restructuring** (August 12, 2025)
+  - Claude-Entwurf Demo promoted to main application codebase
+  - Historical files moved to /archive for documentation purposes
+  - Main Flask application now ready for further development
 - 🚧 **Phase 1 - Session 5**: Backend-Architektur (noch offen)
   - Technische Architektur für Datenbank und APIs planen
 
@@ -126,23 +128,25 @@ The app collects the following information for automatic donation receipt genera
 
 ## Development Commands
 
-Since the codebase is in early development phase, these commands will be established as the project progresses:
+The Flask application is now set up and functional. Here are the current development commands:
 
 ```bash
 # Virtual environment setup
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies (when requirements.txt is created)
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the development server
+python app.py
+# or
+flask run
 
 # Database operations (when Flask-Migrate is set up)
 flask db init
 flask db migrate -m "Initial migration"
 flask db upgrade
-
-# Development server
-flask run
 
 # Testing (when tests are implemented)
 pytest
@@ -153,38 +157,42 @@ pytest --cov=app tests/
 
 ```
 ngue-bvs-app/
-├── app/                    # Main Flask application (to be implemented)
-│   ├── __init__.py
-│   ├── models.py          # SQLAlchemy models
-│   ├── routes.py          # Flask routes
-│   ├── forms.py           # WTForms
-│   └── utils.py           # Helper functions
-├── content/                # Website content (Phase 1 Session 3)
-│   ├── seiten/            # Page content
-│   │   ├── homepage.md
-│   │   ├── vers-auswahl.md
-│   │   ├── ueber-ngue.md
-│   │   ├── ueber-stiftung.md
-│   │   └── faq.md
-│   ├── formulare/         # Form templates
-│   ├── email-templates/   # Email templates
-│   ├── meta/              # Certificates, privacy policy
-│   ├── fehler-nachrichten/# Error messages
-│   └── ui-texte/          # UI text and tooltips
-├── design/                # Design prototypes and system
-│   ├── claude-entwurf/    # Claude's Flask demo (17 templates)
-│   ├── gemini-entwurf/    # Gemini's Flask demo (26 templates)
+├── app.py                  # Main Flask application
+├── requirements.txt        # Python dependencies
+├── .env.example           # Environment variables template
+├── content/               # Website content structure
+│   ├── seiten/           # Page content
+│   ├── formulare/        # Form templates
+│   ├── email-templates/  # Email templates
+│   ├── meta/             # Certificates, privacy policy
+│   ├── fehler-nachrichten/ # Error messages
+│   └── ui-texte/         # UI text and tooltips
+├── data/                  # Bible text data
+│   └── schlachter-1951/  # Schlachter 1951 Bible files (HTML)
+├── design/                # Design system and assets
 │   ├── design-system-preliminary.md  # Complete design system
-│   ├── Logo NGU [sizes]/  # NGÜ logos in various sizes
+│   ├── Logo NGU *.png    # NGÜ logos in various sizes
 │   └── NGÜ Sponsoring[3720].pdf     # Official documentation
 ├── static/                # CSS, JS, images
-├── templates/             # Jinja2 HTML templates
+│   ├── styles.css        # Main stylesheet
+│   ├── logo-navbar.png   # Navigation logo
+│   └── logo-footer.png   # Footer logo
+├── templates/             # Jinja2 HTML templates (17 templates)
+│   ├── layout.html       # Base template
+│   ├── index.html        # Homepage
+│   ├── vers-*.html       # Verse selection pages
+│   ├── checkout-*.html   # Payment flow
+│   ├── login.html        # User authentication
+│   └── ...              # Additional templates
 ├── tests/                 # Test suite
 ├── docs/                  # Project documentation
 │   ├── development-plan.md
 │   ├── phase-2-schweiz-vorbereitung.md
-│   └── user-journey/      # User flow documentation
+│   └── user-journey*.md  # User flow documentation
 ├── dev-diary/             # Development diary and sessions
+├── archive/               # Historical files and documentation
+├── prompts/               # AI prompt templates
+├── flask_session/         # Session storage
 └── migrations/            # Database migrations (to be created)
 ```
 
@@ -224,9 +232,9 @@ The project follows a 7-week development plan documented in `docs/development-pl
 
 ## Environment Configuration
 
-When `.env` file is created, it should include:
+A `.env.example` file is provided as a template. Copy it to `.env` and configure:
 ```
-FLASK_APP=app
+FLASK_APP=app.py
 FLASK_ENV=development
 SECRET_KEY=your-secret-key
 DATABASE_URL=postgresql://user:password@localhost/ngue_bvs_db

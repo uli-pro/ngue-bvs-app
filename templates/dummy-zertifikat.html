@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vers-Zertifikat - NGÜ Sponsoring</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        body {
+            font-family: Georgia, serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+            color: #2c3e50;
+            background-color: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            box-sizing: border-box;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #1a5490;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .certificate-title {
+            font-size: 28pt;
+            font-weight: bold;
+            color: #1a5490;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .certificate-subtitle {
+            font-size: 14pt;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+        
+        .ngu-title {
+            font-size: 12pt;
+            color: #8b4513;
+            font-weight: bold;
+        }
+        
+        .divider {
+            border-top: 2px solid #ddd;
+            margin: 25px 0;
+            position: relative;
+        }
+        
+        .divider::after {
+            content: "❦";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 15px;
+            color: #1a5490;
+            font-size: 18pt;
+        }
+        
+        .confirmation-text {
+            text-align: center;
+            font-size: 12pt;
+            margin: 25px 0;
+            font-weight: bold;
+        }
+        
+        .donor-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #1a5490;
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #1a5490;
+            background-color: #f0f5fa;
+        }
+        
+        .donation-details {
+            text-align: center;
+            font-size: 11pt;
+            margin: 20px 0;
+            line-height: 1.5;
+        }
+        
+        .verse-section {
+            background-color: #faf7f2;
+            border: 2px solid #8b4513;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .verse-reference {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #8b4513;
+            margin-bottom: 15px;
+        }
+        
+        .verse-text {
+            font-size: 14pt;
+            font-style: italic;
+            color: #2c3e50;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            quotes: """ """;
+        }
+        
+        .verse-text::before {
+            content: open-quote;
+            font-size: 20pt;
+            color: #8b4513;
+        }
+        
+        .verse-text::after {
+            content: close-quote;
+            font-size: 20pt;
+            color: #8b4513;
+        }
+        
+        .verse-source {
+            font-size: 9pt;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .impact-section {
+            background-color: #f0f5fa;
+            border-left: 5px solid #1a5490;
+            padding: 20px;
+            margin: 25px 0;
+            font-size: 10pt;
+            text-align: justify;
+            line-height: 1.5;
+        }
+        
+        .impact-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #1a5490;
+            margin-bottom: 10px;
+        }
+        
+        .gratitude {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            color: #8b4513;
+            margin: 25px 0;
+        }
+        
+        .footer {
+            border-top: 2px solid #ddd;
+            padding-top: 20px;
+            margin-top: 30px;
+        }
+        
+        .organization {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .org-name {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1a5490;
+        }
+        
+        .org-subtitle {
+            font-size: 10pt;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .certificate-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9pt;
+            color: #666;
+            margin-top: 15px;
+        }
+        
+        .auto-generated {
+            text-align: center;
+            font-size: 8pt;
+            color: #999;
+            font-style: italic;
+            margin-top: 15px;
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+            }
+            
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="certificate-title">Zertifikat</div>
+            <div class="certificate-subtitle">Vers-Sponsoring für die Neue Genfer Übersetzung (NGÜ)</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Bestätigung -->
+        <div class="confirmation-text">
+            Hiermit bestätigen wir:
+        </div>
+
+        <!-- Spendername -->
+        <div class="donor-name">
+            Max Mustermann
+        </div>
+
+        <!-- Spendendetails -->
+        <div class="donation-details">
+            hat durch eine Spende von <strong>100€</strong> am <strong>{{ current_date or '10. August 2025' }}</strong><br>
+            die Übersetzung des folgenden Bibelverses ermöglicht:
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Vers-Sektion -->
+        <div class="verse-section">
+            <div class="verse-reference">
+                Jeremia 29,11
+            </div>
+            
+            <div class="verse-text">
+                Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.
+            </div>
+            
+            <div class="verse-source">
+                (Schlachter 1951 - Referenztext)
+            </div>
+        </div>
+
+        <!-- Wirkung und Bedeutung -->
+        <div class="impact-section">
+            <div class="impact-title">Ihr bleibender Beitrag:</div>
+            
+            <p>Mit Ihrer Spende haben Sie eine Investition getätigt, die weit über Ihre eigene Lebenszeit hinauswirkt. Ihr gesponserter Vers wird Teil einer modernen Bibelübersetzung, die über Jahrzehnte hinweg von Menschen gelesen wird und Leben prägen kann. Sie haben dazu beigetragen, Gottes Wort in einer zeitgemäßen und zuverlässigen Übersetzung vielen Lesern zugänglich zu machen.</p>
+            
+            <p>Die Neue Genfer Übersetzung (NGÜ) verbindet wissenschaftliche Genauigkeit mit verständlicher Sprache. Ihr Vers wird von erfahrenen Sprachwissenschaftlern und Theologen professionell übersetzt und durchläuft mehrere Qualitätsstufen bis zur Fertigstellung der vollständigen NGÜ-Bibel.</p>
+        </div>
+
+        <!-- Dankesworte -->
+        <div class="gratitude">
+            Vielen Dank für Ihren wertvollen Beitrag!
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="organization">
+                <div class="org-name">Peter-Schöffer-Stiftung</div>
+                <div class="org-subtitle">Im Auftrag der Genfer Bibelgesellschaft</div>
+            </div>
+            
+            <div class="certificate-details">
+                <div>
+                    <strong>Zertifikat-Nr.:</strong> NGU-2025-001234
+                </div>
+                <div>
+                    <strong>Ausgestellt am:</strong> {{ current_date or '10. August 2025' }}
+                </div>
+            </div>
+            
+            <div class="auto-generated">
+                Dieses Zertifikat wurde automatisch generiert und ist ohne Unterschrift gültig.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

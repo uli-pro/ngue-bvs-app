@@ -22,15 +22,9 @@
 
 #### /bestaetigung
 
--  Es muss bei der Geschenk-Option die Möglichkeit geben, keinen Artikel für den Namen zu wählen.
--  Der Komplette Text "Hinweis für Gruppenspenden: "Für Gruppenspenden können wir keine automatische Spendenbescheinigung erstellen. Bei Bedarf kontaktieren Sie uns bitte unter: [spenden@peter-schoeffer-stiftung.de](mailto:spenden@peter-schoeffer-stiftung.de)" von der nächsten Seite (/gruppen/daten) sollte auch schon hier auf der Seite /bestaetitung) erscheinen.
-
 #### /checkout/erfolg
 
-- "Später"-Button entfernen. 
 - Farben...
-- Erstellte Spendenbescheinigung hinterlegen.
-- Ihre Dokumente stehen *sofort* zum Download bereit:
 
 #### /checkout/zusammenfassung
 
@@ -41,7 +35,6 @@
 
 #### /datenschutz
 
-- Keine Widerrufsbelehrung
 - Farben
 
 #### /faq
@@ -64,14 +57,12 @@
 
 #### /index
 
-- "Mehr erfahren" - Button raus
+- 
 
 #### /layout
 
 - Breadcrumbs raus
 - footer: Links zu Social Media
-- footer: Widerrufsbelehrung raus
-- footer: Spendenbedingungen raus, statt dessen Transparenz rein
 
 #### /login
 
@@ -80,6 +71,10 @@
 #### /meine-verse
 
 - Was bedeuten die Symbole -> Mindestens einen Tooltip (oder mit Text)
+
+#### /register
+
+- Felder mit den Daten aus dem Kauf vorausfüllen.
 
 #### /transparenz
 
