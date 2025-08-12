@@ -12,7 +12,10 @@
                     <h1><i class="fas fa-book-open text-primary me-2"></i>Meine gesponserten Verse</h1>
                     <p class="text-muted">Ihre Beiträge zur NGÜ-Übersetzung im Überblick</p>
                 </div>
-                <div>
+                <div class="d-flex gap-2">
+                    <a href="/dashboard" class="btn btn-outline-secondary">
+                        <i class="fas fa-tachometer-alt me-2"></i>Zum Dashboard
+                    </a>
                     <a href="/vers-auswaehlen" class="btn btn-primary">
                         <i class="fas fa-plus me-2"></i>Weiteren Vers sponsern
                     </a>
@@ -61,7 +64,7 @@
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
                             <h2 class="mb-0">2</h2>
-                            <p class="mb-0">Bibelbücher</p>
+                            <p class="mb-0">Bblisches Buch</p>
                         </div>
                         <div>
                             <i class="fas fa-book fa-2x opacity-75"></i>
@@ -111,7 +114,7 @@
                             </select>
                         </div>
                         <div class="col-lg-3">
-                            <label for="filter-book" class="form-label">Bibelbuch</label>
+                            <label for="filter-book" class="form-label">Biblisches Buch</label>
                             <select class="form-select" id="filter-book">
                                 <option value="">Alle Bücher</option>
                                 <option value="jeremia">Jeremia</option>
@@ -134,21 +137,11 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header">
                     <h4 class="mb-0">Ihre Verse</h4>
-                    <div class="btn-group">
-                        <button class="btn btn-outline-primary btn-sm" onclick="toggleView('table')" id="table-view-btn">
-                            <i class="fas fa-table"></i> Tabelle
-                        </button>
-                        <button class="btn btn-outline-primary btn-sm active" onclick="toggleView('cards')" id="cards-view-btn">
-                            <i class="fas fa-th-large"></i> Karten
-                        </button>
-                    </div>
                 </div>
                 <div class="card-body">
-                    <!-- Cards View (Default) -->
-                    <div id="cards-view">
-                        <div class="row" id="verses-container">
+                    <div class="row" id="verses-container">
                             <!-- Vers 1 -->
                             <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="einzelperson" data-book="jeremia">
                                 <div class="card h-100 border-primary">
@@ -283,89 +276,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Table View (Hidden by default) -->
-                    <div id="table-view" style="display: none;">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Vers</th>
-                                        <th>Typ</th>
-                                        <th>Datum</th>
-                                        <th>Status</th>
-                                        <th>Aktionen</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-body">
-                                    <tr>
-                                        <td>
-                                            <strong>Jeremia 29,11</strong><br>
-                                            <small class="text-muted">Denn ich weiß die Gedanken...</small>
-                                        </td>
-                                        <td><span class="badge bg-primary">Einzelspende</span></td>
-                                        <td>08.08.2025</td>
-                                        <td>
-                                            <span class="badge bg-success">Gesponsert</span>
-                                        </td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="downloadCertificate('jeremia-29-11')">
-                                                    <i class="fas fa-certificate"></i>
-                                                </button>
-                                                <button class="btn btn-outline-success" onclick="downloadReceipt('jeremia-29-11')">
-                                                    <i class="fas fa-receipt"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Psalm 23,1</strong><br>
-                                            <small class="text-muted">Der HERR ist mein Hirte...</small>
-                                        </td>
-                                        <td><span class="badge bg-info">Geschenk</span></td>
-                                        <td>05.08.2025</td>
-                                        <td>
-                                            <span class="badge bg-success">Gesponsert</span>
-                                        </td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="downloadCertificate('psalm-23-1')">
-                                                    <i class="fas fa-certificate"></i>
-                                                </button>
-                                                <button class="btn btn-outline-success" onclick="downloadReceipt('psalm-23-1')">
-                                                    <i class="fas fa-receipt"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Sprüche 3,5-6</strong><br>
-                                            <small class="text-muted">Vertraue auf den HERRN...</small>
-                                        </td>
-                                        <td><span class="badge bg-success">Gruppe</span></td>
-                                        <td>01.08.2025</td>
-                                        <td>
-                                            <span class="badge bg-success">Gesponsert</span>
-                                        </td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="downloadCertificate('sprueche-3-5-6')">
-                                                    <i class="fas fa-certificate"></i>
-                                                </button>
-                                                <button class="btn btn-outline-secondary" disabled title="Kontakt erforderlich">
-                                                    <i class="fas fa-receipt"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -406,27 +316,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filter-book').addEventListener('change', filterVerses);
 });
 
-function toggleView(view) {
-    const cardsView = document.getElementById('cards-view');
-    const tableView = document.getElementById('table-view');
-    const cardsBtn = document.getElementById('cards-view-btn');
-    const tableBtn = document.getElementById('table-view-btn');
-    
-    if (view === 'table') {
-        cardsView.style.display = 'none';
-        tableView.style.display = 'block';
-        cardsBtn.classList.remove('active');
-        tableBtn.classList.add('active');
-        currentView = 'table';
-    } else {
-        cardsView.style.display = 'block';
-        tableView.style.display = 'none';
-        cardsBtn.classList.add('active');
-        tableBtn.classList.remove('active');
-        currentView = 'cards';
-    }
-}
-
 function filterVerses() {
     const searchTerm = document.getElementById('search-verses').value.toLowerCase();
     const typeFilter = document.getElementById('filter-type').value;
@@ -463,7 +352,7 @@ function filterVerses() {
     
     // Show/hide empty state
     const emptyState = document.getElementById('empty-state');
-    const versesContainer = document.getElementById('cards-view');
+    const versesContainer = document.getElementById('verses-container').parentElement;
     
     if (visibleCount === 0) {
         emptyState.style.display = 'block';

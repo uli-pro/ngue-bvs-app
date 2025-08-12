@@ -145,45 +145,48 @@
                 </div>
             </div>
 
-            <!-- What happens next -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-arrow-right text-primary me-2"></i>
-                        Was passiert nach der Zahlung?
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-primary"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">Sofort</h6>
-                                <p class="mb-0 small">Ihr Vers wird reserviert und Sie erhalten eine Bestätigung</p>
-                            </div>
+            <!-- Container for What happens next and Payment Summary -->
+            <div class="row">
+                <!-- What happens next (7 columns) -->
+                <div class="col-lg-7">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Was passiert nach der Zahlung?
+                            </h5>
                         </div>
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-success"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">Binnen 5 Minuten</h6>
-                                <p class="mb-0 small">Zertifikat und Spendenbescheinigung per E-Mail</p>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-info"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">In den kommenden Monaten</h6>
-                                <p class="mb-0 small">Ihr Vers wird professionell übersetzt und lektoriert</p>
+                        <div class="card-body">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">Sofort</h6>
+                                        <p class="mb-0 small">Ihr Vers wird reserviert und Sie erhalten eine Bestätigung</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-success"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">Binnen 5 Minuten</h6>
+                                        <p class="mb-0 small">Zertifikat und Spendenbescheinigung per E-Mail</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-info"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">In den kommenden Monaten</h6>
+                                        <p class="mb-0 small">Ihr Vers wird professionell übersetzt und lektoriert</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Payment Summary -->
-        <div class="col-lg-4">
-            <div class="card sticky-top" style="top: 100px;">
+                
+                <!-- Payment Summary (5 columns) -->
+                <div class="col-lg-5">
+                    <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">
                         <i class="fas fa-receipt text-primary me-2"></i>
@@ -207,8 +210,9 @@
                     <div class="mb-4">
                         <label class="form-label"><strong>Zahlungsart:</strong></label>
                         <div class="border rounded p-3 text-center">
-                            <img src="https://js.stripe.com/v3/fingerprinted/img/payment-methods/card-outline-24px.png" alt="Karte" class="me-2">
+                            <img src="/static/card-outline.svg" alt="Karte" class="me-2" style="width: 24px; height: 24px;">
                             <span>Kredit-/Debitkarte</span>
+                            <span>Bankeinzug / Giropay / Paypal</span>
                             <div class="mt-2">
                                 <small class="text-muted">Sicher über Stripe bezahlen</small>
                             </div>
@@ -230,15 +234,20 @@
                     <!-- Security Icons -->
                     <div class="text-center mt-3">
                         <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
-                            <img src="https://js.stripe.com/v3/fingerprinted/img/visa-365725566f9578a9589553aa9296c178.svg" alt="Visa" height="20">
-                            <img src="https://js.stripe.com/v3/fingerprinted/img/mastercard-4d8844094130711885b5e41b28c9848f.svg" alt="Mastercard" height="20">
-                            <img src="https://js.stripe.com/v3/fingerprinted/img/amex-a49b82f46c5cd31dc8da3f4f4fedacd7.svg" alt="American Express" height="20">
+                            <img src="/static/visa.svg" alt="Visa" height="17">
+                            <img src="/static/mastercard.svg" alt="Mastercard" height="17">
+                            <img src="/static/paypal.svg" alt="PayPal" height="17">
+                            <img src="/static/giropay.svg" alt="Giropay" height="17">
+                            <img src="/static/sepa.svg" alt="SEPA Bankeinzug" height="17">
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Support -->
+        </div>
+        
+        <!-- Support Card - Full Width -->
+        <div class="col-lg-8">
             <div class="card mt-4">
                 <div class="card-body text-center">
                     <h6><i class="fas fa-question-circle text-primary me-2"></i>Fragen?</h6>

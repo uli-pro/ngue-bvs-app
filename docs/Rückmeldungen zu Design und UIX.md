@@ -4,19 +4,18 @@
 
 #### allgemein
 
-- FEATURE: Mehrere Verse sponsorn ("Warenkorb")? -> Gut durchdenken, denn das ändert die User-Journey!
-- STRIPE: Integration testen, herausfinden, ob Stripe meine User-Informationen übernehmen kann. Welche Daten braucht STRIPE überhaupt?
+- FEATURE: **Mehrere Verse sponsorn ("Warenkorb")**? -> Gut durchdenken, denn das ändert die User-Journey! -> braucht im Back-End eine eigene Tabelle (Purchases oder Kaeufe)
+- KANN ICH DIE **Customer-Journey** vereinfachen? 
 - Breadcrumbs gibt es nur auf der Zahlungs-Route, und sie funktionieren noch nicht überall.
 - Farben müssen vereinheitlicht werden (css) -> Color Picker Complementing / Contrasting (Canva) https://www.canva.com/colors/color-wheel/
 - iPad Pro Größe Breakpoints stimmen nicht (Navbar u.a.)
 - Navbar: Weiteren Vers sponsern -> Weiteren Vers finanzieren
-- Hover-Effekt inkonsequent umgesetzt und z.T. sinnfrei
-- Registrierung auf /bestätigung umlegen
+  Navbar: Über uns: NGÜ - Peter-Schöffer-Stiftung - Transparenz
 - Passwort-Hashing: argon2id
 
 #### zertifikat
 
-- Text überarbeiten (anhand des bereits erstellten Texts)
+- 
 
 ---
 
@@ -26,7 +25,7 @@
 
 #### /checkout/erfolg
 
-- Farben...
+- 
 
 #### /checkout/zusammenfassung
 
@@ -41,10 +40,7 @@
 
 #### /faq
 
-- Kann ich mehrere Vers *sponsern*?
-- ...als Geschenk *sponsern*?
-- ...gemeinsam einen Vers *sponsern*?
-- Hover-Effekt - Suche.
+- 
 - Suche funktioniert noch nicht.
 
 #### /impressum
@@ -64,14 +60,15 @@
 #### /layout
 
 - footer: Links zu Social Media
+- footer: Link zur Peter-Schöffer-Stifung klickbar machen
 
 #### /login
 
-- Hover-Effekt
+- 
 
 #### /meine-verse
 
-- Was bedeuten die Symbole -> Mindestens einen Tooltip (oder mit Text)
+- 
 
 #### /register
 
@@ -83,15 +80,11 @@
 
 #### /ueber-ngue
 
-- Farben
-
-- Transparente Entscheidungen: Ergänzungen in `*Häkchen*` und Fußnoten machen jeden Übersetzungsschritt nachvollziehbar
-- Button: Jetzt Vers *sponsern*
+- 
 
 #### /ueber-stiftung
 
-- Das Blau bei "Neue Genfer-Übersetzung" muss in Grau geändert werden.
-- Nachvollziehbare Mittelverwendung *für die NGÜ-Übersetzung -> in allen Projekten*
+- 
 
 
 

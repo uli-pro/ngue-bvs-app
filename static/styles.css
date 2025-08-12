@@ -203,7 +203,7 @@ a:hover {
 .btn-primary:hover {
     background-color: #c02a2a;
     border-color: #c02a2a;
-    transform: translateY(-2px);
+    text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
 
@@ -216,7 +216,7 @@ a:hover {
 .btn-secondary:hover {
     background-color: #252627;
     border-color: #252627;
-    transform: translateY(-2px);
+    text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
 
@@ -230,6 +230,33 @@ a:hover {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
     color: white;
+    text-decoration: underline;
+}
+
+.btn-outline-success {
+    background-color: transparent;
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.btn-outline-success:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+    text-decoration: underline;
+}
+
+.btn-outline-secondary {
+    background-color: transparent;
+    border-color: var(--color-secondary);
+    color: var(--color-secondary);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: white;
+    text-decoration: underline;
 }
 
 .btn-lg {
