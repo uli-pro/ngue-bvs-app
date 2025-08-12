@@ -76,6 +76,7 @@ temp/
 
 # Bible data files
 /data/schlachter-1951/
+/data/search-data/
 /data/vectors/
 
 # Keep directory structure

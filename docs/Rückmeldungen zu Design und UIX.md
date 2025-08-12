@@ -4,12 +4,14 @@
 
 #### allgemein
 
+- FEATURE: Mehrere Verse sponsorn ("Warenkorb")? -> Gut durchdenken, denn das ändert die User-Journey!
+- STRIPE: Integration testen, herausfinden, ob Stripe meine User-Informationen übernehmen kann. Welche Daten braucht STRIPE überhaupt?
+- Breadcrumbs gibt es nur auf der Zahlungs-Route, und sie funktionieren noch nicht überall.
 - Farben müssen vereinheitlicht werden (css) -> Color Picker Complementing / Contrasting (Canva) https://www.canva.com/colors/color-wheel/
 - iPad Pro Größe Breakpoints stimmen nicht (Navbar u.a.)
 - Navbar: Weiteren Vers sponsern -> Weiteren Vers finanzieren
 - Hover-Effekt inkonsequent umgesetzt und z.T. sinnfrei
 - Registrierung auf /bestätigung umlegen
-- Klären, ob Stripe meine User-Daten übernimmt (zum Vorausfüllen)
 - Passwort-Hashing: argon2id
 
 #### zertifikat
@@ -61,7 +63,6 @@
 
 #### /layout
 
-- Breadcrumbs raus
 - footer: Links zu Social Media
 
 #### /login
