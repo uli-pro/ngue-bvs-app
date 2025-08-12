@@ -32,7 +32,23 @@ This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that ena
     - **Gemini-Entwurf**: 26 templates, comprehensive features including group donations
   - NGÜ logo files integrated (multiple sizes)
   - Official NGÜ sponsoring documentation included
-- 🚧 **Phase 1 - Sessions 4-6**: Backend implementation to continue
+- ✅ **Phase 1 - Session 4A**: Account-System implementiert (August 11, 2025)
+  - Vollständige User-Registrierung mit E-Mail-Verifizierung
+  - Login-System mit Rate-Limiting und Session-Management
+  - Passwort-Zurücksetzen-Funktionalität
+  - Login-geschützte Bereiche mit @login_required Decorator
+  - Personalisierte Navigation und Dashboard-Integration
+- ✅ **Phase 1 - Session 4B**: UI-Verbesserungen und Bugfixes (August 11, 2025)
+  - Übersetzungsfortschritts-Anzeige entfernt (zu aufwändig in der Datenpflege)
+  - Peter-Schöffer-Stiftung Kontaktdaten aktualisiert (neue Adresse, E-Mail @schoeffer.org)
+  - Navigation bereinigt ("Projektpartner" Menüpunkt entfernt)
+  - Demo-Login vereinfacht für Testzwecke
+- ✅ **Phase 1 - Session 6**: Frontend-Polish und Content-Refinement (August 11, 2025)
+  - Account-Templates erstellt und integriert
+  - UI/UX-Konsistenz über alle Seiten sichergestellt
+  - Content-Anpassungen basierend auf finalen Anforderungen
+- 🚧 **Phase 1 - Session 5**: Backend-Architektur (noch offen)
+  - Technische Architektur für Datenbank und APIs planen
 
 ## Technology Stack
 

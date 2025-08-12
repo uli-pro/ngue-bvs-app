@@ -49,31 +49,38 @@
 
 ## Phase 2: Grafiken, Architektur und Mockups (Woche 2 - real)
 
-### Session 4a - Grafiken und Visuelles Design (Teil 1)
-- NGÜ-Logo erstellen/beschaffen
-- Farbschema definieren (Basis-Farben)
-- Schriftarten auswählen
-- Erste Zertifikat-Vorlage skizzieren
+### Session 4A - Account-System Implementation ✅ (11. August 2025)
+- [x] Vollständige User-Registrierung mit E-Mail-Verifizierung implementiert
+- [x] Login-System mit Rate-Limiting und Session-Management
+- [x] Passwort-Zurücksetzen-Funktionalität mit sicheren Tokens
+- [x] Login-geschützte Bereiche mit @login_required Decorator
+- [x] Personalisierte Navigation und Dashboard-Integration
+- [x] Demo-Modus für einfaches Testen implementiert
 
-### Session 4b - Grafiken und Visuelles Design (Teil 2)
-- Zertifikat-Vorlage finalisieren
-- Passende Bilder sammeln (lizenzfrei)
-- Moodboard für visuellen Stil erstellen
-- Konzept für Vers-Animation entwickeln
+### Session 4B - UI-Verbesserungen und Content-Updates ✅ (11. August 2025)
+- [x] Übersetzungsfortschritts-Anzeige entfernt (zu aufwändig für Datenpflege)
+- [x] Peter-Schöffer-Stiftung Kontaktdaten aktualisiert:
+  - [x] Neue Adresse: Wormser Weg 17, 67574 Osthofen
+  - [x] E-Mail-Adressen auf @schoeffer.org vereinheitlicht
+  - [x] Telefonnummer entfernt (nicht verfügbar)
+- [x] Navigation bereinigt ("Projektpartner" Menüpunkt entfernt)
+- [x] Account-Templates erstellt und integriert
 
-### Session 5 - Technische Architektur planen
-- Datenbankschema-Diagramm erstellen (Hinweis: Multi-Org-Struktur vorbereiten, siehe docs/phase-2-schweiz-vorbereitung.md)
-- Alle API-Endpoints auflisten
-- Ordnerstruktur des Projekts definieren
-- Session-Verwaltung planen
-- Suchfunktionalität konzipieren
-- Alle benötigten Umgebungsvariablen dokumentieren (Hinweis: Variablen statt Hardcoding verwenden)
+### Session 5 - Technische Architektur planen 🚧
+- [ ] Datenbankschema-Diagramm erstellen (Hinweis: Multi-Org-Struktur vorbereiten, siehe docs/phase-2-schweiz-vorbereitung.md)
+- [ ] Alle API-Endpoints auflisten
+- [ ] Ordnerstruktur des Projekts definieren
+- [ ] Session-Verwaltung planen
+- [ ] Suchfunktionalität konzipieren
+- [ ] Alle benötigten Umgebungsvariablen dokumentieren (Hinweis: Variablen statt Hardcoding verwenden)
 
-### Session 6 - Frontend-Mockups finalisieren
-- Detaillierte Mockups mit realem Content erstellen
-- Alle Interaktionen und Hover-States definieren
-- Mobile-Responsiveness planen
-- Style-Guide-Seite erstellen
+### Session 6 - Frontend-Polish und Design-Integration ✅ (11. August 2025)
+- [x] Website-Demos mit vollständigem Design-System erstellt
+- [x] NGÜ-Logo in verschiedenen Größen integriert
+- [x] Bootstrap 5.3 Design-System etabliert
+- [x] Mobile-first Responsive Design umgesetzt
+- [x] UI/UX-Konsistenz über alle Seiten sichergestellt
+- [x] Content-Anpassungen basierend auf finalen Anforderungen
 
 ## Phase 3: Backend-Grundstruktur (Woche 3)
 
