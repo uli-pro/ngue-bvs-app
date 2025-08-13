@@ -592,26 +592,6 @@ def download_spendenbescheinigung():
 # DONATION TYPE SPECIFIC ROUTES
 # ==========================================
 
-@app.route("/spende/einzelperson")
-def spende_einzelperson():
-    """Individual donation page - redirect to checkout"""
-    session['donation_type'] = 'einzelperson'
-    return redirect(url_for("checkout_daten", donation_type='einzelperson'))
-
-@app.route("/spende/gruppe")
-def spende_gruppe():
-    """Group donation page"""
-    return render_template("spende-gruppe.html")
-
-@app.route("/spende/geschenk")
-def spende_geschenk():
-    """Gift donation page"""
-    return render_template("spende-geschenk.html")
-
-# ==========================================
-# GROUP DONATION ROUTES
-# ==========================================
-
 @app.route("/checkout/gruppe/daten", methods=["GET", "POST"])
 def checkout_gruppe_daten():
     """Group donation contact data"""

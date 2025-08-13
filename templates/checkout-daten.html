@@ -12,28 +12,6 @@
             <div class="progress mb-3" style="height: 5px;">
                 <div class="progress-bar bg-primary" role="progressbar" style="width: 70%"></div>
             </div>
-            <nav aria-label="Checkout Fortschritt">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">Vers auswählen</li>
-                    <li class="breadcrumb-item">
-                        {% if donation_type == 'gruppe' %}
-                            Gruppendaten
-                        {% elif donation_type == 'geschenk' %}
-                            Geschenk-Details
-                        {% else %}
-                            Spende-Art
-                        {% endif %}
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">
-                        {% if donation_type == 'gruppe' %}
-                            Kontaktperson
-                        {% else %}
-                            Ihre Daten
-                        {% endif %}
-                    </li>
-                    <li class="breadcrumb-item text-muted">Zahlung</li>
-                </ol>
-            </nav>
         </div>
     </div>
 
@@ -353,17 +331,10 @@ function proceedWithType() {
     // Store in session storage
     sessionStorage.setItem('ngue_donation_type', currentDonationType);
     
-    // Handle different donation types
-    if (currentDonationType === 'gruppe') {
-        window.location.href = '/spende/gruppe';
-    } else if (currentDonationType === 'geschenk') {
-        window.location.href = '/spende/geschenk';
-    } else {
-        // Show contact form for individual donation
-        document.getElementById('donation-type-selection').style.display = 'none';
-        document.getElementById('contact-form').classList.remove('d-none');
-        setupContactForm();
-    }
+    // Show contact form for donation
+    document.getElementById('donation-type-selection').style.display = 'none';
+    document.getElementById('contact-form').classList.remove('d-none');
+    setupContactForm();
 }
 
 function setupContactForm() {
@@ -438,13 +409,7 @@ function setupContactForm() {
 }
 
 function goBack() {
-    if (currentDonationType === 'gruppe') {
-        window.location.href = '/spende/gruppe';
-    } else if (currentDonationType === 'geschenk') {
-        window.location.href = '/spende/geschenk';
-    } else {
-        window.history.back();
-    }
+    window.history.back();
 }
 
 // Prevent data loss warning

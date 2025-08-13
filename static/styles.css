@@ -450,9 +450,6 @@ a:hover {
     color: var(--color-text-secondary) !important;
 }
 
-.bg-light-custom {
-    background-color: var(--color-bg-secondary) !important;
-}
 
 .section-padding {
     padding: var(--spacing-xxl) 0;
