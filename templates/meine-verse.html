@@ -63,8 +63,8 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
-                            <h2 class="mb-0">2</h2>
-                            <p class="mb-0">Bblisches Buch</p>
+                            <h2 class="mb-0">3</h2>
+                            <p class="mb-0">Biblische Bücher</p>
                         </div>
                         <div>
                             <i class="fas fa-book fa-2x opacity-75"></i>
@@ -118,8 +118,8 @@
                             <select class="form-select" id="filter-book">
                                 <option value="">Alle Bücher</option>
                                 <option value="jeremia">Jeremia</option>
-                                <option value="psalm">Psalmen</option>
-                                <option value="sprueche">Sprüche</option>
+                                <option value="zefanja">Zefanja</option>
+                                <option value="jesaja">Jesaja</option>
                             </select>
                         </div>
                         <div class="col-lg-2">
@@ -144,16 +144,16 @@
                     <div class="row" id="verses-container">
                             <!-- Vers 1 -->
                             <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="einzelperson" data-book="jeremia">
-                                <div class="card h-100 border-primary">
-                                    <div class="card-header bg-primary text-white">
+                                <div class="card h-100 border-green">
+                                    <div class="card-header bg-green">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="mb-0">Jeremia 29,11</h5>
-                                            <span class="badge bg-light text-primary">Einzelspende</span>
+                                            <span class="badge bg-light text-green">Einzelspende</span>
                                         </div>
                                     </div>
                                     <div class="card-body">
                                         <blockquote class="mb-3">
-                                            <p class="fst-italic">"Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben."</p>
+                                            <p class="fst-italic">"Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben."</p>
                                         </blockquote>
                                         
                                         <div class="row small text-muted mb-3">
@@ -171,10 +171,10 @@
                                             <button class="btn btn-primary btn-sm" onclick="downloadCertificate('jeremia-29-11')">
                                                 <i class="fas fa-certificate"></i> Zertifikat
                                             </button>
-                                            <button class="btn btn-success btn-sm" onclick="downloadReceipt('jeremia-29-11')">
+                                            <button class="btn btn-sm" style="background-color: var(--color-green); color: white; border-color: var(--color-green);" onclick="downloadReceipt('jeremia-29-11')">
                                                 <i class="fas fa-receipt"></i> Bescheinigung
                                             </button>
-                                            <button class="btn btn-info btn-sm" onclick="shareVerse('jeremia-29-11')">
+                                            <button class="btn btn-sm" style="background-color: var(--color-blue); color: white; border-color: var(--color-blue);" onclick="shareVerse('jeremia-29-11')">
                                                 <i class="fas fa-share"></i> Teilen
                                             </button>
                                         </div>
@@ -183,23 +183,23 @@
                             </div>
 
                             <!-- Vers 2 -->
-                            <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="geschenk" data-book="psalm">
-                                <div class="card h-100 border-info">
-                                    <div class="card-header bg-info text-white">
+                            <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="geschenk" data-book="zefanja">
+                                <div class="card h-100 border-blue">
+                                    <div class="card-header bg-blue">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0">Psalm 23,1</h5>
-                                            <span class="badge bg-light text-info">Geschenk</span>
+                                            <h5 class="mb-0">Zefanja 3,17</h5>
+                                            <span class="badge bg-light text-blue">Geschenk</span>
                                         </div>
                                     </div>
                                     <div class="card-body">
                                         <blockquote class="mb-3">
-                                            <p class="fst-italic">"Der HERR ist mein Hirte; mir wird nichts mangeln."</p>
+                                            <p class="fst-italic">"Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken."</p>
                                         </blockquote>
                                         
-                                        <div class="alert alert-info py-2">
+                                        <div class="alert py-2" style="background-color: var(--color-blue); color: white;">
                                             <small>
                                                 <i class="fas fa-gift me-1"></i>
-                                                <strong>Geschenk für:</strong> Anna Mustermann
+                                                <strong>Geschenk für:</strong> Erika Mustermann
                                             </small>
                                         </div>
                                         
@@ -215,13 +215,13 @@
                                     </div>
                                     <div class="card-footer bg-light">
                                         <div class="btn-group w-100">
-                                            <button class="btn btn-primary btn-sm" onclick="downloadCertificate('psalm-23-1')">
+                                            <button class="btn btn-primary btn-sm" onclick="downloadCertificate('zefanja-3-17')">
                                                 <i class="fas fa-certificate"></i> Zertifikat
                                             </button>
-                                            <button class="btn btn-success btn-sm" onclick="downloadReceipt('psalm-23-1')">
+                                            <button class="btn btn-sm" style="background-color: var(--color-green); color: white; border-color: var(--color-green);" onclick="downloadReceipt('zefanja-3-17')">
                                                 <i class="fas fa-receipt"></i> Bescheinigung
                                             </button>
-                                            <button class="btn btn-secondary btn-sm" onclick="resendGift('psalm-23-1')">
+                                            <button class="btn btn-sm" style="background-color: var(--color-gray); color: white; border-color: var(--color-gray);" onclick="resendGift('zefanja-3-17')">
                                                 <i class="fas fa-envelope"></i> Erneut senden
                                             </button>
                                         </div>
@@ -230,23 +230,23 @@
                             </div>
 
                             <!-- Vers 3 -->
-                            <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="gruppe" data-book="sprueche">
-                                <div class="card h-100 border-success">
-                                    <div class="card-header bg-success text-white">
+                            <div class="col-lg-4 col-md-6 mb-4 verse-card" data-type="gruppe" data-book="jesaja">
+                                <div class="card h-100 border-orange">
+                                    <div class="card-header bg-orange">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0">Sprüche 3,5-6</h5>
-                                            <span class="badge bg-light text-success">Gruppe</span>
+                                            <h5 class="mb-0">Jesaja 43,1</h5>
+                                            <span class="badge bg-light text-orange">Gruppe</span>
                                         </div>
                                     </div>
                                     <div class="card-body">
                                         <blockquote class="mb-3">
-                                            <p class="fst-italic">"Vertraue auf den HERRN von ganzem Herzen und verlaß dich nicht auf deinen Verstand; erkenne ihn auf allen deinen Wegen, so wird er deine Pfade ebnen!"</p>
+                                            <p class="fst-italic">"Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!"</p>
                                         </blockquote>
                                         
-                                        <div class="alert alert-success py-2">
+                                        <div class="alert py-2" style="background-color: var(--color-orange); color: white;">
                                             <small>
                                                 <i class="fas fa-users me-1"></i>
-                                                <strong>Gruppe:</strong> Die Familie Schmidt
+                                                <strong>Gruppe:</strong> Teenkreis Musterdorf
                                             </small>
                                         </div>
                                         
@@ -262,13 +262,13 @@
                                     </div>
                                     <div class="card-footer bg-light">
                                         <div class="btn-group w-100">
-                                            <button class="btn btn-primary btn-sm" onclick="downloadCertificate('sprueche-3-5-6')">
+                                            <button class="btn btn-primary btn-sm" onclick="downloadCertificate('jesaja-43-1')">
                                                 <i class="fas fa-certificate"></i> Zertifikat
                                             </button>
                                             <button class="btn btn-outline-secondary btn-sm" disabled title="Spendenbescheinigung auf Anfrage">
                                                 <i class="fas fa-receipt"></i> Kontakt nötig
                                             </button>
-                                            <button class="btn btn-info btn-sm" onclick="shareVerse('sprueche-3-5-6')">
+                                            <button class="btn btn-sm" style="background-color: var(--color-blue); color: white; border-color: var(--color-blue);" onclick="shareVerse('jesaja-43-1')">
                                                 <i class="fas fa-share"></i> Teilen
                                             </button>
                                         </div>

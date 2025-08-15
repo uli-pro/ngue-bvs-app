@@ -97,6 +97,9 @@ const CheckoutPage = {
         const wantReceiptCheckbox = document.getElementById('wantReceipt');
         const receiptForm = document.getElementById('receipt-form');
         
+        // Setup gift recipient form
+        this.setupGiftForm();
+        
         // Handle receipt checkbox (only for non-group donations)
         if (wantReceiptCheckbox && receiptForm) {
             wantReceiptCheckbox.addEventListener('change', function() {
@@ -150,6 +153,51 @@ const CheckoutPage = {
             // In real app, this would redirect to Stripe or other payment provider
             window.location.href = '/checkout/erfolg';
         }, 2000);
+    },
+
+    /**
+     * Setup gift recipient form functionality
+     */
+    setupGiftForm: function() {
+        const giftDirectCheckbox = document.getElementById('gift_direct_send');
+        const giftDirectFields = document.getElementById('gift_direct_fields');
+        const giftRecipientEmail = document.getElementById('gift_recipient_email');
+        const giftMessageField = document.getElementById('gift_message_field');
+        
+        if (!giftDirectCheckbox || !giftDirectFields || !giftRecipientEmail || !giftMessageField) return;
+        
+        // Toggle direct send fields visibility
+        giftDirectCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                giftDirectFields.style.display = 'block';
+                giftRecipientEmail.required = true;
+            } else {
+                giftDirectFields.style.display = 'none';
+                giftRecipientEmail.required = false;
+                giftRecipientEmail.value = '';
+                // Hide message field when checkbox is unchecked
+                giftMessageField.style.display = 'none';
+                document.getElementById('gift_message').value = '';
+            }
+        });
+
+        // Show personal message field when user starts typing email
+        giftRecipientEmail.addEventListener('input', function() {
+            if (this.value.length > 0 && giftDirectCheckbox.checked) {
+                giftMessageField.style.display = 'block';
+            } else {
+                giftMessageField.style.display = 'none';
+                if (this.value.length === 0) {
+                    document.getElementById('gift_message').value = '';
+                }
+            }
+        });
+
+        // Initialize: Since checkbox is checked by default, show fields
+        if (giftDirectCheckbox.checked) {
+            giftDirectFields.style.display = 'block';
+            giftRecipientEmail.required = true;
+        }
     }
 };
 

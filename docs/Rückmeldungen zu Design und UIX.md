@@ -4,14 +4,10 @@
 
 #### allgemein
 
-- FEATURE: **Mehrere Verse sponsorn ("Warenkorb")**? -> Gut durchdenken, denn das ändert die User-Journey! -> braucht im Back-End eine eigene Tabelle (Purchases oder Kaeufe)
-- KANN ICH DIE **Customer-Journey** vereinfachen? 
-- Breadcrumbs gibt es nur auf der Zahlungs-Route, und sie funktionieren noch nicht überall.
 - Farben müssen vereinheitlicht werden (css) -> Color Picker Complementing / Contrasting (Canva) https://www.canva.com/colors/color-wheel/
 - iPad Pro Größe Breakpoints stimmen nicht (Navbar u.a.)
-- Navbar: Weiteren Vers sponsern -> Weiteren Vers finanzieren
-  Navbar: Über uns: NGÜ - Peter-Schöffer-Stiftung - Transparenz
 - Passwort-Hashing: argon2id
+- Idee: Eine Art Liveticker, wer zuletzt wie viele Verse gesponsert hat.
 
 #### zertifikat
 
@@ -27,28 +23,40 @@
 
 - 
 
+#### /checkout/einzelspende/daten
+
+- Ab dem zweiten Vers in einer Sitzung die Daten nicht mehr eingeben müssen
+- Ebenso nicht, wenn die Person sich einloggt (selbst wenn sie die Daten in dieser Sitzung nicht eingegeben hatte)
+
+*Das gilt für alle drei /daten-Seiten*.
+
+#### /checkout/gruppe/daten
+
+#### /checkout/geschenk/daten
+
 #### /checkout/zusammenfassung
 
-> **mehrere Verse auf einmal auswählen und bezahlen können (aber einzelne Zertifikate beibehalten!)**
+- 
 
-- Grafiken (Karten)
-- Bezahlmöglichkeiten (u.a. Paypal, wenn Stripe das anbietet)
+#### /dashboard
+
+- Button "Alle anzeigen" -> "Verse anzeigen"
 
 #### /datenschutz
 
-- Farben
+- 
+- Text
 
 #### /faq
 
-- 
 - Suche funktioniert noch nicht.
 
 #### /impressum
 
-- Farben
+- 
 - "Vorstand-Vorsitzenden"
 - E-Mail / Link anklickbar machen
-- Registereintrag 
+- Registereintrag
 - Steuerliche Angaben
 - Technische Umsetzung (:-))
 - EU-Streitschlichtung
@@ -68,27 +76,27 @@
 
 #### /meine-verse
 
-- 
+- Karusell zum Display.
 
 #### /register
 
-- Felder mit den Daten aus dem Kauf vorausfüllen.
+- Später: Felder mit den Daten aus dem Kauf vorausfüllen (und andersherum)
+
+#### /spendenart 
+
+- Spende für mich selbst anders formulieren
 
 #### /transparenz
 
 - Den gesamten Text kritisch auf Sachaussagen hin prüfen.
+- Zweiten CTA-Button einfügen
 
 #### /ueber-ngue
 
-- 
+- Zweiten CTA-Button einfügen
 
 #### /ueber-stiftung
 
 - 
 
-
-
-
-
-----
-
+---

@@ -50,17 +50,17 @@ def inject_context():
 def get_demo_verse(verse_id):
     """Get demo verse data for the given ID."""
     verses = {
+        'jesaja-43-1': {
+            'reference': 'Jesaja 43,1',
+            'text': 'Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!'
+        },
         'jeremia-29-11': {
             'reference': 'Jeremia 29,11',
-            'text': 'Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.'
+            'text': 'Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben.'
         },
-        'psalm-23-1': {
-            'reference': 'Psalm 23,1',
-            'text': 'Der HERR ist mein Hirte; mir wird nichts mangeln.'
-        },
-        'sprueche-3-5-6': {
-            'reference': 'Sprüche 3,5-6',
-            'text': 'Vertraue auf den HERRN von ganzem Herzen und verlaß dich nicht auf deinen Verstand; erkenne ihn auf allen deinen Wegen, so wird er deine Pfade ebnen!'
+        'zefanja-3-17': {
+            'reference': 'Zefanja 3,17',
+            'text': 'Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken.'
         }
     }
     return verses.get(verse_id, verses['jeremia-29-11'])
@@ -184,6 +184,11 @@ def ueber_stiftung():
     """About Peter-Schöffer-Stiftung page"""
     return render_template("ueber-stiftung.html")
 
+@app.route("/ueber-verlage")
+def ueber_verlage():
+    """About the publishing houses page"""
+    return render_template("ueber-verlage.html")
+
 @app.route("/projektpartner")
 def projektpartner():
     """Project partners page"""
@@ -199,27 +204,28 @@ def faq():
 # VERSE SEARCH ROUTES
 # ==========================================
 
-@app.route("/vers-suche/referenz")
-def vers_suche_referenz():
+@app.route("/vers-auswaehlen/referenz")
+def vers_auswaehlen_referenz():
     """Reference search page"""
-    return render_template("vers-suche-referenz.html")
+    return render_template("vers-auswaehlen-referenz.html")
 
-@app.route("/vers-suche/keyword")
-def vers_suche_keyword():
+@app.route("/vers-auswaehlen/keyword")
+def vers_auswaehlen_keyword():
     """Keyword search page"""
-    return render_template("vers-suche-keyword.html")
+    return render_template("vers-auswaehlen-keyword.html")
 
 # ==========================================
 # VERSE CONFIRMATION ROUTES
 # ==========================================
 
-@app.route("/vers/<verse_id>/bestaetigung")
-def vers_bestaetigung(verse_id):
-    """Verse confirmation page"""
+@app.route("/vers/<verse_id>/spendenart")
+def vers_spendenart(verse_id):
+    """Donation type selection page"""
     verse_data = get_demo_verse(verse_id)
-    return render_template("vers-bestaetigung.html", 
+    return render_template("vers-spendenart.html", 
                          verse_reference=verse_data['reference'],
-                         verse_text=verse_data['text'])
+                         verse_text=verse_data['text'],
+                         verse_id=verse_id)
 
 # ==========================================
 # CHECKOUT ROUTES

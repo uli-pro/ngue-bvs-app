@@ -7,43 +7,35 @@
         
     /vers-auswaehlen
     	--> /vers-suche/referenz
-    	--> /bestaetigung
+    	--> /spendenart
     
     	/vers-auswaehlen
-    	-->/bestaetigung
+    	-->/spendenart
     
     	/vers-auswaehlen
     	--> /vers-suche/keyword
-    	--> /bestaetigung
+    	--> /spendenart
     
-		/bestaetigung
+		/spendenart
     	--> /checkout/gruppe/daten
     	--> /checkout-zusammenfassung
     
-			/bestaetigung
+			/spendenart
 		  --> /checkout/einzelperson/daten
     	--> /checkout-zusammenfassung 
     	
-    	/bestaetigung
+    	/spendenart
     	--> /checkout/geschenk/daten
     	--> /checkout-zusammenfassung
     
-    /checkout/gruppe/daten --> /vers-auswaehlen
-    /checkout/einzelperson/daten --> /vers-auswaehlen
-    /checkout/geschenk/daten --> /vers-auswaehlen
+   
+    /checkout-zusammenfassung
+    	--> /vers-auswaehlen
     
     /checkout-zusammenfassung
-    --> STRIPE
-    --> /checkout-erfolg
-    --> /register
-    --> /registration-success
-    --> /login
-    --> /dashboard
-    
-    --> /meine-verse
-    --> /dashboard
-    /dashboard --> /profil
-    /profil --> /dashboard
-
+   	 --> STRIPE
+    	--> /checkout-erfolg
+   	 --> /register
+   	 
 ```
 

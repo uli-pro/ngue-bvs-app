@@ -112,7 +112,7 @@
                             <i class="fas fa-info-circle me-2"></i>
                             Referenztext zur Orientierung. Wird in der NGÜ neu übersetzt.
                         </div>
-                        <a href="/vers/jeremia-29-11/bestaetigung" class="btn btn-primary btn-lg" id="selectVerseBtn">DIESEN VERS WÄHLEN</a>
+                        <a href="/vers/jeremia-29-11/spendenart" class="btn btn-primary btn-lg" id="selectVerseBtn">DIESEN VERS WÄHLEN</a>
                     </div>
                 </div>
             </div>
@@ -145,9 +145,31 @@
         const verse = document.getElementById('verse').value;
         
         if (book && chapter && verse) {
-            // Show mock result
-            document.getElementById('resultReference').textContent = 
-                document.getElementById('book').selectedOptions[0].text + ' ' + chapter + ',' + verse;
+            // Demo: Always show one of the three available verses
+            const demoVerses = [
+                {
+                    id: 'jesaja-43-1',
+                    reference: 'Jesaja 43,1',
+                    text: 'Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!'
+                },
+                {
+                    id: 'jeremia-29-11',
+                    reference: 'Jeremia 29,11',
+                    text: 'Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben.'
+                },
+                {
+                    id: 'zefanja-3-17',
+                    reference: 'Zefanja 3,17',
+                    text: 'Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken.'
+                }
+            ];
+            
+            // Select one of the demo verses randomly
+            const selectedVerse = demoVerses[Math.floor(Math.random() * demoVerses.length)];
+            
+            document.getElementById('resultReference').textContent = selectedVerse.reference;
+            document.getElementById('resultText').textContent = '"' + selectedVerse.text + '"';
+            document.getElementById('selectVerseBtn').href = '/vers/' + selectedVerse.id + '/spendenart';
             document.getElementById('searchResult').style.display = 'block';
             document.getElementById('searchResult').scrollIntoView({behavior: 'smooth'});
         }

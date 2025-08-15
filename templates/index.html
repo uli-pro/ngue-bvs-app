@@ -76,82 +76,127 @@
 <!-- Transparenz Section -->
 <section class="bg-light-custom section-padding">
     <div class="container">
-        <div class="row">
-            <div class="col-lg-6 mb-4">
+        <div class="text-center mb-5">
+            <h2>Projektstand und Transparenz</h2>
+            <p class="lead">Verstehen Sie, wie Ihre Spende wirkt und wo das Projekt steht</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Container 1: Gesamtfortschritt der Bibelübersetzung -->
+            <div class="col-lg-4 mb-4">
                 <div class="card h-100">
                     <div class="card-header">
-                        <h3>So entsteht Ihr Bibelvers</h3>
+                        <h4>Übersetzungsfortschrit NGÜ-Bibel</h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-4">
+                            <canvas id="gesamtfortschrittChart" width="250" height="250" style="max-height: 250px;"></canvas>
+                        </div>
+                        
+                        <div class="row small text-start">
+                            <div class="col-12 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2 bg-green" style="width: 12px; height: 12px; border-radius: 50%;"></div>
+                                    <span>Übersetzt: 20.097 Verse (64,5%)</span>
+                                </div>
+                            </div>
+                            <div class="col-12 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2 bg-ngu-red" style="width: 12px; height: 12px; border-radius: 50%;"></div>
+                                    <span>Noch zu übersetzen: 11.047 Verse</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <small class="text-muted">
+                                <strong>NT:</strong> komplett übersetzt (7.958 Verse)<br>
+                                <strong>AT:</strong> 52,4% übersetzt (12.139 von 23.186 Versen)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Container 2: Sponsoring-Fortschritt -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4>Vers-Sponsoring Fortschritt</h4>
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
-                            <canvas id="kostenChart" width="300" height="300" style="max-height: 300px;"></canvas>
+                            <h2 class="text-primary mb-3">3,2% gesponsert</h2>
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 3.2%" aria-valuenow="3.2" aria-valuemin="0" aria-valuemax="100">3,2%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center mb-4">
+                            <div class="col-6">
+                                <h3 class="text-primary">354</h3>
+                                <p class="mb-0">Verse gesponsert</p>
+                            </div>
+                            <div class="col-6">
+                                <h3 class="text-secondary">10.693</h3>
+                                <p class="mb-0">Verse verfügbar</p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p class="small text-muted mb-3">
+                                Jeder gesponserte Vers bringt uns näher ans Ziel
+                            </p>
+                            <a href="/vers-auswaehlen" class="btn btn-primary btn-sm">
+                                JETZT VERS SPONSERN
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Container 3: Kostenaufschlüsselung -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4>So kommen die 100€ pro Vers zustande</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <canvas id="kostenChart" width="250" height="250" style="max-height: 250px;"></canvas>
                         </div>
                         
                         <!-- Legend -->
                         <div class="row text-center small">
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
-                                    <div class="me-2" style="width: 15px; height: 15px; background-color: #dd3333; border-radius: 2px;"></div>
-                                    <span>Erstübersetzung (50%)</span>
+                                    <div class="me-2 bg-green" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+                                    <span>Erstübersetzung (50€)</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
-                                    <div class="me-2" style="width: 15px; height: 15px; background-color: #ff6b6b; border-radius: 2px;"></div>
-                                    <span>Revision (35%)</span>
+                                    <div class="me-2 bg-red" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+                                    <span>Revision (30€)</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
-                                    <div class="me-2" style="width: 15px; height: 15px; background-color: #ffa8a8; border-radius: 2px;"></div>
-                                    <span>Supervisor (10%)</span>
+                                    <div class="me-2 bg-orange" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+                                    <span>Supervision (10€)</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
-                                    <div class="me-2" style="width: 15px; height: 15px; background-color: #ffd1d1; border-radius: 2px;"></div>
-                                    <span>Qualitätssicherung (5%)</span>
+                                    <div class="me-2 bg-blue" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+                                    <span>Qualitätssicherung (10€)</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mt-4 text-center">
-                            <a href="/transparenz" class="text-primary">Vollständige Kostenaufstellung →</a>
+                            <a href="/transparenz" class="text-primary small">Vollständige Kostenaufstellung →</a>
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h3>Aktueller Projektstand</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-4">
-                            <h2 class="text-primary mb-3">3% finanziert</h2>
-                            <div class="progress" style="height: 30px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: 3%" aria-valuenow="3" aria-valuemin="0" aria-valuemax="100">3%</div>
-                            </div>
-                        </div>
-                        
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <h3 class="text-primary">357</h3>
-                                <p>Verse gesponsert</p>
-                            </div>
-                            <div class="col-6">
-                                <h3 class="text-secondary">10.641</h3>
-                                <p>Verse verfügbar</p>
-                            </div>
-                        </div>
-                        
-                        <hr>
-                        
-                        <p class="text-center mb-0">
-                            <strong>Noch 10.641 Verse</strong> warten darauf,<br>
-                            für die nächsten Jahrzehnte übersetzt zu werden
-                        </p>
                     </div>
                 </div>
             </div>
@@ -193,7 +238,7 @@
                             Wie funktioniert das Vers-Sponsoring?
                         </h5>
                         <p class="card-text">
-                            Sie wählen einen der noch zu übersetzenden 11.000 Verse aus dem Alten Testament aus und sponsern ihn mit einer Spende von 100€. Nach der Zahlung erhalten Sie automatisch ein personalisiertes Zertifikat sowie eine offizielle Spendenbescheinigung per E-Mail.
+                            Sie wählen einen der noch zu übersetzenden 11.047 Verse aus dem Alten Testament aus und sponsern ihn mit einer Spende von 100€. Nach der Zahlung erhalten Sie automatisch ein personalisiertes Zertifikat sowie eine offizielle Spendenbescheinigung per E-Mail.
                         </p>
                     </div>
                 </div>
@@ -271,6 +316,63 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // CSS-Farben lesen
+    const rootStyles = getComputedStyle(document.documentElement);
+    const colorGreen = rootStyles.getPropertyValue('--color-green').trim();
+    const colorNguRed = rootStyles.getPropertyValue('--color-ngu-red').trim();
+    const colorOrange = rootStyles.getPropertyValue('--color-orange').trim();
+    const colorBlue = rootStyles.getPropertyValue('--color-blue').trim();
+    
+    // Gesamtfortschritt-Kreisdiagramm
+    const gesamtfortschrittCtx = document.getElementById('gesamtfortschrittChart');
+    const gesamtfortschrittChart = new Chart(gesamtfortschrittCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                'Bereits übersetzt',
+                'Noch zu übersetzen'
+            ],
+            datasets: [{
+                data: [64.5, 35.5],
+                backgroundColor: [
+                    colorGreen,   // Green for translated
+                    colorNguRed   // NGÜ-Red for remaining
+                ],
+                borderWidth: 2,
+                borderColor: '#ffffff',
+                hoverOffset: 8,
+                cutout: '50%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: colorNguRed,
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            return label + ': ' + value + '%';
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+    
     // Kosten-Tortendiagramm
     const ctx = document.getElementById('kostenChart');
     const kostenChart = new Chart(ctx, {
@@ -283,12 +385,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Qualitätssicherung & Finalisierung'
             ],
             datasets: [{
-                data: [50, 35, 10, 5],
+                data: [50, 30, 10, 10],
                 backgroundColor: [
-                    '#dd3333',  // NGÜ primary red
-                    '#ff6b6b',  // Lighter red
-                    '#ffa8a8',  // Even lighter red
-                    '#ffd1d1'   // Lightest red
+                    colorGreen,   // Green for Erstübersetzung
+                    colorNguRed,  // NGÜ-Primary Red for Revision
+                    colorOrange,  // Orange for Supervision
+                    colorBlue     // Blue for Qualitätssicherung
                 ],
                 borderWidth: 2,
                 borderColor: '#ffffff',
@@ -307,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
-                    borderColor: '#dd3333',
+                    borderColor: colorNguRed,
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {
@@ -328,18 +430,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Chart visibility animation
-    const chartCard = document.querySelector('#kostenChart').closest('.card');
+    // Chart visibility animations
+    const gesamtfortschrittCard = document.querySelector('#gesamtfortschrittChart').closest('.card');
+    const kostenCard = document.querySelector('#kostenChart').closest('.card');
+    
     const chartObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                kostenChart.update('active');
+                const chart = entry.target.querySelector('canvas');
+                if (chart.id === 'gesamtfortschrittChart') {
+                    gesamtfortschrittChart.update('active');
+                } else if (chart.id === 'kostenChart') {
+                    kostenChart.update('active');
+                }
                 chartObserver.unobserve(entry.target);
             }
         });
     }, { threshold: 0.3 });
     
-    chartObserver.observe(chartCard);
+    chartObserver.observe(gesamtfortschrittCard);
+    chartObserver.observe(kostenCard);
 });
 
 // Smooth scroll for anchor links

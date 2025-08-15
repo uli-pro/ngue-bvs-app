@@ -17,72 +17,9 @@
 
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <!-- Step 1: Donation Type Selection (only if not already selected) -->
-            {% if not donation_type %}
-            <div class="card mb-4" id="donation-type-selection">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-hand-holding-heart text-primary me-2"></i>
-                        Für wen möchten Sie diesen Vers sponsern?
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="donation-type-card" data-type="einzelperson">
-                                <input class="form-check-input visually-hidden" type="radio" name="donation_type" id="type_einzelperson" value="einzelperson" checked>
-                                <label class="card h-100 text-center donation-type-label" for="type_einzelperson">
-                                    <div class="card-body">
-                                        <i class="fas fa-user fa-3x text-primary mb-3"></i>
-                                        <h5>Als Einzelperson</h5>
-                                        <p class="text-muted mb-0">(für mich selbst)</p>
-                                        <small class="text-muted">Sie erhalten das Zertifikat und die Spendenbescheinigung</small>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="donation-type-card" data-type="gruppe">
-                                <input class="form-check-input visually-hidden" type="radio" name="donation_type" id="type_gruppe" value="gruppe">
-                                <label class="card h-100 text-center donation-type-label" for="type_gruppe">
-                                    <div class="card-body">
-                                        <i class="fas fa-users fa-3x text-success mb-3"></i>
-                                        <h5>Als Gruppe</h5>
-                                        <p class="text-muted mb-0">(Familie, Verein, etc.)</p>
-                                        <small class="text-muted">Das Zertifikat wird auf Ihre Gruppe ausgestellt</small>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="donation-type-card" data-type="geschenk">
-                                <input class="form-check-input visually-hidden" type="radio" name="donation_type" id="type_geschenk" value="geschenk">
-                                <label class="card h-100 text-center donation-type-label" for="type_geschenk">
-                                    <div class="card-body">
-                                        <i class="fas fa-gift fa-3x text-info mb-3"></i>
-                                        <h5>Als Geschenk</h5>
-                                        <p class="text-muted mb-0">(für jemand anderen)</p>
-                                        <small class="text-muted">Der Empfänger erhält das Zertifikat, Sie die Spendenbescheinigung</small>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="text-center mt-4">
-                        <button type="button" class="btn btn-primary btn-lg" onclick="proceedWithType()" id="proceed-type-btn">
-                            Weiter mit ausgewählter Option
-                            <i class="fas fa-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
 
-            <!-- Step 2: Contact Data Form -->
-            <div class="card{% if not donation_type %} d-none{% endif %}" id="contact-form">
+            <!-- Contact Data Form -->
+            <div class="card" id="contact-form">
                 <div class="card-header">
                     <h3 class="mb-0">
                         <i class="fas fa-user-edit text-primary me-2"></i>
@@ -130,7 +67,7 @@
                         <!-- Spendenbescheinigung Section -->
                         {% if donation_type != 'gruppe' %}
                         <div class="card mb-4">
-                            <div class="card-header bg-primary text-white">
+                            <div class="card-header {% if donation_type == 'einzelperson' %}bg-green{% elif donation_type == 'geschenk' %}bg-blue{% else %}bg-primary-header{% endif %}">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Spendenbescheinigung</h5>
                                     <div class="form-check">
@@ -214,6 +151,48 @@
                         </div>
                         {% endif %}
 
+                        <!-- Gift Recipient Section (only for geschenk type) -->
+                        {% if donation_type == 'geschenk' %}
+                        <div class="card mb-4">
+                            <div class="card-header bg-blue">
+                                <h5 class="mb-0">Geschenk-Empfänger</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="gift_recipient_name" class="form-label">Name des Empfängers *</label>
+                                        <input type="text" class="form-control" id="gift_recipient_name" name="gift_recipient_name" required>
+                                        <div class="invalid-feedback">Bitte geben Sie den Namen des Empfängers ein.</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="gift_direct_send" name="gift_direct_send" checked>
+                                    <label class="form-check-label" for="gift_direct_send">
+                                        <strong>Zertifikat direkt an Empfänger senden</strong>
+                                        <div class="text-muted small">Andernfalls erhalten Sie das Zertifikat zur persönlichen Übergabe</div>
+                                    </label>
+                                </div>
+                                
+                                <div id="gift_direct_fields">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="gift_recipient_email" class="form-label">E-Mail des Empfängers *</label>
+                                            <input type="email" class="form-control" id="gift_recipient_email" name="gift_recipient_email">
+                                            <div class="invalid-feedback">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3" id="gift_message_field" style="display: none;">
+                                        <label for="gift_message" class="form-label">Persönliche Nachricht (optional)</label>
+                                        <textarea class="form-control" id="gift_message" name="gift_message" rows="3" placeholder="Eine persönliche Nachricht für den Empfänger..." maxlength="500"></textarea>
+                                        <div class="form-text">Maximal 500 Zeichen</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <!-- Additional Options -->
                         <div class="card mb-4">
                             <div class="card-header bg-light">
@@ -255,33 +234,6 @@
     </div>
 </div>
 
-<style>
-.donation-type-card {
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.donation-type-label {
-    border: 2px solid #dee2e6;
-    transition: all 0.3s ease;
-}
-
-.donation-type-label:hover {
-    border-color: #007bff;
-    box-shadow: 0 4px 8px rgba(0,123,255,0.15);
-    transform: translateY(-2px);
-}
-
-input[name="donation_type"]:checked + .donation-type-label {
-    border-color: #007bff;
-    background-color: rgba(0,123,255,0.1);
-    box-shadow: 0 4px 12px rgba(0,123,255,0.2);
-}
-
-input[name="donation_type"]:checked + .donation-type-label i {
-    color: #007bff !important;
-}
-</style>
 {% endblock %}
 
 {% block scripts %}
