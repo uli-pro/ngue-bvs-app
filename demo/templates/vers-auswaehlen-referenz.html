@@ -1,0 +1,208 @@
+{% extends "layout.html" %}
+
+{% block title %}Nach Bibelstelle suchen{% endblock %}
+
+{% block main %}
+
+
+<!-- Header -->
+<section class="hero-section py-5">
+    <div class="container">
+        <h1 class="text-center mb-3">Suchen Sie nach einer bestimmten Bibelstelle</h1>
+        <p class="lead text-center text-secondary">Wählen Sie Buch, Kapitel und Vers aus den Dropdown-Menüs</p>
+    </div>
+</section>
+
+<!-- Search Form -->
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <form id="referenceSearchForm">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="book" class="form-label">Buch wählen</label>
+                                    <select class="form-select" id="book" name="book" required>
+                                        <option value="">Buch wählen...</option>
+                                        <option value="1mose">1. Mose</option>
+                                        <option value="2mose">2. Mose</option>
+                                        <option value="3mose">3. Mose</option>
+                                        <option value="4mose">4. Mose</option>
+                                        <option value="5mose">5. Mose</option>
+                                        <option value="josua">Josua</option>
+                                        <option value="richter">Richter</option>
+                                        <option value="rut">Rut</option>
+                                        <option value="1samuel">1. Samuel</option>
+                                        <option value="2samuel">2. Samuel</option>
+                                        <option value="1koenige">1. Könige</option>
+                                        <option value="2koenige">2. Könige</option>
+                                        <option value="1chronik">1. Chronik</option>
+                                        <option value="2chronik">2. Chronik</option>
+                                        <option value="esra">Esra</option>
+                                        <option value="nehemia">Nehemia</option>
+                                        <option value="ester">Ester</option>
+                                        <option value="hiob">Hiob</option>
+                                        <option value="psalm">Psalm</option>
+                                        <option value="sprueche">Sprüche</option>
+                                        <option value="prediger">Prediger</option>
+                                        <option value="hohelied">Hohelied</option>
+                                        <option value="jesaja">Jesaja</option>
+                                        <option value="jeremia">Jeremia</option>
+                                        <option value="klagelieder">Klagelieder</option>
+                                        <option value="hesekiel">Hesekiel</option>
+                                        <option value="daniel">Daniel</option>
+                                        <option value="hosea">Hosea</option>
+                                        <option value="joel">Joel</option>
+                                        <option value="amos">Amos</option>
+                                        <option value="obadja">Obadja</option>
+                                        <option value="jona">Jona</option>
+                                        <option value="micha">Micha</option>
+                                        <option value="nahum">Nahum</option>
+                                        <option value="habakuk">Habakuk</option>
+                                        <option value="zefanja">Zefanja</option>
+                                        <option value="haggai">Haggai</option>
+                                        <option value="sacharja">Sacharja</option>
+                                        <option value="maleachi">Maleachi</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="chapter" class="form-label">Kapitel</label>
+                                    <select class="form-select" id="chapter" name="chapter" required disabled>
+                                        <option value="">Kapitel wählen...</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="verse" class="form-label">Vers</label>
+                                    <select class="form-select" id="verse" name="verse" required disabled>
+                                        <option value="">Vers wählen...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">VERS SUCHEN</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Result -->
+<section class="section-padding" id="searchResult" style="display: none;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-4 text-center">
+                        <h4 class="text-primary mb-3" id="resultReference">1. Mose 1,1</h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-3" id="resultText">"Am Anfang schuf Gott Himmel und Erde."</p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Referenztext zur Orientierung. Wird in der NGÜ neu übersetzt.
+                        </div>
+                        <a href="/vers/jeremia-29-11/spendenart" class="btn btn-primary btn-lg" id="selectVerseBtn">DIESEN VERS WÄHLEN</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Navigation -->
+<section class="py-3">
+    <div class="container">
+        <div class="text-center">
+            <a href="/vers-auswaehlen" class="btn btn-link">
+                <i class="fas fa-arrow-left me-2"></i>
+                Zurück zur Vers-Auswahl
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Demo functionality for reference search
+    document.getElementById('referenceSearchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const book = document.getElementById('book').value;
+        const chapter = document.getElementById('chapter').value;
+        const verse = document.getElementById('verse').value;
+        
+        if (book && chapter && verse) {
+            // Demo: Always show one of the three available verses
+            const demoVerses = [
+                {
+                    id: 'jesaja-43-1',
+                    reference: 'Jesaja 43,1',
+                    text: 'Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!'
+                },
+                {
+                    id: 'jeremia-29-11',
+                    reference: 'Jeremia 29,11',
+                    text: 'Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben.'
+                },
+                {
+                    id: 'zefanja-3-17',
+                    reference: 'Zefanja 3,17',
+                    text: 'Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken.'
+                }
+            ];
+            
+            // Select one of the demo verses randomly
+            const selectedVerse = demoVerses[Math.floor(Math.random() * demoVerses.length)];
+            
+            document.getElementById('resultReference').textContent = selectedVerse.reference;
+            document.getElementById('resultText').textContent = '"' + selectedVerse.text + '"';
+            document.getElementById('selectVerseBtn').href = '/vers/' + selectedVerse.id + '/spendenart';
+            document.getElementById('searchResult').style.display = 'block';
+            document.getElementById('searchResult').scrollIntoView({behavior: 'smooth'});
+        }
+    });
+    
+    // Demo: Enable chapter dropdown when book is selected
+    document.getElementById('book').addEventListener('change', function() {
+        const chapterSelect = document.getElementById('chapter');
+        chapterSelect.disabled = false;
+        chapterSelect.innerHTML = '<option value="">Kapitel wählen...</option>';
+        
+        // Add demo chapters
+        for (let i = 1; i <= 50; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            chapterSelect.appendChild(option);
+        }
+    });
+    
+    // Demo: Enable verse dropdown when chapter is selected
+    document.getElementById('chapter').addEventListener('change', function() {
+        const verseSelect = document.getElementById('verse');
+        verseSelect.disabled = false;
+        verseSelect.innerHTML = '<option value="">Vers wählen...</option>';
+        
+        // Add demo verses
+        for (let i = 1; i <= 31; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            verseSelect.appendChild(option);
+        }
+    });
+</script>
+{% endblock %}

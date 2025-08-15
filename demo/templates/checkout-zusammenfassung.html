@@ -1,0 +1,566 @@
+{% extends "layout.html" %}
+
+{% block title %}Spendenkorb{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 90%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donation Cart Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-hand-holding-heart text-primary me-3"></i>Ihr Spendenkorb</h1>
+            <p class="lead text-muted">Überprüfen Sie Ihre ausgewählten Verse vor der Zahlung</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-lg-8 mb-4">
+            <!-- Cart Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-list text-primary me-2"></i>
+                        Ausgewählte Verse
+                    </h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40%;">Vers</th>
+                                    <th style="width: 30%;">Spendentyp</th>
+                                    <th style="width: 15%;" class="text-end">Betrag</th>
+                                    <th style="width: 15%;" class="text-center">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Demo Item 1: Jeremia 29,11 - Einzelspende -->
+                                <tr id="cart-item-1">
+                                    <td>
+                                        <div class="d-flex align-items-start">
+                                            <div class="verse-preview flex-grow-1 verse-clickable" onclick="showVerseModal('jeremia-29-11')" data-verse-id="jeremia-29-11">
+                                                <h6 class="mb-1 text-primary">Jeremia 29,11</h6>
+                                                <p class="mb-0 text-muted small">"Denn ich weiß, was für Gedanken ich über euch habe..."</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-green">Einzelspende</span>
+                                        <small class="d-block text-muted mt-1">Für mich selbst</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>100,00 €</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-danger btn-sm" onclick="removeCartItem(1)" title="Vers entfernen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Demo Item 2: Zefanja 3,17 - Geschenk -->
+                                <tr id="cart-item-2">
+                                    <td>
+                                        <div class="d-flex align-items-start">
+                                            <div class="verse-preview flex-grow-1 verse-clickable" onclick="showVerseModal('zefanja-3-17')" data-verse-id="zefanja-3-17">
+                                                <h6 class="mb-1 text-primary">Zefanja 3,17</h6>
+                                                <p class="mb-0 text-muted small">"Der HERR, dein Gott, ist in deiner Mitte..."</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-blue">Geschenk</span>
+                                        <small class="d-block text-muted mt-1">Für Erika Mustermann</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>100,00 €</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-danger btn-sm" onclick="removeCartItem(2)" title="Vers entfernen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Demo Item 3: Jesaja 43,1 - Gruppenspende -->
+                                <tr id="cart-item-3">
+                                    <td>
+                                        <div class="d-flex align-items-start">
+                                            <div class="verse-preview flex-grow-1 verse-clickable" onclick="showVerseModal('jesaja-43-1')" data-verse-id="jesaja-43-1">
+                                                <h6 class="mb-1 text-primary">Jesaja 43,1</h6>
+                                                <p class="mb-0 text-muted small">"Und nun spricht der HERR, der dich geschaffen hat..."</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-orange">Gruppe</span>
+                                        <small class="d-block text-muted mt-1">Teenkreis Musterdorf</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>100,00 €</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-danger btn-sm" onclick="removeCartItem(3)" title="Vers entfernen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="/vers-auswaehlen" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-2"></i>Weiteren Vers hinzufügen
+                            </a>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="mb-0">Gesamtbetrag: <strong id="cart-total">300,00 €</strong></h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <!-- Payment Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator text-primary me-2"></i>
+                        Bestellübersicht
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>3 Verse × 100,00 €</span>
+                        <span>300,00 €</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Bearbeitungsgebühr</span>
+                        <span>0,00 €</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Versandkosten</span>
+                        <span>0,00 €</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Gesamtbetrag:</strong>
+                        <strong class="text-primary">300,00 €</strong>
+                    </div>
+                    
+                    <div class="d-grid mb-3">
+                        <button class="btn btn-primary btn-lg" onclick="processPayment()">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Sicher spenden - 300,00 €
+                        </button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <small class="text-muted mb-2 d-block">
+                            <i class="fas fa-lock me-1"></i>
+                            Sichere Zahlung über Stripe
+                        </small>
+                        <div class="payment-icons">
+                            <img src="/static/visa.svg" alt="Visa" class="payment-icon">
+                            <img src="/static/mastercard.svg" alt="Mastercard" class="payment-icon">
+                            <img src="/static/paypal.svg" alt="PayPal" class="payment-icon">
+                            <img src="/static/giropay.svg" alt="Giropay" class="payment-icon">
+                            <img src="/static/sepa.svg" alt="SEPA Lastschrift" class="payment-icon">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What happens next -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-arrow-right text-primary me-2"></i>
+                        Nach der Zahlung
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="step-item mb-3">
+                        <div class="d-flex">
+                            <div class="step-number me-3">1</div>
+                            <div>
+                                <h6 class="mb-1">Sofortige Bestätigung</h6>
+                                <small class="text-muted">Sie erhalten eine E-Mail-Bestätigung Ihrer Spende</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item mb-3">
+                        <div class="d-flex">
+                            <div class="step-number me-3">2</div>
+                            <div>
+                                <h6 class="mb-1">Automatischer Versand</h6>
+                                <small class="text-muted">Zertifikate und Spendenbescheinigungen werden automatisch versendet</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <div class="d-flex">
+                            <div class="step-number me-3">3</div>
+                            <div>
+                                <h6 class="mb-1">Übersetzung beginnt</h6>
+                                <small class="text-muted">Ihre gesponserten Verse werden in die Übersetzung aufgenommen</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verse Modal -->
+<div id="verseModal" class="verse-modal" onclick="closeVerseModal()">
+    <div class="verse-modal-content" onclick="event.stopPropagation()">
+        <div class="verse-modal-header">
+            <h4 id="modalVerseReference">Jeremia 29,11</h4>
+            <button class="verse-modal-close" onclick="closeVerseModal()">&times;</button>
+        </div>
+        <div class="verse-modal-body">
+            <blockquote id="modalVerseText">
+                "Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben."
+            </blockquote>
+            <footer class="verse-modal-footer">
+                <cite>Schlachter 1951 (zur Orientierung)</cite>
+                <small class="text-muted d-block mt-2">Klicken Sie außerhalb des Fensters oder auf × um zu schließen</small>
+            </footer>
+        </div>
+    </div>
+</div>
+
+<style>
+.verse-preview {
+    min-width: 0; /* Allow text truncation */
+}
+
+.step-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9em;
+    flex-shrink: 0;
+}
+
+.step-item {
+    position: relative;
+}
+
+.step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 35px;
+    bottom: -15px;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.05);
+}
+
+.cart-item-removed {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.verse-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.verse-clickable:hover {
+    background-color: rgba(0,123,255,0.1);
+}
+
+.verse-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.verse-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 600px;
+    animation: slideIn 0.3s ease;
+}
+
+.verse-modal-header {
+    padding: 20px 25px 10px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.verse-modal-header h4 {
+    margin: 0;
+    color: #007bff;
+    flex-grow: 1;
+}
+
+.verse-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.verse-modal-close:hover {
+    color: #000;
+}
+
+.verse-modal-body {
+    padding: 20px 25px 25px;
+}
+
+.verse-modal-body blockquote {
+    font-size: 1.1em;
+    line-height: 1.6;
+    font-style: italic;
+    color: #333;
+    margin-bottom: 15px;
+    padding: 0;
+    border: none;
+}
+
+.verse-modal-footer {
+    text-align: center;
+    color: #6c757d;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.payment-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.payment-icon {
+    height: 18px;
+    width: auto;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.payment-icon:hover {
+    opacity: 1;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cartTotal = 300.00;
+let cartItemCount = 3;
+
+function removeCartItem(itemId) {
+    const row = document.getElementById(`cart-item-${itemId}`);
+    const badge = row.querySelector('.badge').textContent;
+    
+    if (confirm(`Möchten Sie diesen ${badge.toLowerCase()} wirklich aus dem Warenkorb entfernen?`)) {
+        // Remove item with animation
+        row.classList.add('cart-item-removed');
+        
+        setTimeout(() => {
+            row.remove();
+            cartItemCount--;
+            cartTotal -= 100.00;
+            
+            // Update total
+            document.getElementById('cart-total').textContent = cartTotal.toFixed(2).replace('.', ',') + ' €';
+            
+            // Update payment button
+            const payButton = document.querySelector('.btn-primary.btn-lg');
+            if (payButton) {
+                payButton.innerHTML = `<i class="fas fa-credit-card me-2"></i>Sicher spenden - ${cartTotal.toFixed(2).replace('.', ',')} €`;
+            }
+            
+            // Update summary
+            const summaryLine = document.querySelector('.card-body .d-flex span:first-child');
+            if (summaryLine) {
+                summaryLine.textContent = `${cartItemCount} Verse × 100,00 €`;
+            }
+            const summaryAmount = document.querySelector('.card-body .d-flex span:last-child');
+            if (summaryAmount) {
+                summaryAmount.textContent = cartTotal.toFixed(2).replace('.', ',') + ' €';
+            }
+            const totalAmounts = document.querySelectorAll('.text-primary strong');
+            totalAmounts.forEach(element => {
+                if (element.textContent.includes('€')) {
+                    element.textContent = cartTotal.toFixed(2).replace('.', ',') + ' €';
+                }
+            });
+            
+            // Show message if cart is empty
+            if (cartItemCount === 0) {
+                showEmptyCart();
+            }
+            
+            // Show success message
+            if (typeof ToastManager !== 'undefined') {
+                ToastManager.success('Vers wurde aus dem Spendenkorb entfernt.');
+            }
+        }, 300);
+    }
+}
+
+function showEmptyCart() {
+    const tableBody = document.querySelector('tbody');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="4" class="text-center py-5">
+                <i class="fas fa-hand-holding-heart fa-3x text-muted mb-3"></i>
+                <h5>Ihr Spendenkorb ist leer</h5>
+                <p class="text-muted mb-4">Wählen Sie Verse aus, um eine Spende zu tätigen.</p>
+                <a href="/vers-auswaehlen" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Vers auswählen
+                </a>
+            </td>
+        </tr>
+    `;
+    
+    // Hide payment section
+    const paymentCard = document.querySelector('.col-lg-4 .card');
+    if (paymentCard) {
+        paymentCard.style.display = 'none';
+    }
+}
+
+function processPayment() {
+    if (cartItemCount === 0) {
+        alert('Ihr Spendenkorb ist leer.');
+        return;
+    }
+    
+    if (typeof ToastManager !== 'undefined') {
+        ToastManager.info('Weiterleitung zur Zahlungsabwicklung...');
+    }
+    
+    // Simulate redirect to payment provider
+    setTimeout(() => {
+        // In real app, this would redirect to Stripe or other payment provider
+        window.location.href = '/checkout/erfolg';
+    }, 2000);
+}
+
+// Verse modal functionality
+const verseData = {
+    'jeremia-29-11': {
+        reference: 'Jeremia 29,11',
+        text: 'Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben.'
+    },
+    'zefanja-3-17': {
+        reference: 'Zefanja 3,17',
+        text: 'Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken.'
+    },
+    'jesaja-43-1': {
+        reference: 'Jesaja 43,1',
+        text: 'Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!'
+    }
+};
+
+function showVerseModal(verseId) {
+    const verse = verseData[verseId];
+    if (!verse) return;
+
+    // Update modal content
+    document.getElementById('modalVerseReference').textContent = verse.reference;
+    document.getElementById('modalVerseText').textContent = '"' + verse.text + '"';
+    
+    // Show modal
+    const modal = document.getElementById('verseModal');
+    modal.style.display = 'block';
+    
+    // Add fade-in effect
+    setTimeout(() => {
+        modal.style.opacity = '1';
+    }, 10);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closeVerseModal() {
+    const modal = document.getElementById('verseModal');
+    modal.style.display = 'none';
+    
+    // Restore body scroll
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeVerseModal();
+    }
+});
+</script>
+{% endblock %}

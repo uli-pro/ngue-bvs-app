@@ -1,0 +1,830 @@
+/* ============================================
+   NGÜ Bibelvers-Sponsoring - Custom Styles
+   ============================================ */
+
+/* Root Variables */
+:root {
+    /* Farben */
+    --color-primary: #dd3333;
+    --color-secondary: #100f0f;
+    --color-text-primary: #313131;
+    --color-text-secondary: #232222;
+    --color-text-inverse: #ffffff;
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f5f5f5;
+    --color-success: #dd3333;
+    --color-warning-bg: #d8c5ca;
+    
+    /* 7-Farben-System - Zentralisierte Farbvariablen */
+    --color-ngu-red: #dd3333;    /* NGÜ-Primary: Revision, Header, Buttons */
+    --color-green: #28a745;      /* Erstübersetzung, Einzelspende */
+    --color-orange: #fd7e14;     /* Supervision, Gruppenspende */
+    --color-blue: #007bff;       /* Qualitätssicherung, Geschenk */
+    --color-rose: #d8c5ca;       /* Alerts, Warnings, FAQ-Akkordeon */
+    --color-gray: #6c757d;       /* Bootstrap Secondary Gray: Headers, Box-Hintergründe */
+    --color-dark: #100f0f;       /* Dunkles Grau: Footer, Überschriften, Texte */
+    
+    /* Abgeleitete Farben für Rosé */
+    --color-rose-border: #c48a96;
+    --color-rose-text: #7a4d56;
+    
+    /* Legacy-Kompatibilität für bestehendes CSS */
+    --color-primary: var(--color-ngu-red);
+    --color-red: var(--color-ngu-red);
+    --color-secondary: var(--color-dark);
+    --color-warning-bg: var(--color-rose);
+    
+    /* Schriftarten */
+    --font-family-primary: 'Poppins', sans-serif;
+    --font-family-heading: 'Poppins', sans-serif;
+    --font-family-secondary: 'Montserrat', sans-serif;
+    --font-family-heading-secondary: 'Montserrat', sans-serif;
+    --font-family-fallback: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family-mono: 'Courier New', Courier, monospace;
+    
+    /* Abstände */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-xxl: 3rem;
+    
+    /* Schatten */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+    
+    /* Übergänge */
+    --transition-base: all 0.3s ease;
+}
+
+/* ============================================
+   Grundlegende Styles
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family-primary);
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-heading);
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: var(--spacing-md);
+    color: var(--color-secondary);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+p {
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text-secondary);
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: var(--transition-base);
+}
+
+a:hover {
+    color: darken(var(--color-primary), 10%);
+    text-decoration: underline;
+}
+
+/* ============================================
+   Navigation
+   ============================================ */
+
+.navbar {
+    background-color: var(--color-bg-primary) !important;
+    transition: var(--transition-base);
+    padding: var(--spacing-md) 0;
+}
+
+.navbar-scrolled {
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-sm) 0;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--color-secondary) !important;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand img {
+    transition: var(--transition-base);
+    background-color: white;
+    border-radius: 4px;
+    padding: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand:hover img {
+    transform: scale(1.05);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.brand-ngu {
+    color: var(--color-primary);
+    font-family: var(--font-family-heading);
+}
+
+.brand-subtitle {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+    margin-left: var(--spacing-xs);
+}
+
+.navbar-nav .nav-link {
+    color: var(--color-text-primary) !important;
+    font-weight: 500;
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+    transition: var(--transition-base);
+    position: relative;
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--color-primary) !important;
+}
+
+.navbar-nav .nav-link.active {
+    color: var(--color-primary) !important;
+}
+
+.navbar-nav .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    height: 3px;
+    background-color: var(--color-primary);
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: var(--shadow-lg);
+    border-radius: 8px;
+    padding: var(--spacing-sm) 0;
+}
+
+.dropdown-item {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    transition: var(--transition-base);
+}
+
+.dropdown-item:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-primary);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.btn {
+    font-weight: 500;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: 6px;
+    transition: var(--transition-base);
+    border: 2px solid transparent;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #c02a2a;
+    border-color: #c02a2a;
+    text-decoration: underline;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #252627;
+    border-color: #252627;
+    text-decoration: underline;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+    text-decoration: underline;
+}
+
+.btn-outline-success {
+    background-color: transparent;
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.btn-outline-success:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+    text-decoration: underline;
+}
+
+.btn-outline-secondary {
+    background-color: transparent;
+    border-color: var(--color-secondary);
+    color: var(--color-secondary);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: white;
+    text-decoration: underline;
+}
+
+.btn-lg {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: 1.1rem;
+}
+
+/* Button-Klassen für die vier Hauptfarben des NGÜ-Designs */
+
+/* Red/NGÜ Buttons */
+.btn-red {
+    background-color: var(--color-ngu-red);
+    border-color: var(--color-ngu-red);
+    color: white;
+}
+.btn-red:hover {
+    background-color: #c02a2a;
+    border-color: #c02a2a;
+    color: white;
+    text-decoration: underline;
+    box-shadow: var(--shadow-md);
+}
+.btn-outline-red {
+    background-color: transparent;
+    border-color: var(--color-ngu-red);
+    color: var(--color-ngu-red);
+}
+.btn-outline-red:hover {
+    background-color: var(--color-ngu-red);
+    border-color: var(--color-ngu-red);
+    color: white;
+    text-decoration: underline;
+}
+
+/* Blue Buttons */
+.btn-blue {
+    background-color: var(--color-blue);
+    border-color: var(--color-blue);
+    color: white;
+}
+.btn-blue:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    color: white;
+    text-decoration: underline;
+    box-shadow: var(--shadow-md);
+}
+.btn-outline-blue {
+    background-color: transparent;
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+}
+.btn-outline-blue:hover {
+    background-color: var(--color-blue);
+    border-color: var(--color-blue);
+    color: white;
+    text-decoration: underline;
+}
+
+/* Green Buttons */
+.btn-green {
+    background-color: var(--color-green);
+    border-color: var(--color-green);
+    color: white;
+}
+.btn-green:hover {
+    background-color: #1e7e34;
+    border-color: #1e7e34;
+    color: white;
+    text-decoration: underline;
+    box-shadow: var(--shadow-md);
+}
+.btn-outline-green {
+    background-color: transparent;
+    border-color: var(--color-green);
+    color: var(--color-green);
+}
+.btn-outline-green:hover {
+    background-color: var(--color-green);
+    border-color: var(--color-green);
+    color: white;
+    text-decoration: underline;
+}
+
+/* Orange Buttons */
+.btn-orange {
+    background-color: var(--color-orange);
+    border-color: var(--color-orange);
+    color: white;
+}
+.btn-orange:hover {
+    background-color: #e55a00;
+    border-color: #e55a00;
+    color: white;
+    text-decoration: underline;
+    box-shadow: var(--shadow-md);
+}
+.btn-outline-orange {
+    background-color: transparent;
+    border-color: var(--color-orange);
+    color: var(--color-orange);
+}
+.btn-outline-orange:hover {
+    background-color: var(--color-orange);
+    border-color: var(--color-orange);
+    color: white;
+    text-decoration: underline;
+}
+
+/* ============================================
+   Main Content
+   ============================================ */
+
+.main-content {
+    flex: 1;
+    padding-top: 80px; /* Account for fixed navbar */
+}
+
+.hero-section {
+    background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
+    padding: var(--spacing-xxl) 0;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-lg);
+    color: var(--color-secondary);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* ============================================
+   Cards
+   ============================================ */
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+    overflow: hidden;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-5px);
+}
+
+.card-header {
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid #e0e0e0;
+    padding: var(--spacing-lg);
+}
+
+.card-body {
+    padding: var(--spacing-lg);
+}
+
+.verse-card {
+    position: relative;
+    cursor: pointer;
+    margin-bottom: var(--spacing-md);
+}
+
+.verse-card.sponsored {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.verse-card.sponsored::after {
+    content: 'Bereits gesponsert';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--color-success);
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* ============================================
+   Forms
+   ============================================ */
+
+.form-control,
+.form-select {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    transition: var(--transition-base);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem rgba(221, 51, 51, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.invalid-feedback {
+    color: var(--color-success);
+    font-size: 0.875rem;
+    margin-top: var(--spacing-xs);
+}
+
+/* ============================================
+   Alerts
+   ============================================ */
+
+.alert {
+    border: none;
+    border-radius: 8px;
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.alert-primary {
+    background-color: rgba(221, 51, 51, 0.1);
+    color: var(--color-primary);
+}
+
+.alert-success {
+    background-color: rgba(198, 3, 56, 0.1);
+    color: var(--color-success);
+}
+
+.alert-warning {
+    background-color: var(--color-warning-bg);
+    color: var(--color-text-primary);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.footer {
+    background-color: var(--color-secondary) !important;
+    color: var(--color-text-inverse);
+    margin-top: auto;
+}
+
+.footer h5,
+.footer h6 {
+    color: var(--color-text-inverse);
+    margin-bottom: var(--spacing-md);
+}
+
+.footer a {
+    color: rgba(255, 255, 255, 0.7);
+    transition: var(--transition-base);
+}
+
+.footer a:hover {
+    color: var(--color-text-inverse);
+    text-decoration: none;
+}
+
+.social-links a {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: var(--transition-base);
+}
+
+.social-links a:hover {
+    background-color: var(--color-primary);
+    color: white !important;
+}
+
+/* ============================================
+   Utilities
+   ============================================ */
+
+.text-primary {
+    color: var(--color-primary) !important;
+}
+
+.text-secondary {
+    color: var(--color-text-secondary) !important;
+}
+
+
+.section-padding {
+    padding: var(--spacing-xxl) 0;
+}
+
+.mb-section {
+    margin-bottom: var(--spacing-xxl);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
+    h3 { font-size: 1.5rem; }
+    
+    .hero-title {
+        font-size: 2rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+    
+    .brand-subtitle {
+        display: block;
+        margin-left: 0;
+        font-size: 0.8rem;
+    }
+    
+    .main-content {
+        padding-top: 70px;
+    }
+    
+    .section-padding {
+        padding: var(--spacing-xl) 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+    }
+    
+    .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .footer .col-lg-4,
+    .footer .col-lg-2 {
+        text-align: center;
+        margin-bottom: var(--spacing-xl);
+    }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    .navbar,
+    .footer,
+    .btn,
+    .alert {
+        display: none !important;
+    }
+    
+    .main-content {
+        padding-top: 0;
+    }
+    
+    body {
+        font-size: 12pt;
+        color: black;
+    }
+    
+    a {
+        color: black;
+        text-decoration: underline;
+    }
+}
+
+/* ============================================
+   Kostenaufschlüsselung - Farbklassen
+   ============================================ */
+
+/* Background-Klassen mit Text-Farbe */
+.bg-green {
+    background-color: var(--color-green) !important;
+    color: white !important;
+}
+
+.bg-red {
+    background-color: var(--color-ngu-red) !important;
+    color: white !important;
+}
+
+.bg-ngu-red {
+    background-color: var(--color-ngu-red) !important;
+    color: white !important;
+}
+
+.bg-orange {
+    background-color: var(--color-orange) !important;
+    color: white !important;
+}
+
+.bg-blue {
+    background-color: var(--color-blue) !important;
+    color: white !important;
+}
+
+.bg-primary-header {
+    background-color: var(--color-ngu-red) !important;
+    color: white !important;
+}
+
+.bg-rose {
+    background-color: var(--color-rose) !important;
+    color: var(--color-rose-text) !important;
+}
+
+.bg-gray {
+    background-color: var(--color-gray) !important;
+    color: white !important;
+}
+
+/* Border-Klassen */
+.border-green {
+    border-color: var(--color-green) !important;
+}
+
+.border-red {
+    border-color: var(--color-ngu-red) !important;
+}
+
+.border-ngu-red {
+    border-color: var(--color-ngu-red) !important;
+}
+
+.border-rose {
+    border-color: var(--color-rose-border) !important;
+}
+
+.border-gray {
+    border-color: var(--color-gray) !important;
+}
+
+.border-orange {
+    border-color: var(--color-orange) !important;
+}
+
+.border-blue {
+    border-color: var(--color-blue) !important;
+}
+
+/* Text-Klassen für Icons und Text */
+.text-green {
+    color: var(--color-green) !important;
+}
+
+.text-red {
+    color: var(--color-ngu-red) !important;
+}
+
+.text-ngu-red {
+    color: var(--color-ngu-red) !important;
+}
+
+.text-rose {
+    color: var(--color-rose-text) !important;
+}
+
+.text-gray {
+    color: var(--color-gray) !important;
+}
+
+.text-orange {
+    color: var(--color-orange) !important;
+}
+
+.text-blue {
+    color: var(--color-blue) !important;
+}
+
+/* Dark-Klassen für Footer, Überschriften und Texte */
+.bg-dark {
+    background-color: var(--color-dark) !important;
+    color: white !important;
+}
+
+.border-dark {
+    border-color: var(--color-dark) !important;
+}
+
+.text-dark {
+    color: var(--color-dark) !important;
+}
+
+
+/* ============================================
+   Alert-Farben vereinheitlichen
+   ============================================ */
+
+/* Alle Info-Alerts zur roseartigen Warning-Farbe */
+.alert-info {
+    background-color: var(--color-rose) !important;
+    border-color: var(--color-rose-border) !important;
+    color: var(--color-rose-text) !important;
+}
+
+/* Warning-Alerts behalten die roseartige Farbe */
+.alert-warning {
+    background-color: var(--color-rose) !important;
+    border-color: var(--color-rose-border) !important;
+    color: var(--color-rose-text) !important;
+}
+
+/* FAQ-Akkordeon mit roseartiger Farbe */
+.accordion-button:not(.collapsed) {
+    background-color: var(--color-rose) !important;
+    border-color: var(--color-rose-border) !important;
+    color: var(--color-rose-text) !important;
+}
+
+.accordion-button:focus {
+    border-color: var(--color-rose-border) !important;
+    box-shadow: 0 0 0 0.25rem rgba(216, 197, 202, 0.25) !important;
+}

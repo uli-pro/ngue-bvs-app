@@ -1,0 +1,282 @@
+{% extends "layout.html" %}
+
+{% block title %}Mein Dashboard{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>Willkommen zurück{% if current_user %}, {{ current_user.first_name }}{% endif %}!</h1>
+                    <p class="text-muted mb-0">
+                        Hier ist die Übersicht Ihrer gesponserten Verse
+                    </p>
+                </div>
+                <div>
+                    <a href="/meine-verse" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-book-open me-2"></i>Meine Verse
+                    </a>
+                    <a href="/profil" class="btn btn-outline-primary">
+                        <i class="fas fa-user-edit me-2"></i>Profil bearbeiten
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">3</h3>
+                            <p class="mb-0">Gesponserte Verse</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-book fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">300€</h3>
+                            <p class="mb-0">Gesamt gespendet</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-euro-sign fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">1</h3>
+                            <p class="mb-0">Als Geschenk</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-gift fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">6</h3>
+                            <p class="mb-0">Zertifikate</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-certificate fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Schnellaktionen</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-4 mb-3">
+                            <a href="/vers-auswaehlen" class="btn btn-primary w-100 py-3">
+                                <i class="fas fa-plus-circle fa-lg mb-2 d-block"></i>
+                                Weiteren Vers sponsern
+                            </a>
+                        </div>
+                        <div class="col-lg-4 mb-3">
+                            <a href="/meine-verse" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-list fa-lg mb-2 d-block"></i>
+                                Meine Verse anzeigen
+                            </a>
+                        </div>
+                        <div class="col-lg-4 mb-3">
+                            <button class="btn btn-outline-secondary w-100 py-3" onclick="downloadAllDocuments()">
+                                <i class="fas fa-download fa-lg mb-2 d-block"></i>
+                                Alle Dokumente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Verses -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Zuletzt gesponserte Verse</h4>
+                    <a href="/meine-verse" class="btn btn-sm btn-outline-primary">Alle anzeigen</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Vers</th>
+                                    <th>Datum</th>
+                                    <th>Typ</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <strong>Jeremia 29,11</strong><br>
+                                        <small class="text-muted">Denn ich weiß, was für Gedanken ich über euch habe...</small>
+                                    </td>
+                                    <td>08.08.2025</td>
+                                    <td><span class="badge bg-green">Einzelspende</span></td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-2">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="downloadCertificate('jeremia-29-11')">
+                                                <i class="fas fa-download me-1"></i>Zertifikat herunterladen
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm" onclick="downloadReceipt('jeremia-29-11')">
+                                                <i class="fas fa-file-invoice me-1"></i>Spendenbescheinigung
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>Zefanja 3,17</strong><br>
+                                        <small class="text-muted">Der HERR, dein Gott, ist in deiner Mitte...</small>
+                                    </td>
+                                    <td>05.08.2025</td>
+                                    <td><span class="badge bg-blue">Geschenk</span></td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-2">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="downloadCertificate('zefanja-3-17')">
+                                                <i class="fas fa-download me-1"></i>Zertifikat herunterladen
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm" onclick="downloadReceipt('zefanja-3-17')">
+                                                <i class="fas fa-file-invoice me-1"></i>Spendenbescheinigung
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>Jesaja 43,1</strong><br>
+                                        <small class="text-muted">Und nun spricht der HERR, der dich geschaffen hat...</small>
+                                    </td>
+                                    <td>01.08.2025</td>
+                                    <td><span class="badge bg-orange">Gruppe</span></td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-2">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="downloadCertificate('jesaja-43-1')">
+                                                <i class="fas fa-download me-1"></i>Zertifikat herunterladen
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm" disabled title="Spendenbescheinigung auf Anfrage">
+                                                <i class="fas fa-envelope me-1"></i>Kontakt für Bescheinigung
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Progress -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">NGÜ Projektfortschritt</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Altes Testament Übersetzung</span>
+                            <span><strong>3.2%</strong></span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 3.2%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h5 class="text-primary mb-0">354</h5>
+                            <small class="text-muted">Verse finanziert</small>
+                        </div>
+                        <div class="col-4">
+                            <h5 class="text-secondary mb-0">10.693</h5>
+                            <small class="text-muted">Verse verfügbar</small>
+                        </div>
+                        <div class="col-4">
+                            <h5 class="text-success mb-0">35.400€</h5>
+                            <small class="text-muted">Gesammelt</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            Stand: {{ current_year }}. Dank Spender wie Ihnen wird die NGÜ Realität!
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ihr Impact</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-heart fa-3x text-danger mb-2"></i>
+                        <p class="mb-2">Ihre Spenden haben bereits ermöglicht</p>
+                        <h4 class="text-primary">3 Verse</h4>
+                        <p class="mb-0">zu übersetzen</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="small text-muted">
+                        <p class="mb-1"><i class="fas fa-book-open text-danger me-1"></i>Diese Verse werden von Tausenden gelesen</p>
+                        <p class="mb-1"><i class="fas fa-clock text-danger me-1"></i>Ihre Investition wirkt über Jahrzehnte</p>
+                        <p class="mb-0"><i class="fas fa-globe text-danger me-1"></i>Gottes Wort verändert Leben</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/dashboard.js') }}"></script>
+{% endblock %}

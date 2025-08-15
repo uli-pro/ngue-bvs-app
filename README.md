@@ -1,8 +1,126 @@
-# NGÜ Bible Verse Sponsoring App
+# NGÜ Bibelvers-Sponsoring App
 
-**A Flask web application for sponsoring individual Old Testament verses of the NGÜ Bible translation project.**
+Flask-basierte Web-Anwendung für das Sponsoring einzelner Bibelverse zur Finanzierung der NGÜ (Neue Genfer Übersetzung) des Alten Testaments.
 
-This is my CS50 final project that enables donors to sponsor biblical verses for €100 each and receive personalized certificates as a meaningful acknowledgment of their contribution to the NGÜ (Neue Genfer Übersetzung) Bible translation project.
+## Projektstruktur
+
+```
+ngue-bvs-app/
+├── demo/                    # 🎨 Demo-Version (läuft auf Homeserver)
+│   ├── app.py              # Demo Flask-App
+│   ├── templates/          # UI-Templates für Demo
+│   ├── static/             # CSS/JS/Images für Demo
+│   └── README.md           # Demo-Dokumentation
+│
+├── src/                     # 🚀 Echte App (in Entwicklung)
+│   ├── models.py           # SQLAlchemy Database-Models
+│   ├── requirements.txt    # Python Dependencies
+│   ├── templates/          # Production Templates
+│   ├── static/             # Production Assets
+│   └── README.md           # Development-Dokumentation
+│
+├── data/                    # 📚 Gemeinsame Daten
+│   ├── schlachter-1951/    # HTML-Dateien der Schlachter Bibel
+│   ├── verses/             # verses.json mit ~11.000 Versen + Scores
+│   └── vectors/            # Für semantic search (zukünftig)
+│
+├── docs/                    # 📖 Projektdokumentation
+│   ├── development-todos/   # Detaillierte Implementation-TODOs
+│   ├── database-refactoring-payment-transactions.md
+│   └── ...
+│
+├── design/                  # 🎨 Design-System und Assets
+│   ├── design-system-preliminary.md
+│   ├── Logo NGU *.png
+│   └── NGÜ Sponsoring[3720].pdf
+│
+└── archive/                 # 📦 Historische Dateien
+```
+
+## Zwei Versionen
+
+### 🎨 Demo (`/demo/`)
+- **Zweck**: User-Feedback sammeln, UI/UX testen
+- **Status**: ✅ Läuft produktiv auf Homeserver
+- **Features**: Vollständige UI, statische Daten, kein echtes Payment
+- **Start**: `cd demo && python app.py`
+
+### 🚀 Production (`/src/`)
+- **Zweck**: Echte App mit Database, Payments, PDF-Generation
+- **Status**: 🔄 In aktiver Entwicklung
+- **Features**: PostgreSQL, Stripe, ~11.000 Verse, echte Spenden
+- **Start**: `cd src && python app.py`
+
+## Aktueller Entwicklungsstand
+
+### ✅ Abgeschlossen
+- Database-Models (User, Donation, PaymentTransaction, Certificate, DonationCartItem)
+- ~11.000 Bibelverse mit Positivity-Scores (0-100)
+- UI/UX-Design vollständig (17 Templates, Bootstrap 5.3)
+- NGÜ-Branding und Logo-Integration
+- Projektstruktur und TODO-System
+
+### 🔄 In Bearbeitung
+- Stripe Payment-Integration
+- PDF-Zertifikat-Generator
+- E-Mail-Automation
+- Semantic Verse Search
+
+### ⏳ Geplant
+- Admin-Dashboard
+- Performance-Optimierung
+- Testing-Suite
+- Production-Deployment
+
+## Technische Details
+
+### Tech Stack
+- **Backend**: Python 3.8+ mit Flask
+- **Database**: PostgreSQL mit SQLAlchemy ORM und pgvector
+- **Payments**: Stripe (€100 pro Vers)
+- **PDF**: WeasyPrint für Zertifikat-Generierung
+- **Email**: Flask-Mail für automatischen Versand
+- **Frontend**: Bootstrap 5.3, responsive design
+
+### Business Model
+- **Sponsoring**: €100 pro Altes Testament Vers
+- **Zielgruppe**: Einzelpersonen, Gruppen, Geschenkspenden
+- **Zertifikate**: Personalisierte PDF-Zertifikate + Spendenbescheinigungen
+- **Automatisierung**: Minimaler manueller Aufwand nach Spende
+
+## Entwicklung
+
+### Demo beibehalten
+```bash
+cd demo/
+python app.py  # Demo läuft weiter für User-Feedback
+```
+
+### Echte App entwickeln
+```bash
+cd src/
+pip install -r requirements.txt
+python -c "from models import init_db; init_db(app)"
+python -c "from models import import_all_verses; import_all_verses()"
+python app.py  # Neue App-Entwicklung
+```
+
+### TODOs verfolgen
+Alle Implementierungs-Pläne in `/docs/development-todos/`:
+- `pdf-generator-service-requirements.md`
+- `stripe-billing-integration.md`
+- `checkout-form-prefilling.md`
+- und weitere...
+
+## CS50 Context
+
+Dieses Projekt dient als Final Project für Harvard's CS50 Kurs und löst ein echtes Problem für die Peter-Schöffer-Stiftung zur Finanzierung der NGÜ-Bibelübersetzung.
+
+---
+
+**Demo**: Läuft produktiv für User-Feedback  
+**Production**: In aktiver Entwicklung  
+**Ziel**: Vollautomatisierte Vers-Sponsoring-Plattform
 
 ## Features
 

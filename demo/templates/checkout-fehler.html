@@ -1,0 +1,245 @@
+{% extends "layout.html" %}
+
+{% block title %}Zahlungsfehler{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Error Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <div class="mb-4">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning"></i>
+            </div>
+            <h1 class="text-danger mb-3">Zahlungsfehler</h1>
+            <p class="lead text-muted">Bei der Verarbeitung Ihrer Zahlung ist ein Problem aufgetreten</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Error Details Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Fehlermeldung</h4>
+                </div>
+                <div class="card-body">
+                    <div id="error-message">
+                        <p class="mb-0">Ihre Karte wurde abgelehnt. Bitte verwenden Sie eine andere Zahlungsmethode.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What can you do? -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Was können Sie tun?</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p class="mb-2"><strong>Keine Sorge:</strong> Bei Zahlungsfehlern wird Ihr Konto nicht belastet.</p>
+                        <p class="mb-0"><strong>Ihr Vers bleibt reserviert:</strong> Sie haben noch <span id="countdown">15:00</span> Minuten Zeit für einen neuen Zahlungsversuch.</p>
+                    </div>
+                    
+                    <h6>Mögliche Lösungen:</h6>
+                    <ul class="mb-0">
+                        <li>Versuchen Sie eine andere Karte oder Zahlungsmethode</li>
+                        <li>Überprüfen Sie Ihre Kartendetails (Nummer, Ablaufdatum, CVV)</li>
+                        <li>Prüfen Sie Ihre Kontodeckung</li>
+                        <li>Warten Sie einige Minuten und versuchen Sie es erneut</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="mb-3">Nächste Schritte:</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-primary" onclick="retryPayment()">
+                            <i class="fas fa-redo me-2"></i>Erneut versuchen
+                        </button>
+                        <a href="/vers-auswaehlen" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Anderen Vers wählen
+                        </a>
+                        <button class="btn btn-outline-info" onclick="showPaymentMethods()">
+                            <i class="fas fa-credit-card me-2"></i>Andere Zahlungsmethode
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Contact -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-headset me-2"></i>Benötigen Sie Hilfe?</h5>
+                </div>
+                <div class="card-body">
+                    <p>Bei wiederholten Problemen oder Fragen kontaktieren Sie gerne unseren Support:</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                <div>
+                                    <strong>E-Mail Support</strong><br>
+                                    <a href="mailto:info@schoeffer.org">info@schoeffer.org</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-phone text-primary me-2"></i>
+                                <div>
+                                    <strong>Telefon Support</strong><br>
+                                    <a href="tel:+49123456789">+49 (0) 123 456789</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <small class="text-muted">
+                        Bitte geben Sie bei Ihrer Anfrage die Fehlermeldung und Ihre Vers-Auswahl an.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Methods Modal -->
+<div class="modal fade" id="paymentMethodsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verfügbare Zahlungsmethoden</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="fas fa-credit-card text-primary me-3"></i>
+                        <div>
+                            <strong>Kreditkarte</strong>
+                            <div class="small text-muted">Visa, MasterCard, American Express</div>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="fab fa-paypal text-primary me-3"></i>
+                        <div>
+                            <strong>PayPal</strong>
+                            <div class="small text-muted">Schnell und sicher</div>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="fas fa-university text-primary me-3"></i>
+                        <div>
+                            <strong>SEPA-Lastschrift</strong>
+                            <div class="small text-muted">Direkte Abbuchung vom Bankkonto</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button type="button" class="btn btn-primary" onclick="goToCheckout()">Zur Zahlungsauswahl</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Start countdown timer
+    let timeLeft = 15 * 60; // 15 minutes in seconds
+    const countdownElement = document.getElementById('countdown');
+    
+    const timer = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            showTimeoutMessage();
+        }
+        timeLeft--;
+    }, 1000);
+    
+    // Load error details from URL params or session storage
+    loadErrorDetails();
+});
+
+function loadErrorDetails() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const errorMessageEl = document.getElementById('error-message');
+    
+    if (error) {
+        const errorMessages = {
+            'card_declined': 'Ihre Karte wurde abgelehnt. Bitte verwenden Sie eine andere Zahlungsmethode.',
+            'insufficient_funds': 'Die Zahlung konnte nicht verarbeitet werden. Bitte prüfen Sie Ihre Kontodeckung.',
+            'expired_card': 'Diese Karte ist abgelaufen. Bitte verwenden Sie eine gültige Karte.',
+            'invalid_card': 'Die Kartennummer ist ungültig. Bitte überprüfen Sie Ihre Eingabe.',
+            'invalid_cvc': 'Der Sicherheitscode ist ungültig. Bitte überprüfen Sie die 3-stellige Nummer auf der Rückseite Ihrer Karte.',
+            'authentication_required': 'Ihre Bank erfordert eine zusätzliche Bestätigung.',
+            'processing_error': 'Ein technischer Fehler ist aufgetreten. Bitte versuchen Sie es erneut.',
+            'timeout': 'Die Zahlungsanfrage hat zu lange gedauert. Bitte versuchen Sie es erneut.',
+            'verse_unavailable': 'Der ausgewählte Vers wurde in der Zwischenzeit von jemand anderem gesponsert. Bitte wählen Sie einen anderen Vers.',
+            'session_expired': 'Ihre Reservierung ist abgelaufen. Bitte beginnen Sie die Vers-Auswahl erneut.'
+        };
+        
+        errorMessageEl.innerHTML = `<p class="mb-0">${errorMessages[error] || 'Ein unbekannter Fehler ist aufgetreten.'}</p>`;
+    }
+}
+
+function retryPayment() {
+    // In a real app, this would restart the payment process
+    showToast('Zahlungsvorgang wird neu gestartet...', 'info');
+    setTimeout(() => {
+        window.location.href = '/checkout/zusammenfassung';
+    }, 1500);
+}
+
+function showPaymentMethods() {
+    const modal = new bootstrap.Modal(document.getElementById('paymentMethodsModal'));
+    modal.show();
+}
+
+function goToCheckout() {
+    window.location.href = '/checkout/zusammenfassung';
+}
+
+function showTimeoutMessage() {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-warning mt-3';
+    alert.innerHTML = `
+        <i class="fas fa-clock me-2"></i>
+        <strong>Reservierung abgelaufen:</strong> Bitte wählen Sie Ihren Vers erneut aus.
+        <div class="mt-2">
+            <a href="/vers-auswaehlen" class="btn btn-warning btn-sm">Vers neu auswählen</a>
+        </div>
+    `;
+    document.querySelector('.container .row .col-lg-8').appendChild(alert);
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

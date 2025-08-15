@@ -8,6 +8,7 @@
 - iPad Pro Größe Breakpoints stimmen nicht (Navbar u.a.)
 - Passwort-Hashing: argon2id
 - Idee: Eine Art Liveticker, wer zuletzt wie viele Verse gesponsert hat.
+- Retry-Strategie für Zahlungen überlegen.
 
 #### zertifikat
 
@@ -36,7 +37,7 @@
 
 #### /checkout/zusammenfassung
 
-- 
+- Alert bei Entfernung: möchten sie *diesen* *einzelspende/geschenk/gruppe* wirklich aus dem *Warenkorb* entfernen?
 
 #### /dashboard
 
@@ -49,7 +50,8 @@
 
 #### /faq
 
-- Suche funktioniert noch nicht.
+- Wann wird die NGÜ vollständig erscheinen? -> Frühestens 2030
+- Wer steht hinter ... Wann ist die DBG ausgestiegen? 
 
 #### /impressum
 
