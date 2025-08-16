@@ -107,19 +107,23 @@
             </div>
         </div>
         
-        <div class="text-center mt-5">
-            <button class="btn btn-outline-primary btn-lg">WEITERE VERSE ANZEIGEN</button>
+        <div class="text-center mt-4 pt-3 border-top" id="loadMoreContainer" style="display: none;">
+            <button class="btn btn-outline-secondary" id="loadMoreBtn">
+                <i class="fas fa-plus me-2"></i>
+                Weitere Verse anzeigen
+            </button>
         </div>
     </div>
 </section>
 
 <!-- Navigation -->
-<section class="py-3">
+<section class="py-4">
     <div class="container">
         <div class="text-center">
-            <a href="/vers-auswaehlen" class="btn btn-link">
-                <i class="fas fa-arrow-left me-2"></i>
-                Zurück zur Vers-Auswahl
+            <p class="text-muted mb-3">Gefallen Ihnen diese Ergebnisse nicht?</p>
+            <a href="/vers-auswaehlen" class="btn btn-outline-secondary">
+                <i class="fas fa-search me-2"></i>
+                Andere Verse entdecken
             </a>
         </div>
     </div>
@@ -129,16 +133,21 @@
 
 {% block scripts %}
 <script>
-    // Demo functionality for keyword search
+    let currentOffset = 0;
+    let currentQuery = '';
+    let hasMore = false;
+    let isLoading = false;
+
+    // Handle search form submission
     document.getElementById('keywordSearchForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const keyword = document.getElementById('keyword').value.trim();
         
-        if (keyword) {
-            document.getElementById('searchTerm').textContent = keyword;
-            document.getElementById('searchResults').style.display = 'block';
-            document.getElementById('searchResults').scrollIntoView({behavior: 'smooth'});
+        if (keyword && keyword.length >= 2) {
+            searchVerses(keyword, 0);
+        } else {
+            alert('Bitte geben Sie mindestens 2 Zeichen ein.');
         }
     });
     
@@ -147,10 +156,122 @@
         button.addEventListener('click', function() {
             const keyword = this.getAttribute('data-keyword');
             document.getElementById('keyword').value = keyword;
-            document.getElementById('searchTerm').textContent = keyword;
-            document.getElementById('searchResults').style.display = 'block';
-            document.getElementById('searchResults').scrollIntoView({behavior: 'smooth'});
+            searchVerses(keyword, 0);
         });
     });
+    
+    // Handle "Load More" button
+    document.getElementById('loadMoreBtn').addEventListener('click', function() {
+        if (currentQuery && hasMore && !isLoading) {
+            searchVerses(currentQuery, currentOffset, true);
+        }
+    });
+    
+    function searchVerses(query, offset = 0, append = false) {
+        if (isLoading) return;
+        
+        isLoading = true;
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        const originalText = loadMoreBtn.textContent;
+        loadMoreBtn.textContent = 'LADE...';
+        loadMoreBtn.disabled = true;
+        
+        // Reset wenn neue Suche
+        if (!append) {
+            currentOffset = 0;
+            currentQuery = query;
+            document.getElementById('searchTerm').textContent = query;
+        }
+        
+        fetch('/api/verse/search/keyword', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                'query': query,
+                'offset': offset
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (append) {
+                    appendVerseResults(data.verses);
+                } else {
+                    displayVerseResults(data.verses);
+                }
+                
+                currentOffset = data.offset + data.verses.length;
+                hasMore = data.has_more;
+                
+                // Update load more button visibility
+                const loadMoreContainer = document.getElementById('loadMoreContainer');
+                if (hasMore) {
+                    loadMoreContainer.style.display = 'block';
+                } else {
+                    loadMoreContainer.style.display = 'none';
+                }
+                
+                // Show results section
+                document.getElementById('searchResults').style.display = 'block';
+                if (!append) {
+                    document.getElementById('searchResults').scrollIntoView({behavior: 'smooth'});
+                }
+            } else {
+                alert('Fehler bei der Suche: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            alert('Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.');
+        })
+        .finally(() => {
+            isLoading = false;
+            loadMoreBtn.textContent = originalText;
+            loadMoreBtn.disabled = false;
+        });
+    }
+    
+    function displayVerseResults(verses) {
+        const resultsContainer = document.querySelector('#searchResults .row');
+        resultsContainer.innerHTML = '';
+        
+        verses.forEach(verse => {
+            const verseCard = createVerseCard(verse);
+            resultsContainer.appendChild(verseCard);
+        });
+    }
+    
+    function appendVerseResults(verses) {
+        const resultsContainer = document.querySelector('#searchResults .row');
+        
+        verses.forEach(verse => {
+            const verseCard = createVerseCard(verse);
+            resultsContainer.appendChild(verseCard);
+        });
+    }
+    
+    function createVerseCard(verse) {
+        const col = document.createElement('div');
+        col.className = 'col-lg-4';
+        
+        col.innerHTML = `
+            <div class="card h-100 verse-card">
+                <div class="card-body text-center p-4">
+                    <h4 class="text-primary mb-3">${verse.reference}</h4>
+                    <blockquote class="blockquote">
+                        <p class="mb-4">"${verse.text}"</p>
+                        <footer class="blockquote-footer">
+                            <cite title="Schlachter 1951">Schlachter 1951</cite>
+                        </footer>
+                    </blockquote>
+                    <a href="/vers/${verse.url_slug}/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                </div>
+            </div>
+        `;
+        
+        return col;
+    }
 </script>
 {% endblock %}

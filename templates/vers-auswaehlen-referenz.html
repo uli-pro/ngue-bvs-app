@@ -147,14 +147,6 @@
                             </a>
                         </div>
                         
-                        <!-- Additional option for more verses -->
-                        <div id="moreOptions" class="text-center mt-4 pt-3 border-top d-none">
-                            <p class="text-muted mb-3">Gefallen Ihnen diese Alternativen nicht?</p>
-                            <a href="/vers-auswaehlen" class="btn btn-outline-secondary">
-                                <i class="fas fa-search me-2"></i>
-                                Andere Verse entdecken
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -163,12 +155,13 @@
 </section>
 
 <!-- Alternative navigation for non-sponsored verses -->
-<section class="py-3" id="generalNavigation">
+<section class="py-4" id="generalNavigation">
     <div class="container">
         <div class="text-center">
-            <a href="/vers-auswaehlen" class="btn btn-link">
-                <i class="fas fa-arrow-left me-2"></i>
-                Zurück zur Vers-Auswahl
+            <p class="text-muted mb-3">Möchten Sie doch lieber einen anderen Vers wählen?</p>
+            <a href="/vers-auswaehlen" class="btn btn-outline-secondary">
+                <i class="fas fa-search me-2"></i>
+                Andere Verse entdecken
             </a>
         </div>
     </div>
@@ -396,17 +389,14 @@
         displaySimilarVerses(verses) {
             const container = document.getElementById('similarVerses');
             const noAlternatives = document.getElementById('noAlternatives');
-            const moreOptions = document.getElementById('moreOptions');
             
             if (!verses || verses.length === 0) {
                 container.innerHTML = '';
                 noAlternatives.classList.remove('d-none');
-                moreOptions.classList.add('d-none');
                 return;
             }
             
             noAlternatives.classList.add('d-none');
-            moreOptions.classList.remove('d-none');
             
             container.innerHTML = verses.map(verse => `
                 <div class="card mb-3">

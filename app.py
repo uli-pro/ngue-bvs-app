@@ -994,6 +994,121 @@ def api_verse_verses(book, chapter):
             'error': 'Internal server error'
         }, 500
 
+@app.route("/api/verse/search/keyword", methods=["POST"])
+@csrf.exempt
+def api_keyword_search():
+    """Keyword search API with positivity-based ranking and pagination"""
+    try:
+        # Validate request
+        if not request.is_json:
+            return {
+                'success': False,
+                'error': 'Request must be JSON'
+            }, 400
+        
+        data = request.get_json()
+        query = data.get('query', '').strip()
+        offset = data.get('offset', 0)
+        
+        # Validate parameters
+        if not query:
+            return {
+                'success': False,
+                'error': 'Query parameter is required'
+            }, 400
+        
+        if len(query) < 2:
+            return {
+                'success': False,
+                'error': 'Query must be at least 2 characters long'
+            }, 400
+        
+        if offset < 0:
+            offset = 0
+        
+        # Session management für Pagination
+        if 'keyword_search' not in session or session['keyword_search'].get('query') != query:
+            # Neue Suche oder geänderte Query - Session zurücksetzen
+            session['keyword_search'] = {
+                'query': query,
+                'shown_verse_ids': [],
+                'all_result_ids': None
+            }
+        
+        search_session = session['keyword_search']
+        
+        # Wenn noch keine Gesamtergebnisse geladen wurden
+        if search_session['all_result_ids'] is None:
+            # Führe Hybrid-Suche durch
+            all_results = Verse.search_hybrid(query, limit=100)
+            
+            # Nach kombiniertem Score sortieren (Positivity + Search Score)
+            scored_results = []
+            for verse in all_results:
+                if not verse.is_sponsored:  # Nur ungesponserte Verse
+                    # Kombinierter Score: 40% Search relevance + 60% Positivity
+                    search_relevance = 1.0  # Placeholder - alle Hybrid-Ergebnisse sind relevant
+                    positivity_normalized = (verse.positivity_score or 0) / 100.0
+                    combined_score = 0.4 * search_relevance + 0.6 * positivity_normalized
+                    scored_results.append((verse, combined_score))
+            
+            # Nach kombiniertem Score sortieren (höchste zuerst)
+            scored_results.sort(key=lambda x: x[1], reverse=True)
+            
+            # Nur die Verse-IDs speichern für Pagination
+            search_session['all_result_ids'] = [verse.id for verse, score in scored_results]
+            session.modified = True
+        
+        # Paginierung: 3 Verse ab Offset
+        all_ids = search_session['all_result_ids']
+        page_ids = all_ids[offset:offset + 3]
+        
+        # Verse laden
+        if page_ids:
+            # Lade Verse in der korrekten Reihenfolge
+            verses_dict = {v.id: v for v in Verse.query.filter(Verse.id.in_(page_ids)).all()}
+            verses = [verses_dict[vid] for vid in page_ids if vid in verses_dict]
+        else:
+            verses = []
+        
+        # Update shown_verse_ids
+        search_session['shown_verse_ids'].extend([v.id for v in verses])
+        session.modified = True
+        
+        # Response zusammenbauen
+        verses_data = []
+        for verse in verses:
+            verses_data.append({
+                'id': verse.id,
+                'book': verse.book,
+                'chapter': verse.chapter,
+                'verse': verse.verse,
+                'text': verse.text,
+                'reference': verse.reference,
+                'positivity_score': verse.positivity_score,
+                'is_sponsored': verse.is_sponsored,
+                'url_slug': verse.url_slug
+            })
+        
+        # Prüfe ob weitere Verse verfügbar sind
+        has_more = (offset + 3) < len(all_ids)
+        
+        return {
+            'success': True,
+            'query': query,
+            'verses': verses_data,
+            'has_more': has_more,
+            'total_found': len(all_ids),
+            'offset': offset
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error in keyword search: {e}")
+        return {
+            'success': False,
+            'error': 'Internal server error occurred'
+        }, 500
+
 # ==========================================
 # CONTACT ROUTES
 # ==========================================
