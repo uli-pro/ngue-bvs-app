@@ -4,7 +4,6 @@
 
 {% block main %}
 
-
 <!-- Header -->
 <section class="hero-section py-5">
     <div class="container">
@@ -26,46 +25,11 @@
                                     <label for="book" class="form-label">Buch wählen</label>
                                     <select class="form-select" id="book" name="book" required>
                                         <option value="">Buch wählen...</option>
-                                        <option value="1mose">1. Mose</option>
-                                        <option value="2mose">2. Mose</option>
-                                        <option value="3mose">3. Mose</option>
-                                        <option value="4mose">4. Mose</option>
-                                        <option value="5mose">5. Mose</option>
-                                        <option value="josua">Josua</option>
-                                        <option value="richter">Richter</option>
-                                        <option value="rut">Rut</option>
-                                        <option value="1samuel">1. Samuel</option>
-                                        <option value="2samuel">2. Samuel</option>
-                                        <option value="1koenige">1. Könige</option>
-                                        <option value="2koenige">2. Könige</option>
-                                        <option value="1chronik">1. Chronik</option>
-                                        <option value="2chronik">2. Chronik</option>
-                                        <option value="esra">Esra</option>
-                                        <option value="nehemia">Nehemia</option>
-                                        <option value="ester">Ester</option>
-                                        <option value="hiob">Hiob</option>
-                                        <option value="psalm">Psalm</option>
-                                        <option value="sprueche">Sprüche</option>
-                                        <option value="prediger">Prediger</option>
-                                        <option value="hohelied">Hohelied</option>
-                                        <option value="jesaja">Jesaja</option>
-                                        <option value="jeremia">Jeremia</option>
-                                        <option value="klagelieder">Klagelieder</option>
-                                        <option value="hesekiel">Hesekiel</option>
-                                        <option value="daniel">Daniel</option>
-                                        <option value="hosea">Hosea</option>
-                                        <option value="joel">Joel</option>
-                                        <option value="amos">Amos</option>
-                                        <option value="obadja">Obadja</option>
-                                        <option value="jona">Jona</option>
-                                        <option value="micha">Micha</option>
-                                        <option value="nahum">Nahum</option>
-                                        <option value="habakuk">Habakuk</option>
-                                        <option value="zefanja">Zefanja</option>
-                                        <option value="haggai">Haggai</option>
-                                        <option value="sacharja">Sacharja</option>
-                                        <option value="maleachi">Maleachi</option>
+                                        <!-- Options loaded dynamically from API -->
                                     </select>
+                                    <div class="spinner-border spinner-border-sm text-primary d-none" id="bookSpinner" role="status">
+                                        <span class="visually-hidden">Laden...</span>
+                                    </div>
                                 </div>
                                 
                                 <div class="col-md-4">
@@ -73,6 +37,9 @@
                                     <select class="form-select" id="chapter" name="chapter" required disabled>
                                         <option value="">Kapitel wählen...</option>
                                     </select>
+                                    <div class="spinner-border spinner-border-sm text-primary d-none" id="chapterSpinner" role="status">
+                                        <span class="visually-hidden">Laden...</span>
+                                    </div>
                                 </div>
                                 
                                 <div class="col-md-4">
@@ -80,13 +47,25 @@
                                     <select class="form-select" id="verse" name="verse" required disabled>
                                         <option value="">Vers wählen...</option>
                                     </select>
+                                    <div class="spinner-border spinner-border-sm text-primary d-none" id="verseSpinner" role="status">
+                                        <span class="visually-hidden">Laden...</span>
+                                    </div>
                                 </div>
                             </div>
                             
                             <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg">VERS SUCHEN</button>
+                                <button type="submit" class="btn btn-primary btn-lg" id="searchButton" disabled>
+                                    <span class="spinner-border spinner-border-sm d-none me-2" id="searchSpinner" role="status" aria-hidden="true"></span>
+                                    VERS SUCHEN
+                                </button>
                             </div>
                         </form>
+                        
+                        <!-- Error Message Area -->
+                        <div id="errorMessage" class="alert alert-danger d-none mt-3" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="errorText"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -94,16 +73,16 @@
     </div>
 </section>
 
-<!-- Search Result -->
+<!-- Search Result - Available Verse -->
 <section class="section-padding" id="searchResult" style="display: none;">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <div class="card">
                     <div class="card-body p-4 text-center">
-                        <h4 class="text-primary mb-3" id="resultReference">1. Mose 1,1</h4>
+                        <h4 class="text-primary mb-3" id="resultReference"></h4>
                         <blockquote class="blockquote">
-                            <p class="mb-3" id="resultText">"Am Anfang schuf Gott Himmel und Erde."</p>
+                            <p class="mb-3" id="resultText"></p>
                             <footer class="blockquote-footer">
                                 <cite title="Schlachter 1951">Schlachter 1951</cite>
                             </footer>
@@ -112,7 +91,11 @@
                             <i class="fas fa-info-circle me-2"></i>
                             Referenztext zur Orientierung. Wird in der NGÜ neu übersetzt.
                         </div>
-                        <a href="/vers/jeremia-29-11/spendenart" class="btn btn-primary btn-lg" id="selectVerseBtn">DIESEN VERS WÄHLEN</a>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Dieser Vers ist verfügbar!</strong> Sie können ihn für €100 sponsern.
+                        </div>
+                        <a href="#" class="btn btn-primary btn-lg" id="selectVerseBtn">DIESEN VERS WÄHLEN</a>
                     </div>
                 </div>
             </div>
@@ -120,8 +103,67 @@
     </div>
 </section>
 
-<!-- Navigation -->
-<section class="py-3">
+<!-- Search Result - Sponsored Verse with Alternatives -->
+<section class="section-padding" id="sponsoredResult" style="display: none;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Original Sponsored Verse -->
+                <div class="card mb-4">
+                    <div class="card-body p-4 text-center">
+                        <h4 class="text-primary mb-3" id="sponsoredReference"></h4>
+                        <blockquote class="blockquote">
+                            <p class="mb-3" id="sponsoredText"></p>
+                            <footer class="blockquote-footer">
+                                <cite title="Schlachter 1951">Schlachter 1951</cite>
+                            </footer>
+                        </blockquote>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-heart me-2"></i>
+                            <strong>Dieser Vers wurde bereits gesponsert!</strong><br>
+                            Vielen Dank an alle, die dieses Projekt unterstützen.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Similar Verses -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Verse mit ähnlichen Themen oder Begriffen
+                        </h5>
+                        <p class="text-muted mb-0">Vielleicht gefallen Ihnen diese alternativen Verse:</p>
+                    </div>
+                    <div class="card-body">
+                        <div id="similarVerses">
+                            <!-- Similar verses loaded dynamically -->
+                        </div>
+                        <div id="noAlternatives" class="text-center text-muted d-none">
+                            <i class="fas fa-search me-2"></i>
+                            Leider konnten wir keine ähnlichen verfügbaren Verse finden.
+                            <a href="/vers-auswaehlen" class="btn btn-outline-primary mt-3">
+                                Zur normalen Versauswahl
+                            </a>
+                        </div>
+                        
+                        <!-- Additional option for more verses -->
+                        <div id="moreOptions" class="text-center mt-4 pt-3 border-top d-none">
+                            <p class="text-muted mb-3">Gefallen Ihnen diese Alternativen nicht?</p>
+                            <a href="/vers-auswaehlen" class="btn btn-outline-secondary">
+                                <i class="fas fa-search me-2"></i>
+                                Andere Verse entdecken
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Alternative navigation for non-sponsored verses -->
+<section class="py-3" id="generalNavigation">
     <div class="container">
         <div class="text-center">
             <a href="/vers-auswaehlen" class="btn btn-link">
@@ -136,73 +178,298 @@
 
 {% block scripts %}
 <script>
-    // Demo functionality for reference search
-    document.getElementById('referenceSearchForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    // API-based Reference Search Implementation
+    class ReferenceSearch {
+        constructor() {
+            this.bookSelect = document.getElementById('book');
+            this.chapterSelect = document.getElementById('chapter');
+            this.verseSelect = document.getElementById('verse');
+            this.searchButton = document.getElementById('searchButton');
+            this.form = document.getElementById('referenceSearchForm');
+            
+            this.init();
+        }
         
-        const book = document.getElementById('book').value;
-        const chapter = document.getElementById('chapter').value;
-        const verse = document.getElementById('verse').value;
+        init() {
+            this.loadBooks();
+            this.setupEventListeners();
+        }
         
-        if (book && chapter && verse) {
-            // Demo: Always show one of the three available verses
-            const demoVerses = [
-                {
-                    id: 'jesaja-43-1',
-                    reference: 'Jesaja 43,1',
-                    text: 'Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!'
-                },
-                {
-                    id: 'jeremia-29-11',
-                    reference: 'Jeremia 29,11',
-                    text: 'Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben.'
-                },
-                {
-                    id: 'zefanja-3-17',
-                    reference: 'Zefanja 3,17',
-                    text: 'Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken.'
+        setupEventListeners() {
+            this.bookSelect.addEventListener('change', () => this.onBookChange());
+            this.chapterSelect.addEventListener('change', () => this.onChapterChange());
+            this.verseSelect.addEventListener('change', () => this.onVerseChange());
+            this.form.addEventListener('submit', (e) => this.onSubmit(e));
+        }
+        
+        async loadBooks() {
+            try {
+                this.showSpinner('bookSpinner');
+                const response = await fetch('/api/verse/books');
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.populateBookSelect(data.books);
+                } else {
+                    this.showError('Fehler beim Laden der Bücher');
                 }
-            ];
+            } catch (error) {
+                this.showError('Netzwerkfehler beim Laden der Bücher');
+            } finally {
+                this.hideSpinner('bookSpinner');
+            }
+        }
+        
+        populateBookSelect(books) {
+            // Clear existing options except first
+            this.bookSelect.innerHTML = '<option value="">Buch wählen...</option>';
             
-            // Select one of the demo verses randomly
-            const selectedVerse = demoVerses[Math.floor(Math.random() * demoVerses.length)];
+            // Book name mapping for display
+            const bookNames = {
+                'GEN': '1. Mose', 'EXO': '2. Mose', 'LEV': '3. Mose', 'NUM': '4. Mose', 'DEU': '5. Mose',
+                'JOS': 'Josua', 'JDG': 'Richter', 'RUT': 'Rut', '1SA': '1. Samuel', '2SA': '2. Samuel',
+                '1KI': '1. Könige', '2KI': '2. Könige', '1CH': '1. Chronik', '2CH': '2. Chronik',
+                'EZR': 'Esra', 'NEH': 'Nehemia', 'EST': 'Ester', 'JOB': 'Hiob', 'PSA': 'Psalm',
+                'PRO': 'Sprüche', 'ECC': 'Prediger', 'SNG': 'Hohelied', 'ISA': 'Jesaja', 'JER': 'Jeremia',
+                'LAM': 'Klagelieder', 'EZK': 'Hesekiel', 'DAN': 'Daniel', 'HOS': 'Hosea', 'JOL': 'Joel',
+                'AMO': 'Amos', 'OBA': 'Obadja', 'JON': 'Jona', 'MIC': 'Micha', 'NAM': 'Nahum',
+                'HAB': 'Habakuk', 'ZEP': 'Zefanja', 'HAG': 'Haggai', 'ZEC': 'Sacharja', 'MAL': 'Maleachi'
+            };
             
-            document.getElementById('resultReference').textContent = selectedVerse.reference;
-            document.getElementById('resultText').textContent = '"' + selectedVerse.text + '"';
-            document.getElementById('selectVerseBtn').href = '/vers/' + selectedVerse.id + '/spendenart';
+            books.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.toLowerCase();
+                option.textContent = bookNames[book] || book;
+                this.bookSelect.appendChild(option);
+            });
+        }
+        
+        async onBookChange() {
+            const selectedBook = this.bookSelect.value;
+            
+            // Reset dependent dropdowns
+            this.resetChapterSelect();
+            this.resetVerseSelect();
+            this.updateSearchButton();
+            
+            if (!selectedBook) return;
+            
+            try {
+                this.showSpinner('chapterSpinner');
+                const response = await fetch(`/api/verse/chapters/${selectedBook}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.populateChapterSelect(data.chapters);
+                } else {
+                    this.showError('Fehler beim Laden der Kapitel');
+                }
+            } catch (error) {
+                this.showError('Netzwerkfehler beim Laden der Kapitel');
+            } finally {
+                this.hideSpinner('chapterSpinner');
+            }
+        }
+        
+        populateChapterSelect(chapters) {
+            this.chapterSelect.innerHTML = '<option value="">Kapitel wählen...</option>';
+            
+            chapters.forEach(chapter => {
+                const option = document.createElement('option');
+                option.value = chapter;
+                option.textContent = chapter;
+                this.chapterSelect.appendChild(option);
+            });
+            
+            this.chapterSelect.disabled = false;
+        }
+        
+        async onChapterChange() {
+            const selectedBook = this.bookSelect.value;
+            const selectedChapter = this.chapterSelect.value;
+            
+            // Reset verse dropdown
+            this.resetVerseSelect();
+            this.updateSearchButton();
+            
+            if (!selectedBook || !selectedChapter) return;
+            
+            try {
+                this.showSpinner('verseSpinner');
+                const response = await fetch(`/api/verse/verses/${selectedBook}/${selectedChapter}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.populateVerseSelect(data.verses);
+                } else {
+                    this.showError('Fehler beim Laden der Verse');
+                }
+            } catch (error) {
+                this.showError('Netzwerkfehler beim Laden der Verse');
+            } finally {
+                this.hideSpinner('verseSpinner');
+            }
+        }
+        
+        populateVerseSelect(verses) {
+            this.verseSelect.innerHTML = '<option value="">Vers wählen...</option>';
+            
+            verses.forEach(verse => {
+                const option = document.createElement('option');
+                option.value = verse;
+                option.textContent = verse;
+                this.verseSelect.appendChild(option);
+            });
+            
+            this.verseSelect.disabled = false;
+        }
+        
+        onVerseChange() {
+            this.updateSearchButton();
+        }
+        
+        updateSearchButton() {
+            const allSelected = this.bookSelect.value && this.chapterSelect.value && this.verseSelect.value;
+            this.searchButton.disabled = !allSelected;
+        }
+        
+        async onSubmit(e) {
+            e.preventDefault();
+            
+            const book = this.bookSelect.value;
+            const chapter = this.chapterSelect.value;
+            const verse = this.verseSelect.value;
+            
+            if (!book || !chapter || !verse) return;
+            
+            try {
+                this.showSearchSpinner();
+                this.hideError();
+                this.hideResults();
+                
+                const response = await fetch(`/api/verse/reference/${book}/${chapter}/${verse}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.displaySearchResult(data);
+                } else {
+                    this.showError(data.error || 'Vers nicht gefunden');
+                }
+            } catch (error) {
+                this.showError('Netzwerkfehler bei der Suche');
+            } finally {
+                this.hideSearchSpinner();
+            }
+        }
+        
+        displaySearchResult(data) {
+            const verse = data.verse;
+            
+            if (verse.is_sponsored) {
+                this.displaySponsoredVerse(verse, data.similar_verses || []);
+            } else {
+                this.displayAvailableVerse(verse);
+            }
+        }
+        
+        displayAvailableVerse(verse) {
+            document.getElementById('resultReference').textContent = verse.reference;
+            document.getElementById('resultText').textContent = `"${verse.text}"`;
+            document.getElementById('selectVerseBtn').href = `/vers/${verse.url_slug}/spendenart`;
+            
             document.getElementById('searchResult').style.display = 'block';
+            document.getElementById('sponsoredResult').style.display = 'none';
             document.getElementById('searchResult').scrollIntoView({behavior: 'smooth'});
         }
-    });
-    
-    // Demo: Enable chapter dropdown when book is selected
-    document.getElementById('book').addEventListener('change', function() {
-        const chapterSelect = document.getElementById('chapter');
-        chapterSelect.disabled = false;
-        chapterSelect.innerHTML = '<option value="">Kapitel wählen...</option>';
         
-        // Add demo chapters
-        for (let i = 1; i <= 50; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = i;
-            chapterSelect.appendChild(option);
+        displaySponsoredVerse(verse, similarVerses) {
+            document.getElementById('sponsoredReference').textContent = verse.reference;
+            document.getElementById('sponsoredText').textContent = `"${verse.text}"`;
+            
+            this.displaySimilarVerses(similarVerses);
+            
+            document.getElementById('searchResult').style.display = 'none';
+            document.getElementById('sponsoredResult').style.display = 'block';
+            document.getElementById('sponsoredResult').scrollIntoView({behavior: 'smooth'});
         }
-    });
-    
-    // Demo: Enable verse dropdown when chapter is selected
-    document.getElementById('chapter').addEventListener('change', function() {
-        const verseSelect = document.getElementById('verse');
-        verseSelect.disabled = false;
-        verseSelect.innerHTML = '<option value="">Vers wählen...</option>';
         
-        // Add demo verses
-        for (let i = 1; i <= 31; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = i;
-            verseSelect.appendChild(option);
+        displaySimilarVerses(verses) {
+            const container = document.getElementById('similarVerses');
+            const noAlternatives = document.getElementById('noAlternatives');
+            const moreOptions = document.getElementById('moreOptions');
+            
+            if (!verses || verses.length === 0) {
+                container.innerHTML = '';
+                noAlternatives.classList.remove('d-none');
+                moreOptions.classList.add('d-none');
+                return;
+            }
+            
+            noAlternatives.classList.add('d-none');
+            moreOptions.classList.remove('d-none');
+            
+            container.innerHTML = verses.map(verse => `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title text-primary">${verse.reference}</h6>
+                        <p class="card-text">"${verse.text}"</p>
+                        <div class="text-end">
+                            <a href="/vers/${verse.url_slug}/spendenart" class="btn btn-primary">
+                                Diesen Vers wählen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
+        
+        // Helper methods
+        resetChapterSelect() {
+            this.chapterSelect.innerHTML = '<option value="">Kapitel wählen...</option>';
+            this.chapterSelect.disabled = true;
+        }
+        
+        resetVerseSelect() {
+            this.verseSelect.innerHTML = '<option value="">Vers wählen...</option>';
+            this.verseSelect.disabled = true;
+        }
+        
+        showSpinner(spinnerId) {
+            document.getElementById(spinnerId).classList.remove('d-none');
+        }
+        
+        hideSpinner(spinnerId) {
+            document.getElementById(spinnerId).classList.add('d-none');
+        }
+        
+        showSearchSpinner() {
+            document.getElementById('searchSpinner').classList.remove('d-none');
+            this.searchButton.disabled = true;
+        }
+        
+        hideSearchSpinner() {
+            document.getElementById('searchSpinner').classList.add('d-none');
+            this.updateSearchButton();
+        }
+        
+        showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('d-none');
+        }
+        
+        hideError() {
+            document.getElementById('errorMessage').classList.add('d-none');
+        }
+        
+        hideResults() {
+            document.getElementById('searchResult').style.display = 'none';
+            document.getElementById('sponsoredResult').style.display = 'none';
+        }
+    }
+    
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        new ReferenceSearch();
     });
 </script>
 {% endblock %}

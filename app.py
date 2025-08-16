@@ -392,7 +392,7 @@ def vers_spendenart(verse_id):
     
     # Check ob bereits gesponsert
     if verse.is_sponsored:
-        flash(f"Der Vers {verse.reference} wurde bereits gesponsert. Bitte wählen Sie einen anderen.", "warning")
+        flash(f"Dieser Vers wurde inzwischen gesponsert. Bitte wählen Sie einen anderen.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
     # Check ob bereits reserviert (von anderem User)
@@ -780,6 +780,219 @@ def dashboard():
     }
     
     return render_template("dashboard.html", user=current_user, stats=stats)
+
+# ==========================================
+# REFERENCE SEARCH API ROUTES
+# ==========================================
+
+@app.route("/api/verse/reference/<book>/<int:chapter>/<int:verse_num>")
+def api_verse_by_reference(book, chapter, verse_num):
+    """API endpoint for verse reference search with enhanced error handling."""
+    # Input validation
+    if not book or not book.strip():
+        return {
+            'success': False,
+            'error': 'Book name is required'
+        }, 400
+    
+    if chapter <= 0 or verse_num <= 0:
+        return {
+            'success': False,
+            'error': 'Chapter and verse numbers must be positive'
+        }, 400
+    
+    if chapter > 200 or verse_num > 200:  # Reasonable limits
+        return {
+            'success': False,
+            'error': 'Chapter or verse number seems too large'
+        }, 400
+    
+    try:
+        verse = Verse.get_by_reference(book, chapter, verse_num)
+        
+        if not verse:
+            return {
+                'success': False,
+                'error': f'Verse {book} {chapter}:{verse_num} not found in database',
+                'suggestion': 'Please check the book name, chapter and verse numbers'
+            }, 404
+        
+        # If verse is sponsored, include similar verses
+        response_data = {
+            'success': True,
+            'verse': {
+                'id': verse.id,
+                'book': verse.book,
+                'chapter': verse.chapter,
+                'verse': verse.verse,
+                'text': verse.text,
+                'reference': verse.reference,
+                'positivity_score': verse.positivity_score,
+                'is_sponsored': verse.is_sponsored,
+                'url_slug': verse.url_slug
+            }
+        }
+        
+        # Add similar verses if this one is sponsored
+        if verse.is_sponsored:
+            similar_verses = verse.find_similar_verses(limit=3, positivity_tolerance=10)
+            response_data['similar_verses'] = [
+                {
+                    'id': alt.id,
+                    'reference': alt.reference,
+                    'text': alt.text,  # Show full text for alternative verses
+                    'positivity_score': alt.positivity_score,
+                    'url_slug': alt.url_slug
+                }
+                for alt in similar_verses
+            ]
+        
+        return response_data
+        
+    except Exception as e:
+        app.logger.error(f"Error in verse reference search: {e}")
+        return {
+            'success': False,
+            'error': 'Internal server error occurred while searching for verse'
+        }, 500
+
+@app.route("/api/verse/<int:verse_id>/similar")
+def api_similar_verses(verse_id):
+    """Get similar verses for a sponsored verse"""
+    try:
+        verse = Verse.query.get(verse_id)
+        if not verse:
+            return {
+                'success': False,
+                'error': 'Verse not found'
+            }, 404
+        
+        alternatives = verse.find_similar_verses(limit=3, positivity_tolerance=10)
+        
+        alternatives_data = []
+        for alt in alternatives:
+            alternatives_data.append({
+                'id': alt.id,
+                'book': alt.book,
+                'chapter': alt.chapter,
+                'verse': alt.verse,
+                'text': alt.text,
+                'reference': alt.reference,
+                'positivity_score': alt.positivity_score,
+                'url_slug': alt.url_slug
+            })
+        
+        return {
+            'success': True,
+            'original_verse': {
+                'id': verse.id,
+                'reference': verse.reference,
+                'is_sponsored': verse.is_sponsored
+            },
+            'alternatives': alternatives_data
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
+
+@app.route("/api/verse/books")
+def api_verse_books():
+    """Get list of all available books in biblical order"""
+    try:
+        # Get all available books from database
+        available_books_query = db.session.query(Verse.book.distinct()).all()
+        available_books = {book[0] for book in available_books_query if book[0]}
+        
+        # Biblical order for Old Testament books
+        biblical_order = [
+            # Missing: GEN, EXO, LEV, NUM, DEU, JOS, JDG, RUT, 1SA, 2SA (not in our AT-only dataset)
+            '1KI',      # 1.Könige  
+            '2KI',      # 2.Könige
+            '1CH',      # 1.Chronik
+            '2CH',      # 2.Chronik
+            'EZR',      # Esra
+            'NEH',      # Nehemia  
+            'EST',      # Esther
+            'JOB',      # Hiob
+            # Missing: PSA, PRO (not in available books)
+            'ECC',      # Prediger
+            'SNG',      # Hoheslied
+            'ISA',      # Jesaja
+            'JER',      # Jeremia
+            'LAM',      # Klagelieder
+            'EZK',      # Hesekiel
+            'DAN',      # Daniel
+            'HOS',      # Hosea
+            'JOL',      # Joel
+            'AMO',      # Amos
+            'OBA',      # Obadja
+            # Missing: JON (not in available books)
+            'MIC',      # Micha
+            'NAM',      # Nahum
+            'HAB',      # Habakuk
+            'ZEP',      # Zefanja
+            'HAG',      # Haggai
+            'ZEC',      # Sacharja
+            'MAL'       # Maleachi
+        ]
+        
+        # Return only books that exist in database, in biblical order
+        book_list = [book for book in biblical_order if book in available_books]
+        
+        return {
+            'success': True,
+            'books': book_list
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
+
+@app.route("/api/verse/chapters/<book>")
+def api_verse_chapters(book):
+    """Get list of chapters for a specific book"""
+    try:
+        book_upper = book.upper()
+        chapters = db.session.query(Verse.chapter.distinct()).filter(
+            Verse.book == book_upper
+        ).order_by(Verse.chapter).all()
+        
+        chapter_list = [chapter[0] for chapter in chapters if chapter[0]]
+        
+        return {
+            'success': True,
+            'chapters': chapter_list
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
+
+@app.route("/api/verse/verses/<book>/<int:chapter>")
+def api_verse_verses(book, chapter):
+    """Get list of verses for a specific book and chapter"""
+    try:
+        book_upper = book.upper()
+        verses = db.session.query(Verse.verse.distinct()).filter(
+            Verse.book == book_upper,
+            Verse.chapter == chapter
+        ).order_by(Verse.verse).all()
+        
+        verse_list = [verse[0] for verse in verses if verse[0]]
+        
+        return {
+            'success': True,
+            'verses': verse_list
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
 
 # ==========================================
 # CONTACT ROUTES

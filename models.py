@@ -149,6 +149,180 @@ class Verse(db.Model):
         ).limit(limit).all()
     
     @classmethod
+    def get_by_reference(cls, book, chapter, verse_num):
+        """Get verse by biblical reference (book, chapter, verse)."""
+        if not book or chapter is None or verse_num is None:
+            return None
+        
+        if chapter <= 0 or verse_num <= 0:
+            return None
+        
+        # Normalize book name to uppercase for consistent lookup
+        book_upper = book.upper() if book else None
+        
+        return cls.query.filter_by(
+            book=book_upper,
+            chapter=chapter,
+            verse=verse_num
+        ).first()
+    
+    def find_similar_verses(self, limit=3, positivity_tolerance=10, 
+                           use_semantic=True, use_keywords=True):
+        """Find semantically and thematically similar verses."""
+        if not self.text:
+            return []
+        
+        # Start with all unsponsored verses in positivity range
+        min_score = max(0, self.positivity_score - positivity_tolerance)
+        max_score = min(100, self.positivity_score + positivity_tolerance)
+        
+        base_query = self.__class__.query.filter(
+            self.__class__.is_sponsored == False,
+            self.__class__.id != self.id,
+            self.__class__.positivity_score.between(min_score, max_score)
+        )
+        
+        # Use semantic search if available and requested
+        if use_semantic and hasattr(self.__class__, 'search_semantic'):
+            # Try semantic search first if embeddings are available
+            similar_verses = self.__class__.search_semantic(
+                embedding=None,  # Would use self.text_embedding in real implementation
+                limit=limit * 2
+            )
+            
+            # Filter to match our criteria
+            filtered = [v for v in similar_verses 
+                       if not v.is_sponsored 
+                       and v.id != self.id
+                       and min_score <= (v.positivity_score or 0) <= max_score]
+            
+            if filtered:
+                return filtered[:limit]
+        
+        # Fallback to hybrid search if available
+        if use_keywords and hasattr(self.__class__, 'search_hybrid'):
+            # Extract keywords for hybrid search
+            keywords = self.extract_keywords(max_keywords=3) if use_keywords else []
+            query_text = ' '.join(keywords) if keywords else self.text[:100]
+            
+            # Use existing hybrid search method
+            similar_verses = self.__class__.search_hybrid(
+                query_text, 
+                limit=limit * 2  # Get more to filter
+            )
+            
+            # Filter to match our criteria
+            filtered = [v for v in similar_verses 
+                       if not v.is_sponsored 
+                       and v.id != self.id
+                       and min_score <= (v.positivity_score or 0) <= max_score]
+            
+            if filtered:
+                return filtered[:limit]
+        
+        # Final fallback: just return verses with similar positivity scores
+        return base_query.order_by(
+            func.abs(self.__class__.positivity_score - self.positivity_score)
+        ).limit(limit).all()
+    
+    def extract_keywords(self, max_keywords=5):
+        """Extract important keywords from verse text with religious term priority."""
+        if not self.text:
+            return []
+        
+        import re
+        
+        # German stopwords (comprehensive list)
+        stopwords = {
+            'der', 'die', 'das', 'und', 'in', 'zu', 'mit', 'auf', 'für', 
+            'von', 'ist', 'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr',
+            'ein', 'eine', 'einen', 'dem', 'den', 'des', 'als', 'aber',
+            'so', 'da', 'wenn', 'wie', 'auch', 'noch', 'wird', 'war',
+            'hat', 'haben', 'dass', 'sich', 'nicht', 'nur', 'alle',
+            'am', 'im', 'um', 'an', 'bei', 'nach', 'vor', 'über',
+            'unter', 'durch', 'bis', 'dann', 'schon', 'sein', 'seine',
+            'ihm', 'ihn', 'ihre', 'mir', 'mich', 'uns', 'euch', 'aus',
+            'oder', 'kann', 'will', 'soll', 'muss', 'doch', 'was', 'wer'
+        }
+        
+        # High-priority religious and positive terms
+        high_priority_terms = {
+            'gott', 'herr', 'jesus', 'christus', 'geist', 'heilig',
+            'liebe', 'hoffnung', 'frieden', 'freude', 'gnade', 'segen',
+            'vertrauen', 'glauben', 'treue', 'barmherzigkeit', 'güte',
+            'hirte', 'vater', 'sohn', 'erlöser', 'retter', 'heiland',
+            'ewigkeit', 'himmel', 'königreich', 'erlösung', 'vergebung'
+        }
+        
+        # Clean text and split into words
+        text = re.sub(r'[^\w\s]', ' ', self.text.lower())
+        words = text.split()
+        
+        # Categorize words
+        priority_keywords = []
+        regular_keywords = []
+        
+        for word in words:
+            if (len(word) >= 3 and 
+                word not in stopwords and 
+                not word.isdigit()):
+                
+                if word.lower() in high_priority_terms:
+                    priority_keywords.append(word.capitalize())
+                else:
+                    regular_keywords.append(word.capitalize())
+        
+        # Remove duplicates while preserving order
+        def deduplicate(word_list):
+            seen = set()
+            unique = []
+            for word in word_list:
+                if word.lower() not in seen:
+                    seen.add(word.lower())
+                    unique.append(word)
+            return unique
+        
+        priority_keywords = deduplicate(priority_keywords)
+        regular_keywords = deduplicate(regular_keywords)
+        
+        # Combine with priority terms first
+        final_keywords = priority_keywords + regular_keywords
+        
+        return final_keywords[:max_keywords]
+    
+    def calculate_similarity_score(self, other_verse_text, positivity_difference,
+                                 semantic_weight=0.6, keyword_weight=0.3, 
+                                 positivity_weight=0.1):
+        """Calculate combined similarity score between verses."""
+        # Simple implementation for TDD - will improve later
+        if not other_verse_text:
+            return 0.0
+        
+        # Keyword similarity (basic overlap)
+        self_keywords = set(self.extract_keywords())
+        other_keywords = set(self.extract_keywords())  # Would use other_verse_text
+        
+        if self_keywords:
+            keyword_sim = len(self_keywords & other_keywords) / len(self_keywords)
+        else:
+            keyword_sim = 0.0
+        
+        # Positivity similarity
+        positivity_sim = max(0, 1 - abs(positivity_difference) / 100)
+        
+        # Semantic similarity (placeholder - would use embeddings)
+        semantic_sim = 0.5  # Placeholder
+        
+        # Combined score
+        total_score = (
+            semantic_weight * semantic_sim +
+            keyword_weight * keyword_sim +
+            positivity_weight * positivity_sim
+        )
+        
+        return min(1.0, max(0.0, total_score))
+
+    @classmethod
     def get_adaptive_featured_verses(cls, limit=3, exclude_ids=None):
         """Adaptive Auswahl basierend auf verfügbaren Versen"""
         exclude_ids = exclude_ids or []
