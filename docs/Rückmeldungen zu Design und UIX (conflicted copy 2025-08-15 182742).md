@@ -6,9 +6,9 @@
 
 - Farben müssen vereinheitlicht werden (css) -> Color Picker Complementing / Contrasting (Canva) https://www.canva.com/colors/color-wheel/
 - iPad Pro Größe Breakpoints stimmen nicht (Navbar u.a.)
-- Navbar: Über uns: NGÜ - Peter-Schöffer-Stiftung - Transparenz
 - Passwort-Hashing: argon2id
-- Eine Art Liveticker, wer zuletzt wie viele Verse gesponsert hat.
+- Idee: Eine Art Liveticker, wer zuletzt wie viele Verse gesponsert hat.
+- Retry-Strategie für Zahlungen überlegen.
 
 #### zertifikat
 
@@ -37,7 +37,7 @@
 
 #### /checkout/zusammenfassung
 
-- Bezahlmöglichkeiten Grafisch darstellen (u.a. Paypal, wenn Stripe das anbietet)
+- Alert bei Entfernung: möchten sie *diesen* *einzelspende/geschenk/gruppe* wirklich aus dem *Warenkorb* entfernen?
 
 #### /dashboard
 
@@ -45,15 +45,18 @@
 
 #### /datenschutz
 
-- Farben
+- 
 - Text
 
 #### /faq
 
-- Suche funktioniert noch nicht.
+- Wann wird die NGÜ vollständig erscheinen? -> Frühestens 2030
+- Wer steht hinter ... Wann ist die DBG ausgestiegen? 
 
 #### /impressum
 
+- 
+- "Vorstand-Vorsitzenden"
 - E-Mail / Link anklickbar machen
 - Registereintrag
 - Steuerliche Angaben
@@ -62,7 +65,7 @@
 
 #### /index
 
-- Aktueller Projektstand -> anders formulieren, damit klar wird, dass schon große Teile der NGE übersetzt sind.
+- 
 
 #### /layout
 

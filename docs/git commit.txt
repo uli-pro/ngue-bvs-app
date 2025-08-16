@@ -1,5 +1,4 @@
-  git commit -m "$(cat <<'EOF'
-  SQLAlchemy-Models implementiert & Demo-App in /demo verschoben
+  git commit -m "SQLAlchemy-Models implementiert & Demo-App in /demo verschoben
 
   - Demo-App in /demo/ isoliert für kontinuierliches User-Feedback
   - Production-Entwicklung im Root-Verzeichnis vorbereitet
@@ -14,7 +13,4 @@
   - Production-Dependencies erweitert: Stripe, PDF-Generation, E-Mail
   - Argon2id Passwort-Hashing für erhöhte Sicherheit
   - Comprehensive TODO-Dokumentation in /docs/development-todos/
-  - Datenbankstruktur ready für 11.000+ Verse-Import
-
-  EOF
-  )"
+  - Datenbankstruktur ready für 11.000+ Verse-Import"

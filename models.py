@@ -6,8 +6,9 @@ Using SQLAlchemy with PostgreSQL
 from datetime import datetime, timedelta
 from decimal import Decimal
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Index, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Index, UniqueConstraint, text, func
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
+from pgvector.sqlalchemy import Vector
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, HashingError
 
@@ -31,6 +32,8 @@ class Verse(db.Model):
     chapter = db.Column(db.Integer, nullable=False)
     verse = db.Column(db.Integer, nullable=False)
     text = db.Column(db.Text, nullable=False)
+    text_search = db.Column(TSVECTOR)  # For full-text search
+    text_embedding = db.Column(Vector(1536))  # OpenAI text-embedding-3-small dimension
     positivity_score = db.Column(db.Integer)  # 0-100
     is_sponsored = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -39,12 +42,14 @@ class Verse(db.Model):
     donations = db.relationship('Donation', backref='verse', lazy='dynamic')
     donation_cart_items = db.relationship('DonationCartItem', backref='verse', lazy='dynamic')
     
-    # Constraints
+    # Constraints and indexes
     __table_args__ = (
         UniqueConstraint('book', 'chapter', 'verse', name='uq_verse_reference'),
         Index('idx_verse_book_chapter', 'book', 'chapter'),
         Index('idx_verse_positivity', 'positivity_score'),
         Index('idx_verse_sponsored', 'is_sponsored'),
+        Index('idx_verse_text_search', 'text_search', postgresql_using='gin'),
+        Index('idx_verse_embedding', 'text_embedding', postgresql_using='ivfflat', postgresql_ops={'text_embedding': 'vector_cosine_ops'}),
     )
     
     def __repr__(self):
@@ -61,6 +66,93 @@ class Verse(db.Model):
         if len(self.text) <= max_length:
             return self.text
         return self.text[:max_length] + "..."
+    
+    @classmethod
+    def search_keyword(cls, query, limit=10):
+        """Full-text search using PostgreSQL tsvector"""
+        search_query = func.plainto_tsquery('german', query)
+        results = cls.query.filter(
+            cls.text_search.op('@@')(search_query)
+        ).filter(
+            cls.is_sponsored == False
+        ).order_by(
+            func.ts_rank(cls.text_search, search_query).desc()
+        ).limit(limit).all()
+        return results
+    
+    @classmethod
+    def search_semantic(cls, embedding, limit=10):
+        """Semantic search using vector similarity"""
+        if embedding is None:
+            return []
+        
+        results = cls.query.filter(
+            cls.text_embedding.isnot(None),
+            cls.is_sponsored == False
+        ).order_by(
+            cls.text_embedding.cosine_distance(embedding)
+        ).limit(limit).all()
+        return results
+    
+    @classmethod
+    def search_hybrid(cls, query, embedding=None, keyword_weight=0.5, limit=10):
+        """Hybrid search combining keyword and semantic search"""
+        # Dynamic weighting based on query length
+        words = query.split()
+        if len(words) <= 2:
+            keyword_weight = 0.8
+        elif len(words) <= 5:
+            keyword_weight = 0.5
+        else:
+            keyword_weight = 0.2
+        
+        vector_weight = 1 - keyword_weight
+        
+        # Build the hybrid query
+        search_query = func.plainto_tsquery('german', query)
+        
+        if embedding is not None and vector_weight > 0:
+            # Combine keyword and vector scores
+            score = (
+                keyword_weight * func.ts_rank(cls.text_search, search_query) +
+                vector_weight * (1 - cls.text_embedding.cosine_distance(embedding))
+            )
+        else:
+            # Keyword search only
+            score = func.ts_rank(cls.text_search, search_query)
+        
+        results = cls.query.filter(
+            cls.text_search.op('@@')(search_query),
+            cls.is_sponsored == False
+        ).order_by(
+            score.desc()
+        ).limit(limit).all()
+        
+        return results
+    
+    @classmethod
+    def get_top_positive_unsponsored(cls, limit=3):
+        """Get top unsponsored verses by positivity score"""
+        return cls.query.filter(
+            cls.is_sponsored == False,
+            cls.positivity_score.isnot(None)
+        ).order_by(
+            cls.positivity_score.desc()
+        ).limit(limit).all()
+    
+    def update_text_search(self):
+        """Update the tsvector column for full-text search"""
+        if self.text:
+            # Use German configuration for better German text search
+            db.session.execute(
+                text("""
+                    UPDATE verses 
+                    SET text_search = to_tsvector('german', :text)
+                    WHERE id = :id
+                """),
+                {'text': self.text, 'id': self.id}
+            )
+            db.session.commit()
 
 
 class User(db.Model):
@@ -541,7 +633,29 @@ def init_db(app):
     """Initialize database with app context"""
     db.init_app(app)
     with app.app_context():
+        # Create pgvector extension first
+        db.session.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
+        db.session.commit()
+        
+        # Create all tables
         db.create_all()
+        
+        # Create trigger for automatic text_search updates
+        db.session.execute(text("""
+            CREATE OR REPLACE FUNCTION update_verse_text_search()
+            RETURNS trigger AS $$
+            BEGIN
+                NEW.text_search := to_tsvector('german', NEW.text);
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+            
+            CREATE TRIGGER verse_text_search_trigger
+            BEFORE INSERT OR UPDATE OF text ON verses
+            FOR EACH ROW
+            EXECUTE FUNCTION update_verse_text_search();
+        """))
+        db.session.commit()
 
 
 def import_all_verses():
@@ -561,8 +675,16 @@ def import_all_verses():
     with open(verses_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
-    # Get verses from JSON (skip metadata)
-    verses_data = data.get('verses', [])
+    # Get verses from JSON - handle both formats
+    if 'scored_verses' in data:
+        # New format with scored_verses
+        verses_data = data['scored_verses']
+    elif 'verses' in data:
+        # Old format with verses
+        verses_data = data['verses']
+    else:
+        print("Error: Unknown JSON format!")
+        return
     
     print(f"Found {len(verses_data)} verses to import...")
     
@@ -574,20 +696,20 @@ def import_all_verses():
         existing = Verse.query.filter_by(
             book=verse_data['book'],
             chapter=verse_data['chapter'],
-            verse=verse_data['verse_number']
+            verse=verse_data.get('verse_number', verse_data.get('verse'))
         ).first()
         
         if existing:
             skipped_count += 1
             continue
         
-        # Create new verse
+        # Create new verse (trigger will automatically create text_search vector)
         verse = Verse(
             book=verse_data['book'],
             chapter=verse_data['chapter'],
-            verse=verse_data['verse_number'],
+            verse=verse_data.get('verse_number', verse_data.get('verse')),
             text=verse_data['text'],
-            positivity_score=verse_data['positivity_score']
+            positivity_score=verse_data.get('positivity_score')
         )
         
         db.session.add(verse)
@@ -601,9 +723,14 @@ def import_all_verses():
     # Final commit
     db.session.commit()
     
-    print(f"Import completed!")
+    print(f"\nImport completed!")
     print(f"- Imported: {imported_count} verses")
     print(f"- Skipped (already existed): {skipped_count} verses")
     print(f"- Total verses in database: {Verse.query.count()}")
+    
+    # Note about vectorization
+    if imported_count > 0:
+        print(f"\n⚠️  Note: Text search is ready to use!")
+        print(f"   For semantic search, run: python vectorize.py")
 
 
