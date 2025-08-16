@@ -9,7 +9,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1>Willkommen zurück{% if current_user %}, {{ current_user.first_name }}{% endif %}!</h1>
+                    <h1>Willkommen zurück{% if current_user.is_authenticated %}, {{ current_user.first_name }}{% endif %}!</h1>
                     <p class="text-muted mb-0">
                         Hier ist die Übersicht Ihrer gesponserten Verse
                     </p>
@@ -219,24 +219,24 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Altes Testament Übersetzung</span>
-                            <span><strong>3.2%</strong></span>
+                            <span><strong>{{ stats.percentage }}%</strong></span>
                         </div>
                         <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: 3.2%"></div>
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.percentage }}%"></div>
                         </div>
                     </div>
                     
                     <div class="row text-center">
                         <div class="col-4">
-                            <h5 class="text-primary mb-0">354</h5>
+                            <h5 class="text-primary mb-0">{{ "{:,}".format(stats.sponsored_verses).replace(",", ".") }}</h5>
                             <small class="text-muted">Verse finanziert</small>
                         </div>
                         <div class="col-4">
-                            <h5 class="text-secondary mb-0">10.693</h5>
+                            <h5 class="text-secondary mb-0">{{ "{:,}".format(stats.available_verses).replace(",", ".") }}</h5>
                             <small class="text-muted">Verse verfügbar</small>
                         </div>
                         <div class="col-4">
-                            <h5 class="text-success mb-0">35.400€</h5>
+                            <h5 class="text-success mb-0">{{ "{:,}".format(stats.total_amount).replace(",", ".") }}€</h5>
                             <small class="text-muted">Gesammelt</small>
                         </div>
                     </div>

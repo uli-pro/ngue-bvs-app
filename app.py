@@ -1,33 +1,89 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_user, logout_user, login_required as flask_login_required, current_user
+from flask_wtf import FlaskForm, CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import secrets
-import hashlib
 from functools import wraps
-from werkzeug.security import generate_password_hash, check_password_hash
+# Password hashing handled by models.py with Argon2
 import re
+
+# Load environment variables
+load_dotenv()
 
 # Configure application
 app = Flask(__name__)
 
+# Load configuration from environment
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# Configure session to use filesystem (instead of signed cookies)
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
+# Initialize extensions
+from models import db, User, Verse, Donation, VerificationToken, ResetToken, VerseReservation
+db.init_app(app)
 
-# Generate a secret key if not in production
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+# Configure session to use database (production-ready)
+app.config["SESSION_PERMANENT"] = True  # Make sessions permanent so they get expiry dates
+app.config["SESSION_TYPE"] = "sqlalchemy"
+app.config["SESSION_SQLALCHEMY"] = db
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=31)  # Set session lifetime
 
-Session(app)
+# CSRF Protection
+csrf = CSRFProtect(app)
 
-# Demo user storage (in production, use database)
-demo_users = {}
-verification_tokens = {}
-reset_tokens = {}
-login_attempts = {}  # Track failed login attempts for rate limiting
+# Rate Limiting
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["1000 per hour"]
+)
+
+# Session Security (development-safe)
+if app.debug:
+    # Development: HTTP-friendly settings
+    app.config["SESSION_COOKIE_SECURE"] = False
+else:
+    # Production: HTTPS-only settings
+    app.config["SESSION_COOKIE_SECURE"] = True
+
+# Security settings for all environments
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = 'Lax'
+
+# Login Manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Bitte melden Sie sich an, um diese Seite zu sehen.'
+login_manager.login_message_category = 'warning'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Initialize Flask-Session
+sess = Session(app)
+
+# Create sessions table if it doesn't exist
+with app.app_context():
+    try:
+        # This creates the sessions table if it doesn't exist
+        sess.app.session_interface.db.create_all()
+    except Exception as e:
+        # Table might already exist, that's fine
+        print(f"Sessions table initialization: {e}")
+
+# Login attempts tracking (TODO: Move to database table later)
+login_attempts = {}
 
 # Custom filter for currency formatting
 @app.template_filter('currency')
@@ -35,18 +91,15 @@ def currency_filter(value):
     """Format value as EUR currency."""
     return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
-# Context processor to inject current year and user info
+# Context processor to inject current year
 @app.context_processor
 def inject_context():
-    user_info = None
-    if session.get("user_id"):
-        user_info = demo_users.get(session["user_id"])
     return {
-        'current_year': datetime.now().year,
-        'current_user': user_info
+        'current_year': datetime.now().year
+        # current_user is automatically available via Flask-Login
     }
 
-# Helper function for demo verse data
+# Helper function for demo verse data - Delete as soon as verses from db are used.
 def get_demo_verse(verse_id):
     """Get demo verse data for the given ID."""
     verses = {
@@ -68,17 +121,6 @@ def get_demo_verse(verse_id):
 # ==========================================
 # HELPER FUNCTIONS FOR USER MANAGEMENT
 # ==========================================
-
-def login_required(f):
-    """Decorator for routes that require login."""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get("user_id") is None:
-            flash("Bitte melden Sie sich an, um diese Seite zu sehen.", "warning")
-            session["next_url"] = request.url
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-    return decorated_function
 
 def generate_verification_token():
     """Generate a secure verification token."""
@@ -117,42 +159,59 @@ def check_rate_limit(email):
     
     return True
 
-def create_demo_user(email, password, first_name, last_name, newsletter=False):
-    """Create a demo user account."""
-    user_id = secrets.token_hex(16)
+def create_user(email, password, first_name, last_name, newsletter=False):
+    """Create a real user account in database."""
     verification_token = generate_verification_token()
     
-    demo_users[user_id] = {
-        "id": user_id,
-        "email": email,
-        "password_hash": generate_password_hash(password),
-        "first_name": first_name,
-        "last_name": last_name,
-        "newsletter": newsletter,
-        "verified": False,
-        "created_at": datetime.now(),
-        "sponsored_verses": []
-    }
+    # Create new user with Argon2 password hashing
+    user = User(
+        email=email.lower(),
+        first_name=first_name,
+        last_name=last_name,
+        newsletter_opt_in=newsletter,
+        is_verified=False  # Needs email verification
+    )
     
-    verification_tokens[verification_token] = user_id
-    return user_id, verification_token
+    # Set password using Argon2 (from models.py)
+    user.set_password(password)
+    
+    # Save to database
+    db.session.add(user)
+    db.session.commit()
+    
+    # Create verification token in database
+    token_obj = VerificationToken(
+        user_id=user.id,
+        token=verification_token
+    )
+    db.session.add(token_obj)
+    db.session.commit()
+    
+    return user.id, verification_token
 
 def verify_user_email(token):
     """Verify user email with token."""
-    if token in verification_tokens:
-        user_id = verification_tokens[token]
-        if user_id in demo_users:
-            demo_users[user_id]["verified"] = True
-            del verification_tokens[token]
-            return True, user_id
-    return False, None
+    token_obj = VerificationToken.query.filter_by(token=token, used=False).first()
+    
+    if not token_obj:
+        return False, None
+    
+    if token_obj.is_expired:
+        return False, None
+    
+    # Mark user as verified
+    user = token_obj.user
+    user.is_verified = True
+    
+    # Mark token as used
+    token_obj.used = True
+    
+    db.session.commit()
+    return True, user.id
 
 def find_user_by_email(email):
-    """Find user by email address."""
-    for user_id, user in demo_users.items():
-        if user["email"].lower() == email.lower():
-            return user
-    return None
+    """Find user by email address from database."""
+    return User.query.filter_by(email=email.lower()).first()
 
 # ==========================================
 # MAIN ROUTES
@@ -161,18 +220,103 @@ def find_user_by_email(email):
 @app.route("/")
 def index():
     """Show homepage"""
+    # Get real statistics from database
+    total_verses = Verse.query.count()
+    sponsored_verses = Verse.query.filter_by(is_sponsored=True).count()
+    available_verses = total_verses - sponsored_verses
+    percentage = round((sponsored_verses / total_verses * 100), 1) if total_verses > 0 else 0
+    
+    # Bible translation progress calculations
+    # Constants for complete Bible
+    NT_VERSES = 7958  # New Testament - completely translated
+    AT_VERSES = 23186  # Old Testament - total verses
+    AT_ALREADY_TRANSLATED = 12139  # AT verses already translated (not in our DB)
+    TOTAL_BIBLE_VERSES = NT_VERSES + AT_VERSES  # 31,144 verses total
+    
+    # Current translation status
+    # NT is complete (7958), AT has 12139 already translated
+    # Our database contains the remaining AT verses that need sponsoring
+    at_remaining_to_translate = total_verses  # Verses in DB = verses still to translate
+    
+    # Overall Bible progress
+    total_translated = NT_VERSES + AT_ALREADY_TRANSLATED  # 7958 + 12139 = 20097
+    total_remaining = at_remaining_to_translate  # Verses in our database
+    bible_percentage = round((total_translated / TOTAL_BIBLE_VERSES * 100), 1)
+    
+    # AT-specific progress
+    at_percentage = round((AT_ALREADY_TRANSLATED / AT_VERSES * 100), 1)
+    
     stats = {
-        'total_verses': 10998,
-        'sponsored_verses': 357,
-        'available_verses': 10641,
-        'percentage': 3
+        'total_verses': total_verses,
+        'sponsored_verses': sponsored_verses,
+        'available_verses': available_verses,
+        'percentage': percentage
     }
-    return render_template("index.html", stats=stats)
+    
+    # Bible translation progress stats
+    bible_stats = {
+        'total_bible_verses': TOTAL_BIBLE_VERSES,
+        'total_translated': total_translated,
+        'total_remaining': total_remaining,
+        'bible_percentage': bible_percentage,
+        'nt_verses': NT_VERSES,
+        'at_verses': AT_VERSES,
+        'at_already_translated': AT_ALREADY_TRANSLATED,
+        'at_still_to_translate': at_remaining_to_translate,
+        'at_percentage': at_percentage
+    }
+    
+    return render_template("index.html", stats=stats, bible_stats=bible_stats)
 
 @app.route("/vers-auswaehlen")
 def vers_auswaehlen():
-    """Verse selection page"""
-    return render_template("vers-auswaehlen.html")
+    """Verse selection page with session-based persistence"""
+    # Check ob "andere Verse" explizit angefordert
+    refresh_verses = request.args.get('refresh') == 'true'
+    
+    if 'featured_verse_ids' not in session:
+        # Erste Auswahl - keine Excludes
+        featured_verses = Verse.get_adaptive_featured_verses(3)
+        session['featured_verse_ids'] = [v.id for v in featured_verses]
+        session['shown_verse_ids'] = [v.id for v in featured_verses]  # Track all shown verses
+    elif refresh_verses:
+        # "Andere Verse anzeigen" - exclude ALL previously shown verses
+        all_shown_ids = session.get('shown_verse_ids', [])
+        featured_verses = Verse.get_adaptive_featured_verses(3, exclude_ids=all_shown_ids)
+        
+        if len(featured_verses) == 0:
+            # Keine neuen Verse verfügbar - reset und zeige erste wieder
+            featured_verses = Verse.get_adaptive_featured_verses(3)
+            session['shown_verse_ids'] = [v.id for v in featured_verses]
+        else:
+            # Füge neue Verse zur "bereits gezeigt" Liste hinzu
+            session['shown_verse_ids'] = all_shown_ids + [v.id for v in featured_verses]
+        
+        session['featured_verse_ids'] = [v.id for v in featured_verses]
+    else:
+        # Bestehende Session-Verse laden
+        verse_ids = session['featured_verse_ids']
+        featured_verses = Verse.query.filter(Verse.id.in_(verse_ids)).all()
+        
+        # Check ob Verse zwischenzeitlich gesponsert wurden
+        available_verses = [v for v in featured_verses if not v.is_sponsored]
+        
+        if len(available_verses) < len(featured_verses):
+            # Ersetze gesponserte Verse
+            missing_count = len(featured_verses) - len(available_verses)
+            all_shown_ids = session.get('shown_verse_ids', [])
+            
+            new_verses = Verse.get_adaptive_featured_verses(
+                missing_count, exclude_ids=all_shown_ids
+            )
+            
+            featured_verses = available_verses + new_verses
+            session['featured_verse_ids'] = [v.id for v in featured_verses]
+            # Update shown_verse_ids
+            session['shown_verse_ids'] = list(set(all_shown_ids + [v.id for v in new_verses]))
+    
+    return render_template("vers-auswaehlen.html", 
+                         featured_verses=featured_verses)
 
 @app.route("/ueber-ngue")
 def ueber_ngue():
@@ -220,12 +364,59 @@ def vers_auswaehlen_keyword():
 
 @app.route("/vers/<verse_id>/spendenart")
 def vers_spendenart(verse_id):
-    """Donation type selection page"""
-    verse_data = get_demo_verse(verse_id)
-    return render_template("vers-spendenart.html", 
-                         verse_reference=verse_data['reference'],
-                         verse_text=verse_data['text'],
-                         verse_id=verse_id)
+    """Donation type selection page with reservation system"""
+    # Parse verse_id (z.B. "jesaja-43-1" → book="JESAJA", chapter=43, verse=1)
+    parts = verse_id.rsplit('-', 2)
+    if len(parts) != 3:
+        flash("Ungültige Vers-Referenz.", "error")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    try:
+        book = parts[0].upper()
+        chapter = int(parts[1])
+        verse_num = int(parts[2])
+    except ValueError:
+        flash("Ungültige Vers-Referenz.", "error")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Finde Vers in DB
+    verse = Verse.query.filter_by(
+        book=book, 
+        chapter=chapter, 
+        verse=verse_num
+    ).first()
+    
+    if not verse:
+        flash("Dieser Vers wurde nicht gefunden.", "error")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Check ob bereits gesponsert
+    if verse.is_sponsored:
+        flash(f"Der Vers {verse.reference} wurde bereits gesponsert. Bitte wählen Sie einen anderen.", "warning")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Check ob bereits reserviert (von anderem User)
+    existing_reservation = VerseReservation.get_active_for_verse(
+        verse.id, 
+        exclude_session_id=session.sid
+    )
+    
+    if existing_reservation:
+        flash(f"Der Vers {verse.reference} wird gerade von einem anderen Nutzer reserviert. Bitte wählen Sie einen anderen.", "info")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Erstelle/Update eigene Reservierung
+    reservation = VerseReservation.create_or_update(
+        verse_id=verse.id,
+        session_id=session.sid,
+        minutes=15
+    )
+    
+    # Speichere in Session
+    session['selected_verse_id'] = verse.id
+    session['reservation_id'] = reservation.id
+    
+    return render_template("vers-spendenart.html", verse=verse)
 
 # ==========================================
 # CHECKOUT ROUTES
@@ -233,24 +424,63 @@ def vers_spendenart(verse_id):
 
 @app.route("/checkout/<donation_type>/daten")
 def checkout_daten(donation_type):
-    """Data collection for different donation types"""
+    """Data collection for different donation types with reservation validation"""
     if donation_type not in ['einzelperson', 'gruppe', 'geschenk']:
         flash("Ungültiger Spendentyp.", "error")
         return redirect(url_for("vers_auswaehlen"))
     
+    # Check ob Vers ausgewählt
+    if 'selected_verse_id' not in session:
+        flash("Bitte wählen Sie zuerst einen Vers aus.", "warning")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Check ob Reservierung noch gültig
+    if 'reservation_id' in session:
+        reservation = VerseReservation.query.get(session['reservation_id'])
+        if not reservation or reservation.is_expired:
+            flash("Ihre Reservierung ist abgelaufen. Bitte wählen Sie erneut.", "warning")
+            session.pop('selected_verse_id', None)
+            session.pop('reservation_id', None)
+            return redirect(url_for("vers_auswaehlen"))
+        
+        # Verlängere Reservierung bei Aktivität
+        reservation.extend_reservation(15)
+    
     # Store donation type in session
     session['donation_type'] = donation_type
-    return render_template("checkout-daten.html", donation_type=donation_type)
+    
+    # Load verse for display
+    verse = Verse.query.get(session['selected_verse_id'])
+    
+    return render_template("checkout-daten.html", donation_type=donation_type, verse=verse)
 
 @app.route("/checkout/zusammenfassung")
 def checkout_zusammenfassung():
-    """Checkout summary page"""
-    # Demo data - would normally come from session
+    """Checkout summary page with reservation validation"""
+    # Check ob Vers ausgewählt
+    if 'selected_verse_id' not in session:
+        flash("Bitte wählen Sie zuerst einen Vers aus.", "warning")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Check ob Reservierung noch gültig
+    if 'reservation_id' in session:
+        reservation = VerseReservation.query.get(session['reservation_id'])
+        if not reservation or reservation.is_expired:
+            flash("Ihre Reservierung ist abgelaufen. Bitte wählen Sie erneut.", "warning")
+            session.pop('selected_verse_id', None)
+            session.pop('reservation_id', None)
+            return redirect(url_for("vers_auswaehlen"))
+        
+        # Verlängere Reservierung bei Aktivität
+        reservation.extend_reservation(15)
+    
+    # Load verse and build data from session
+    verse = Verse.query.get(session['selected_verse_id'])
     donation_data = {
-        'verse_reference': 'Jeremia 29,11',
-        'verse_text': 'Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.',
-        'donor_name': 'Max Mustermann',
-        'donor_email': 'max.mustermann@example.com',
+        'verse_reference': verse.reference,
+        'verse_text': verse.text,
+        'donor_name': session.get('donor_name', 'Demo User'),
+        'donor_email': session.get('donor_email', 'demo@example.com'),
         'amount': 100.00
     }
     return render_template("checkout-zusammenfassung.html", data=donation_data)
@@ -270,6 +500,7 @@ def checkout_fehler():
 # ==========================================
 
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per 15 minutes")
 def login():
     """Login page"""
     if request.method == "POST":
@@ -282,37 +513,27 @@ def login():
             flash("Bitte geben Sie E-Mail und Passwort ein.", "danger")
             return render_template("login.html")
         
-        # DEMO MODE: Accept any login credentials
-        # Check if user exists
-        user = find_user_by_email(email)
+        # Check if user exists in database
+        user = User.query.filter_by(email=email.lower()).first()
         
         if not user:
-            # Create a demo user on the fly for testing
-            first_name = email.split('@')[0].capitalize()
-            demo_user_id = secrets.token_hex(16)
-            demo_users[demo_user_id] = {
-                "id": demo_user_id,
-                "email": email,
-                "password_hash": generate_password_hash(password),
-                "first_name": first_name,
-                "last_name": "Demo",
-                "newsletter": True,
-                "verified": True,  # Auto-verify for demo
-                "created_at": datetime.now(),
-                "sponsored_verses": []
-            }
-            user = demo_users[demo_user_id]
+            flash("Unbekannte E-Mail-Adresse oder falsches Passwort.", "danger")
+            return render_template("login.html")
         
-        # Login the user (skip password check for demo)
-        session["user_id"] = user["id"]
-        session["user_email"] = user["email"]
-        session["user_name"] = f"{user['first_name']} {user['last_name']}"
+        # Check if user is verified
+        if not user.is_verified:
+            flash("Bitte bestätigen Sie erst Ihre E-Mail-Adresse.", "warning")
+            return render_template("login.html")
         
-        if remember:
-            session.permanent = True
-            app.permanent_session_lifetime = timedelta(days=30)
+        # Verify password
+        if not user.check_password(password):
+            flash("Unbekannte E-Mail-Adresse oder falsches Passwort.", "danger")
+            return render_template("login.html")
         
-        flash(f"Willkommen, {user['first_name']}! (Demo-Modus: Automatische Anmeldung)", "success")
+        # Login user with Flask-Login
+        login_user(user, remember=remember)
+        
+        flash(f"Willkommen, {user.first_name}!", "success")
         
         # Redirect to next URL or dashboard
         next_url = session.pop("next_url", None)
@@ -325,11 +546,15 @@ def login():
 @app.route("/logout")
 def logout():
     """Log user out"""
-    session.clear()
+    logout_user()
+    # Keep some session data that's not user-specific (like CSRF token)
+    # Only clear user-specific data
+    session.pop("next_url", None)
     flash("Sie wurden erfolgreich abgemeldet.", "info")
     return redirect(url_for("index"))
 
 @app.route("/register", methods=["GET", "POST"])
+@limiter.limit("3 per 10 minutes")
 def register():
     """Registration page"""
     if request.method == "POST":
@@ -371,8 +596,8 @@ def register():
                 flash(error, "danger")
             return render_template("register.html")
         
-        # Create user account
-        user_id, verification_token = create_demo_user(
+        # Create user account in database
+        user_id, verification_token = create_user(
             email, password, first_name, last_name, newsletter
         )
         
@@ -417,6 +642,7 @@ def verify_email(token):
         return redirect(url_for("index"))
 
 @app.route("/password/reset", methods=["GET", "POST"])
+@limiter.limit("3 per 30 minutes")
 def password_reset_request():
     """Request password reset"""
     if request.method == "POST":
@@ -431,10 +657,14 @@ def password_reset_request():
         if user:
             # Generate reset token
             reset_token = generate_verification_token()
-            reset_tokens[reset_token] = {
-                "user_id": user["id"],
-                "expires": datetime.now() + timedelta(hours=1)
-            }
+            
+            # Create reset token in database
+            token_obj = ResetToken(
+                user_id=user.id,
+                token=reset_token
+            )
+            db.session.add(token_obj)
+            db.session.commit()
             
             # In production, send email here
             # For demo, show the token
@@ -450,15 +680,14 @@ def password_reset_request():
 def password_reset(token):
     """Reset password with token"""
     # Check if token is valid
-    if token not in reset_tokens:
+    token_obj = ResetToken.query.filter_by(token=token, used=False).first()
+    
+    if not token_obj:
         flash("Der Passwort-Reset-Link ist ungültig oder abgelaufen.", "danger")
         return redirect(url_for("password_reset_request"))
     
-    token_data = reset_tokens[token]
-    
     # Check if token is expired
-    if datetime.now() > token_data["expires"]:
-        del reset_tokens[token]
+    if token_obj.is_expired:
         flash("Der Passwort-Reset-Link ist abgelaufen.", "danger")
         return redirect(url_for("password_reset_request"))
     
@@ -477,17 +706,20 @@ def password_reset(token):
             return render_template("password-reset.html", token=token)
         
         # Update password
-        user_id = token_data["user_id"]
-        if user_id in demo_users:
-            demo_users[user_id]["password_hash"] = generate_password_hash(password)
-            del reset_tokens[token]
-            flash("Ihr Passwort wurde erfolgreich zurückgesetzt. Sie können sich nun anmelden.", "success")
-            return redirect(url_for("login"))
+        user = token_obj.user
+        user.set_password(password)
+        
+        # Mark token as used
+        token_obj.used = True
+        
+        db.session.commit()
+        flash("Ihr Passwort wurde erfolgreich zurückgesetzt. Sie können sich nun anmelden.", "success")
+        return redirect(url_for("login"))
     
     return render_template("password-reset.html", token=token)
 
 @app.route("/meine-verse")
-@login_required
+@flask_login_required
 def meine_verse():
     """My verses page (requires login)"""
     
@@ -524,17 +756,30 @@ def meine_verse():
     return render_template("meine-verse.html", verses=verses)
 
 @app.route("/profil")
-@login_required
+@flask_login_required
 def profil():
     """Profile page (requires login)"""
     return render_template("profil.html")
 
 @app.route("/dashboard")
-@login_required
+@flask_login_required
 def dashboard():
     """User dashboard"""
-    user = demo_users.get(session["user_id"])
-    return render_template("dashboard.html", user=user)
+    # Get same statistics as homepage for consistency
+    total_verses = Verse.query.count()
+    sponsored_verses = Verse.query.filter_by(is_sponsored=True).count()
+    available_verses = total_verses - sponsored_verses
+    percentage = round((sponsored_verses / total_verses * 100), 1) if total_verses > 0 else 0
+    
+    stats = {
+        'total_verses': total_verses,
+        'sponsored_verses': sponsored_verses,
+        'available_verses': available_verses,
+        'percentage': percentage,
+        'total_amount': sponsored_verses * 100  # Calculate total amount raised
+    }
+    
+    return render_template("dashboard.html", user=current_user, stats=stats)
 
 # ==========================================
 # CONTACT ROUTES
@@ -578,7 +823,22 @@ def spendenbedingungen():
 @app.route("/transparenz")
 def transparenz():
     """Transparency page"""
-    return render_template("transparenz.html")
+    # Get statistics for transparency display
+    total_verses = Verse.query.count()
+    sponsored_verses = Verse.query.filter_by(is_sponsored=True).count()
+    available_verses = total_verses - sponsored_verses
+    percentage = round((sponsored_verses / total_verses * 100), 1) if total_verses > 0 else 0
+    
+    stats = {
+        'total_verses': total_verses,
+        'sponsored_verses': sponsored_verses,
+        'available_verses': available_verses,
+        'percentage': percentage,
+        'total_amount': sponsored_verses * 100,  # Total amount raised
+        'total_goal': total_verses * 100  # Total funding goal
+    }
+    
+    return render_template("transparenz.html", stats=stats)
 
 # ==========================================
 # DOWNLOAD ROUTES

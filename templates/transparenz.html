@@ -284,24 +284,24 @@
                 <div class="card">
                     <div class="card-body p-4">
                         <div class="text-center mb-4">
-                            <h3 class="text-primary">3,2% finanziert</h3>
+                            <h3 class="text-primary">{{ stats.percentage }}% finanziert</h3>
                             <div class="progress mb-3" style="height: 30px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: 3.2%" aria-valuenow="3.2" aria-valuemin="0" aria-valuemax="100">
-                                    3,2%
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.percentage }}%" aria-valuenow="{{ stats.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ stats.percentage }}%
                                 </div>
                             </div>
                             <p class="lead">
-                                <strong>35.400€</strong> von <strong>1.104.700€</strong> finanziert
+                                <strong>{{ "{:,}".format(stats.total_amount).replace(",", ".") }}€</strong> von <strong>{{ "{:,}".format(stats.total_goal).replace(",", ".") }}€</strong> finanziert
                             </p>
                         </div>
                         
                         <div class="row text-center">
                             <div class="col-6">
-                                <h4 class="text-primary">354</h4>
-                                <p>von 11.047 Versen gesponsert</p>
+                                <h4 class="text-primary">{{ "{:,}".format(stats.sponsored_verses).replace(",", ".") }}</h4>
+                                <p>von {{ "{:,}".format(stats.total_verses).replace(",", ".") }} Versen gesponsert</p>
                             </div>
                             <div class="col-6">
-                                <h4 class="text-secondary">10.693</h4>
+                                <h4 class="text-secondary">{{ "{:,}".format(stats.available_verses).replace(",", ".") }}</h4>
                                 <p>Verse warten noch auf Ihren Sponsor</p>
                             </div>
                         </div>
@@ -330,6 +330,51 @@
             <div class="col-md-3">
                 <div class="card text-center h-100">
                     <div class="card-body">
-                        <i class="fas fa-certificate fa-3x text-success mb-3"></i>
+                        <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
                         <h5>Gemeinnützigkeitsbescheinigung</h5>
-                        <p class="small mb-0">Anerkannte gemein
+                        <p class="small mb-0">Anerkannte gemeinnützige Stiftung</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                        <h5>Jährliche Tätigkeitsberichte</h5>
+                        <p class="small mb-0">Vollständige Dokumentation unserer Arbeit</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-balance-scale fa-3x text-primary mb-3"></i>
+                        <h5>Externe Wirtschaftsprüfung</h5>
+                        <p class="small mb-0">Unabhängige Kontrolle der Finanzen</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                        <h5>Steuerliche Absetzbarkeit</h5>
+                        <p class="small mb-0">Ihre Spenden sind voll absetzbar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <div class="alert alert-success">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>100% aller Spenden</strong> fließen direkt in die Übersetzungsarbeit - jeder Euro kommt der NGÜ-Übersetzung zugute.
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -8,10 +8,12 @@ Dieses Verzeichnis enthält alle offenen Aufgaben und Anforderungen für die Cod
 - [`pdf-generator-service-requirements.md`](./pdf-generator-service-requirements.md) - Umfassende Spezifikation für PDF-Zertifikat-Generierung
 - [`checkout-form-prefilling.md`](./checkout-form-prefilling.md) - Automatische Formular-Vorausfüllung für eingeloggte User
 - [`stripe-billing-integration.md`](./stripe-billing-integration.md) - Stripe-Payment mit automatischen Billing-Details
+- [`email-service-and-verification.md`](./email-service-and-verification.md) - E-Mail-System für Verifizierung und Bestätigungen
 
 ### 🔶 Mittlere Priorität
 - [`account-creation-from-donation.md`](./account-creation-from-donation.md) - Account-Erstellung aus Guest-Spenden-Daten
 - [`payment-retry-strategies.md`](./payment-retry-strategies.md) - Strategien für fehlgeschlagene Zahlungen
+- [`security-improvements-and-authentication.md`](./security-improvements-and-authentication.md) - Login-Attempts Database & Security-Härtung
 
 ## Weitere geplante TODOs
 

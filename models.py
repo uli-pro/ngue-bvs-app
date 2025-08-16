@@ -6,6 +6,7 @@ Using SQLAlchemy with PostgreSQL
 from datetime import datetime, timedelta
 from decimal import Decimal
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 from sqlalchemy import Index, UniqueConstraint, text, func
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from pgvector.sqlalchemy import Vector
@@ -36,6 +37,7 @@ class Verse(db.Model):
     text_embedding = db.Column(Vector(1536))  # OpenAI text-embedding-3-small dimension
     positivity_score = db.Column(db.Integer)  # 0-100
     is_sponsored = db.Column(db.Boolean, default=False, nullable=False)
+    is_translated = db.Column(db.Boolean, default=False, nullable=False)  # Track translation status
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -48,6 +50,7 @@ class Verse(db.Model):
         Index('idx_verse_book_chapter', 'book', 'chapter'),
         Index('idx_verse_positivity', 'positivity_score'),
         Index('idx_verse_sponsored', 'is_sponsored'),
+        Index('idx_verse_translated', 'is_translated'),
         Index('idx_verse_text_search', 'text_search', postgresql_using='gin'),
         Index('idx_verse_embedding', 'text_embedding', postgresql_using='ivfflat', postgresql_ops={'text_embedding': 'vector_cosine_ops'}),
     )
@@ -59,6 +62,11 @@ class Verse(db.Model):
     def reference(self):
         """Human-readable verse reference"""
         return f"{self.book} {self.chapter},{self.verse}"
+    
+    @property
+    def url_slug(self):
+        """Generate URL-friendly slug: jesaja-43-1"""
+        return f"{self.book.lower()}-{self.chapter}-{self.verse}"
     
     @property
     def short_text(self, max_length=100):
@@ -140,6 +148,47 @@ class Verse(db.Model):
             cls.positivity_score.desc()
         ).limit(limit).all()
     
+    @classmethod
+    def get_adaptive_featured_verses(cls, limit=3, exclude_ids=None):
+        """Adaptive Auswahl basierend auf verfügbaren Versen"""
+        exclude_ids = exclude_ids or []
+        
+        # 1. Finde höchsten verfügbaren Score mit genug Versen
+        min_pool_size = 20  # Mindestens 20 Verse für gute Auswahl
+        
+        for min_score in [90, 80, 70, 60, 50, 40, 30, 20, 10, 0]:
+            pool = cls.query.filter(
+                cls.is_sponsored == False,
+                cls.positivity_score >= min_score,
+                ~cls.id.in_(exclude_ids) if exclude_ids else True  # Exclude bereits verwendete
+            ).limit(min_pool_size + 10).all()
+            
+            if len(pool) >= min_pool_size:
+                break
+        
+        # 2. Keyword-Bonus für bessere Auswahl
+        positive_keywords = [
+            # Substantive
+            'Liebe', 'Hoffnung', 'Frieden', 'Segen', 'Freude', 
+            'Gnade', 'Trost', 'Schutz', 'Hilfe', 'Güte', 'Licht', 'Leben',
+            
+            # Positive Verben
+            'segnen', 'lieben', 'helfen', 'trösten', 'schützen', 'führen',
+            'stärken', 'bewahren', 'heilen', 'erretten', 'erlösen', 
+            'freuen', 'segne', 'liebt', 'hilft', 'tröstet', 'schützt',
+            'stärkt', 'bewahrt', 'heilt', 'errettet', 'erlöst'
+        ]
+        
+        scored_verses = []
+        for verse in pool:
+            keyword_bonus = sum(2 for kw in positive_keywords if kw.lower() in verse.text.lower())
+            final_score = verse.positivity_score + keyword_bonus
+            scored_verses.append((verse, final_score))
+        
+        # 3. Nach Score sortieren und Top auswählen
+        scored_verses.sort(key=lambda x: x[1], reverse=True)
+        return [verse for verse, score in scored_verses[:limit]]
+    
     def update_text_search(self):
         """Update the tsvector column for full-text search"""
         if self.text:
@@ -155,8 +204,8 @@ class Verse(db.Model):
             db.session.commit()
 
 
-class User(db.Model):
-    """Optional user accounts"""
+class User(UserMixin, db.Model):
+    """User accounts with Flask-Login integration"""
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -732,5 +781,163 @@ def import_all_verses():
     if imported_count > 0:
         print(f"\n⚠️  Note: Text search is ready to use!")
         print(f"   For semantic search, run: python vectorize.py")
+
+
+class VerificationToken(db.Model):
+    """Email verification tokens"""
+    __tablename__ = 'verification_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(hours=24))
+    used = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Relationship
+    user = db.relationship('User', backref='verification_tokens')
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_verification_token', 'token'),
+        Index('idx_verification_expires', 'expires_at'),
+    )
+    
+    @property
+    def is_expired(self):
+        """Check if token is expired"""
+        return datetime.utcnow() > self.expires_at
+    
+    @classmethod
+    def cleanup_expired(cls):
+        """Remove expired tokens"""
+        expired_tokens = cls.query.filter(cls.expires_at < datetime.utcnow()).all()
+        for token in expired_tokens:
+            db.session.delete(token)
+        db.session.commit()
+        return len(expired_tokens)
+
+
+class ResetToken(db.Model):
+    """Password reset tokens"""
+    __tablename__ = 'reset_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(hours=1))
+    used = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Relationship
+    user = db.relationship('User', backref='reset_tokens')
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_reset_token', 'token'),
+        Index('idx_reset_expires', 'expires_at'),
+    )
+    
+    @property
+    def is_expired(self):
+        """Check if token is expired"""
+        return datetime.utcnow() > self.expires_at
+    
+    @classmethod
+    def cleanup_expired(cls):
+        """Remove expired tokens"""
+        expired_tokens = cls.query.filter(cls.expires_at < datetime.utcnow()).all()
+        for token in expired_tokens:
+            db.session.delete(token)
+        db.session.commit()
+        return len(expired_tokens)
+
+
+class VerseReservation(db.Model):
+    """Temporary verse reservations during checkout process"""
+    __tablename__ = 'verse_reservations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    verse_id = db.Column(db.Integer, db.ForeignKey('verses.id'), nullable=False)
+    session_id = db.Column(db.String(255), nullable=False)  # Flask session ID
+    reserved_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(minutes=15))
+    
+    # Relationships
+    verse = db.relationship('Verse', backref='reservations')
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_reservation_verse', 'verse_id'),
+        Index('idx_reservation_session', 'session_id'),
+        Index('idx_reservation_expires', 'expires_at'),
+    )
+    
+    def __repr__(self):
+        return f'<VerseReservation {self.verse.reference} by {self.session_id[:8]}...>'
+    
+    @property
+    def is_expired(self):
+        """Check if reservation is expired"""
+        return datetime.utcnow() > self.expires_at
+    
+    def extend_reservation(self, minutes=15):
+        """Extend reservation by specified minutes"""
+        self.expires_at = datetime.utcnow() + timedelta(minutes=minutes)
+        db.session.commit()
+    
+    @classmethod
+    def get_active_for_verse(cls, verse_id, exclude_session_id=None):
+        """Get active reservations for a verse, optionally excluding a session"""
+        query = cls.query.filter(
+            cls.verse_id == verse_id,
+            cls.expires_at > datetime.utcnow()
+        )
+        
+        if exclude_session_id:
+            query = query.filter(cls.session_id != exclude_session_id)
+        
+        return query.first()
+    
+    @classmethod
+    def create_or_update(cls, verse_id, session_id, minutes=15):
+        """Create new reservation or update existing one"""
+        # Check if reservation already exists for this session
+        existing = cls.query.filter_by(
+            verse_id=verse_id,
+            session_id=session_id
+        ).first()
+        
+        if existing:
+            # Extend existing reservation
+            existing.expires_at = datetime.utcnow() + timedelta(minutes=minutes)
+            reservation = existing
+        else:
+            # Create new reservation
+            reservation = cls(
+                verse_id=verse_id,
+                session_id=session_id,
+                expires_at=datetime.utcnow() + timedelta(minutes=minutes)
+            )
+            db.session.add(reservation)
+        
+        db.session.commit()
+        return reservation
+    
+    @classmethod
+    def cleanup_expired(cls):
+        """Remove expired reservations"""
+        expired_count = cls.query.filter(cls.expires_at < datetime.utcnow()).count()
+        cls.query.filter(cls.expires_at < datetime.utcnow()).delete()
+        db.session.commit()
+        return expired_count
+    
+    @classmethod
+    def clear_for_session(cls, session_id):
+        """Clear all reservations for a session (e.g., on logout)"""
+        count = cls.query.filter_by(session_id=session_id).count()
+        cls.query.filter_by(session_id=session_id).delete()
+        db.session.commit()
+        return count
 
 

@@ -23,50 +23,32 @@
 <section class="section-padding">
     <div class="container">
         <div class="row g-4">
+            {% for verse in featured_verses %}
             <div class="col-lg-4">
                 <div class="card h-100 verse-card">
                     <div class="card-body text-center p-4">
-                        <h4 class="text-primary mb-3">Jesaja 43,1</h4>
+                        <h4 class="text-primary mb-3">{{ verse.reference }}</h4>
                         <blockquote class="blockquote">
-                            <p class="mb-4">"Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!"</p>
+                            <p class="mb-4">"{{ verse.text }}"</p>
                             <footer class="blockquote-footer">
                                 <cite title="Schlachter 1951">Schlachter 1951</cite>
                             </footer>
                         </blockquote>
-                        <a href="/vers/jesaja-43-1/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                        <a href="/vers/{{ verse.url_slug }}/spendenart" 
+                           class="btn btn-primary">DIESEN VERS WÄHLEN</a>
                     </div>
                 </div>
             </div>
-            
-            <div class="col-lg-4">
-                <div class="card h-100 verse-card">
-                    <div class="card-body text-center p-4">
-                        <h4 class="text-primary mb-3">Jeremia 29,11</h4>
-                        <blockquote class="blockquote">
-                            <p class="mb-4">"Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben."</p>
-                            <footer class="blockquote-footer">
-                                <cite title="Schlachter 1951">Schlachter 1951</cite>
-                            </footer>
-                        </blockquote>
-                        <a href="/vers/jeremia-29-11/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4">
-                <div class="card h-100 verse-card">
-                    <div class="card-body text-center p-4">
-                        <h4 class="text-primary mb-3">Zefanja 3,17</h4>
-                        <blockquote class="blockquote">
-                            <p class="mb-4">"Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken."</p>
-                            <footer class="blockquote-footer">
-                                <cite title="Schlachter 1951">Schlachter 1951</cite>
-                            </footer>
-                        </blockquote>
-                        <a href="/vers/zefanja-3-17/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- "Andere Verse anzeigen" Button -->
+        <div class="text-center mt-4">
+            <a href="/vers-auswaehlen?refresh=true" 
+               class="btn btn-outline-secondary">
+                <i class="fas fa-sync-alt me-2"></i>
+                Andere Verse anzeigen
+            </a>
         </div>
     </div>
 </section>

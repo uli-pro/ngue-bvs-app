@@ -13,6 +13,7 @@
                         <h2 class="text-center mb-4">Anmelden</h2>
                         
                         <form method="POST" action="/login" class="needs-validation" novalidate>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <div class="mb-3">
                                 <label for="email" class="form-label">E-Mail-Adresse</label>
                                 <input type="email" class="form-control" id="email" name="email" required autofocus>
@@ -52,14 +53,6 @@
                     </div>
                 </div>
                 
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle"></i> <strong>Demo-Modus:</strong> 
-                    <ul class="mb-0 mt-2">
-                        <li>Geben Sie eine beliebige E-Mail und ein beliebiges Passwort ein</li>
-                        <li>Sie werden automatisch eingeloggt und zum Dashboard weitergeleitet</li>
-                        <li>Beispiel: test@example.com / passwort123</li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
