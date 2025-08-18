@@ -1075,28 +1075,50 @@ class VerseReservation(db.Model):
     
     @classmethod
     def create_or_update(cls, verse_id, session_id, minutes=15):
-        """Create new reservation or update existing one"""
-        # Check if reservation already exists for this session
-        existing = cls.query.filter_by(
-            verse_id=verse_id,
-            session_id=session_id
-        ).first()
-        
-        if existing:
-            # Extend existing reservation
-            existing.expires_at = datetime.utcnow() + timedelta(minutes=minutes)
-            reservation = existing
-        else:
-            # Create new reservation
-            reservation = cls(
+        """Create new reservation or update existing one with race condition protection"""
+        try:
+            # Check if verse is already sponsored (race condition check)
+            verse = Verse.query.filter_by(id=verse_id).with_for_update().first()
+            if not verse:
+                raise ValueError("Verse not found")
+            if verse.is_sponsored:
+                raise ValueError("Verse is already sponsored")
+            
+            # Check if another session has an active reservation
+            active_reservation = cls.query.filter(
+                cls.verse_id == verse_id,
+                cls.session_id != session_id,
+                cls.expires_at > datetime.utcnow()
+            ).first()
+            
+            if active_reservation:
+                raise ValueError("Verse is currently reserved by another user")
+            
+            # Check if reservation already exists for this session
+            existing = cls.query.filter_by(
                 verse_id=verse_id,
-                session_id=session_id,
-                expires_at=datetime.utcnow() + timedelta(minutes=minutes)
-            )
-            db.session.add(reservation)
-        
-        db.session.commit()
-        return reservation
+                session_id=session_id
+            ).first()
+            
+            if existing:
+                # Extend existing reservation
+                existing.expires_at = datetime.utcnow() + timedelta(minutes=minutes)
+                reservation = existing
+            else:
+                # Create new reservation
+                reservation = cls(
+                    verse_id=verse_id,
+                    session_id=session_id,
+                    expires_at=datetime.utcnow() + timedelta(minutes=minutes)
+                )
+                db.session.add(reservation)
+            
+            db.session.commit()
+            return reservation
+                
+        except Exception as e:
+            db.session.rollback()
+            raise e
     
     @classmethod
     def cleanup_expired(cls):

@@ -120,11 +120,11 @@
                                         <label for="salutation" class="form-label">Anrede *</label>
                                         <select class="form-select" id="salutation" name="salutation" required>
                                             <option value="">Bitte wählen...</option>
-                                            <option value="Herr">Herr</option>
-                                            <option value="Frau">Frau</option>
-                                            <option value="Eheleute">Eheleute</option>
-                                            <option value="Firma">Firma</option>
-                                            <option value="keine">Keine Anrede</option>
+                                            <option value="Herr" {% if form_data.get('salutation') == 'Herr' %}selected{% endif %}>Herr</option>
+                                            <option value="Frau" {% if form_data.get('salutation') == 'Frau' %}selected{% endif %}>Frau</option>
+                                            <option value="Eheleute" {% if form_data.get('salutation') == 'Eheleute' %}selected{% endif %}>Eheleute</option>
+                                            <option value="Firma" {% if form_data.get('salutation') == 'Firma' %}selected{% endif %}>Firma</option>
+                                            <option value="keine" {% if form_data.get('salutation') == 'keine' %}selected{% endif %}>Keine Anrede</option>
                                         </select>
                                         <div class="invalid-feedback">Bitte wählen Sie eine Anrede.</div>
                                     </div>
@@ -165,7 +165,7 @@
                                         <label for="country" class="form-label">Land *</label>
                                         <select class="form-select" id="country" name="country" required>
                                             <optgroup label="Häufige Länder">
-                                                <option value="DE" selected>DE - Deutschland</option>
+                                                <option value="DE" {% if form_data.get('country', 'DE') == 'DE' %}selected{% endif %}>DE - Deutschland</option>
                                                 <option value="AT">AT - Österreich</option>
                                                 <option value="CH">CH - Schweiz</option>
                                                 <option value="US">US - USA</option>
@@ -405,8 +405,8 @@
                                     
                                     <div class="mb-3" id="gift_message_field" style="display: none;">
                                         <label for="gift_message" class="form-label">Persönliche Nachricht (optional)</label>
-                                        <textarea class="form-control" id="gift_message" name="gift_message" rows="3" placeholder="Eine persönliche Nachricht für den Empfänger..." maxlength="500"></textarea>
-                                        <div class="form-text">Maximal 500 Zeichen</div>
+                                        <textarea class="form-control" id="gift_message" name="gift_message" rows="5" placeholder="Eine persönliche Nachricht für den Empfänger..." maxlength="1000"></textarea>
+                                        <div class="form-text">Maximal 1000 Zeichen</div>
                                     </div>
                                 </div>
                             </div>

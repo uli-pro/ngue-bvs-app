@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required as flask_login_required, current_user
@@ -281,6 +281,12 @@ def faq():
 @app.route("/vers-auswaehlen")
 def vers_auswaehlen():
     """Verse selection page with session-based persistence"""
+    # Cleanup expired reservations periodically (security/performance)
+    try:
+        VerseReservation.cleanup_expired()
+    except Exception:
+        pass  # Silent cleanup failure, don't break user experience
+    
     # Check ob "andere Verse" explizit angefordert
     refresh_verses = request.args.get('refresh') == 'true'
     
@@ -790,6 +796,8 @@ def checkout_daten(donation_type):
         email = request.form.get('email', '').strip()
         if not email or '@' not in email:
             errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+        if len(email) > 255:
+            errors.append("E-Mail-Adresse ist zu lang (max. 255 Zeichen).")
         form_data['email'] = email
         
         # Privacy consent (required)
@@ -803,9 +811,9 @@ def checkout_daten(donation_type):
         
         # Type-specific validation and data collection
         if donation_type == 'gruppe':
-            # Group-specific fields
-            group_article = request.form.get('group_article', '').strip()
-            group_name = request.form.get('group_name', '').strip()
+            # Group-specific fields with length validation
+            group_article = request.form.get('group_article', '').strip()[:20]
+            group_name = request.form.get('group_name', '').strip()[:200]
             
             if not group_article:
                 errors.append("Bitte wählen Sie einen Artikel für den Gruppennamen.")
@@ -822,15 +830,15 @@ def checkout_daten(donation_type):
             form_data['wants_receipt'] = wants_receipt
             
             if wants_receipt:
-                # Collect receipt data
+                # Collect receipt data with length validation
                 salutation = request.form.get('salutation', '').strip()
-                first_name = request.form.get('firstName', '').strip()
-                last_name = request.form.get('lastName', '').strip()
-                street = request.form.get('street', '').strip()
-                house_number = request.form.get('houseNumber', '').strip()
-                postal_code = request.form.get('postalCode', '').strip()
-                city = request.form.get('city', '').strip()
-                country = request.form.get('country', 'DE').strip()
+                first_name = request.form.get('firstName', '').strip()[:100]  # Limit length
+                last_name = request.form.get('lastName', '').strip()[:100]
+                street = request.form.get('street', '').strip()[:200]
+                house_number = request.form.get('houseNumber', '').strip()[:10]
+                postal_code = request.form.get('postalCode', '').strip()[:10]
+                city = request.form.get('city', '').strip()[:100]
+                country = request.form.get('country', 'DE').strip()[:2]
                 
                 # Validate required receipt fields
                 if not salutation:
@@ -862,15 +870,18 @@ def checkout_daten(donation_type):
         
         # Gift-specific fields
         if donation_type == 'geschenk':
-            gift_recipient_name = request.form.get('gift_recipient_name', '').strip()
+            gift_recipient_name = request.form.get('gift_recipient_name', '').strip()[:200]  # Limit length
             gift_direct_send = request.form.get('gift_direct_send') == 'on'
+            # HTML-strip and limit gift message for security
+            import html
+            gift_message = html.escape(request.form.get('gift_message', '').strip())[:1000]
             
             if not gift_recipient_name:
                 errors.append("Bitte geben Sie den Namen des Empfängers ein.")
                 
             form_data['gift_recipient_name'] = gift_recipient_name
             form_data['gift_direct_send'] = gift_direct_send
-            form_data['gift_message'] = request.form.get('gift_message', '').strip()
+            form_data['gift_message'] = gift_message
             
             if gift_direct_send:
                 gift_recipient_email = request.form.get('gift_recipient_email', '').strip()
@@ -887,6 +898,17 @@ def checkout_daten(donation_type):
         # Initialize cart if not exists
         if 'cart' not in session:
             session['cart'] = []
+        
+        # Check cart size limit (security: prevent session overflow)
+        if len(session['cart']) >= 20:
+            flash("Sie können maximal 20 Verse gleichzeitig sponsern. Bitte vervollständigen Sie zuerst Ihre aktuelle Spende.", "warning")
+            return redirect(url_for("spendenkorb"))
+        
+        # Check for duplicate verses in cart (fallback security check)
+        selected_verse_id = session['selected_verse_id']
+        if any(item['verse_id'] == selected_verse_id for item in session['cart']):
+            flash("Dieser Vers befindet sich bereits in Ihrem Spendenkorb.", "warning")
+            return redirect(url_for("vers_auswaehlen"))
         
         # Add verse to cart with all data
         cart_item = {
@@ -932,6 +954,7 @@ def spendenkorb():
     # Load verse data for all items in cart
     cart_items = []
     total_amount = 0
+    expired_count = 0
     
     # Check and update reservations for cart items
     for i, item in enumerate(session['cart']):
@@ -940,16 +963,37 @@ def spendenkorb():
         if not verse:
             continue
             
-        # Check reservation status
+        # Verse im Cart sind dauerhaft reserviert - extend existing reservations
         reservation_valid = True
         if item.get('reservation_id'):
-            reservation = VerseReservation.query.get(item['reservation_id'])
-            if not reservation or reservation.is_expired:
-                reservation_valid = False
-                flash(f"Die Reservierung für {verse.reference} ist abgelaufen.", "warning")
-            else:
-                # Extend reservation
-                reservation.extend_reservation(15)
+            try:
+                reservation = VerseReservation.query.get(item['reservation_id'])
+                if reservation:
+                    # Extend reservation for cart items (they stay reserved)
+                    reservation.extend_reservation(60)  # 1 hour extension for cart items
+                else:
+                    # Reservation was deleted - recreate it for cart item
+                    try:
+                        new_reservation = VerseReservation.create_or_update(
+                            verse.id, session.sid, minutes=60
+                        )
+                        item['reservation_id'] = new_reservation.id
+                        session.modified = True
+                    except Exception:
+                        # If we can't recreate reservation, verse might be taken
+                        reservation_valid = False
+                        expired_count += 1
+            except Exception:
+                # Try to recreate reservation
+                try:
+                    new_reservation = VerseReservation.create_or_update(
+                        verse.id, session.sid, minutes=60
+                    )
+                    item['reservation_id'] = new_reservation.id
+                    session.modified = True
+                except Exception:
+                    reservation_valid = False
+                    expired_count += 1
         
         cart_item_display = {
             'index': i,
@@ -963,6 +1007,10 @@ def spendenkorb():
         cart_items.append(cart_item_display)
         total_amount += item['amount']
     
+    # Show helpful message if there are problematic items
+    if expired_count > 0:
+        flash(f"Achtung: {expired_count} Vers(e) in Ihrem Korb sind zwischenzeitlich nicht mehr verfügbar und müssen entfernt werden.", "danger")
+    
     return render_template("spendenkorb.html", 
                          cart_items=cart_items, 
                          total_amount=total_amount,
@@ -974,20 +1022,31 @@ def cart_remove_item():
     """Remove item from cart via AJAX"""
     try:
         data = request.get_json()
-        item_index = data.get('item_index')
+        item_index = data.get('item_index') if data else None
         
         if 'cart' not in session or item_index is None:
             return jsonify({'success': False, 'message': 'Invalid request'})
         
+        # Security: Validate item_index is integer and in valid range
+        try:
+            item_index = int(item_index)
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid item index'})
+        
         cart = session['cart']
         if 0 <= item_index < len(cart):
-            # Clean up reservation if exists
+            # Clean up reservation if exists (safely handle already deleted reservations)
             removed_item = cart[item_index]
             if removed_item.get('reservation_id'):
-                reservation = VerseReservation.query.get(removed_item['reservation_id'])
-                if reservation:
-                    db.session.delete(reservation)
-                    db.session.commit()
+                try:
+                    reservation = VerseReservation.query.get(removed_item['reservation_id'])
+                    if reservation:
+                        db.session.delete(reservation)
+                        db.session.commit()
+                except Exception:
+                    # Reservation might already be deleted by cleanup - that's okay
+                    # Continue with cart removal anyway
+                    pass
             
             # Remove item from cart
             cart.pop(item_index)
@@ -1004,7 +1063,26 @@ def cart_remove_item():
 @app.route("/checkout/erfolg")
 def checkout_erfolg():
     """Success page after payment"""
+    # Clear cart after successful payment
+    session.pop('cart', None)
+    session.pop('shared_donor_data', None)
     return render_template("checkout-erfolg.html")
+
+@app.route("/admin/cleanup-reservations", methods=["POST"])
+@limiter.limit("1 per minute")
+def cleanup_reservations():
+    """Admin endpoint to cleanup expired reservations"""
+    try:
+        count = VerseReservation.cleanup_expired()
+        return jsonify({
+            'success': True, 
+            'message': f'Cleaned up {count} expired reservations'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'message': f'Cleanup failed: {str(e)}'
+        }), 500
 
 @app.route("/checkout/fehler")
 def checkout_fehler():
