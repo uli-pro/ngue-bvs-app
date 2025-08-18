@@ -41,8 +41,21 @@ const NGUEApp = {
      * Initialize common events and functionality
      */
     initCommonEvents: function() {
-        // Prevent data loss warning for forms with content
+        // Track if form is being submitted normally
+        let formSubmitting = false;
+        
+        // Mark when forms are being submitted normally
+        document.addEventListener('submit', function(e) {
+            formSubmitting = true;
+        });
+        
+        // Prevent data loss warning for forms with content (but not during normal submit)
         window.addEventListener('beforeunload', function(e) {
+            // Don't warn if form is being submitted normally
+            if (formSubmitting) {
+                return;
+            }
+            
             const forms = document.querySelectorAll('form input[type="text"], form input[type="email"], form textarea');
             let hasContent = false;
             

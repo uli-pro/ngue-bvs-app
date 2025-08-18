@@ -99,24 +99,6 @@ def inject_context():
         # current_user is automatically available via Flask-Login
     }
 
-# Helper function for demo verse data - Delete as soon as verses from db are used.
-def get_demo_verse(verse_id):
-    """Get demo verse data for the given ID."""
-    verses = {
-        'jesaja-43-1': {
-            'reference': 'Jesaja 43,1',
-            'text': 'Und nun spricht der HERR, der dich geschaffen hat, Jakob, und der dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst. Ich habe dich bei deinem Namen gerufen; du bist mein!'
-        },
-        'jeremia-29-11': {
-            'reference': 'Jeremia 29,11',
-            'text': 'Denn ich weiß, was für Gedanken ich über euch habe, spricht der HERR, Gedanken des Friedens und nicht des Leides, euch eine Zukunft und eine Hoffnung zu geben.'
-        },
-        'zefanja-3-17': {
-            'reference': 'Zefanja 3,17',
-            'text': 'Der HERR, dein Gott, ist in deiner Mitte, ein Held, der helfen kann; er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dir jubelnd frohlocken.'
-        }
-    }
-    return verses.get(verse_id, verses['jeremia-29-11'])
 
 # ==========================================
 # HELPER FUNCTIONS FOR USER MANAGEMENT
@@ -214,7 +196,7 @@ def find_user_by_email(email):
     return User.query.filter_by(email=email.lower()).first()
 
 # ==========================================
-# MAIN ROUTES
+# INDEX PAGE ROUTES
 # ==========================================
 
 @app.route("/")
@@ -268,55 +250,9 @@ def index():
     
     return render_template("index.html", stats=stats, bible_stats=bible_stats)
 
-@app.route("/vers-auswaehlen")
-def vers_auswaehlen():
-    """Verse selection page with session-based persistence"""
-    # Check ob "andere Verse" explizit angefordert
-    refresh_verses = request.args.get('refresh') == 'true'
-    
-    if 'featured_verse_ids' not in session:
-        # Erste Auswahl - keine Excludes
-        featured_verses = Verse.get_adaptive_featured_verses(3)
-        session['featured_verse_ids'] = [v.id for v in featured_verses]
-        session['shown_verse_ids'] = [v.id for v in featured_verses]  # Track all shown verses
-    elif refresh_verses:
-        # "Andere Verse anzeigen" - exclude ALL previously shown verses
-        all_shown_ids = session.get('shown_verse_ids', [])
-        featured_verses = Verse.get_adaptive_featured_verses(3, exclude_ids=all_shown_ids)
-        
-        if len(featured_verses) == 0:
-            # Keine neuen Verse verfügbar - reset und zeige erste wieder
-            featured_verses = Verse.get_adaptive_featured_verses(3)
-            session['shown_verse_ids'] = [v.id for v in featured_verses]
-        else:
-            # Füge neue Verse zur "bereits gezeigt" Liste hinzu
-            session['shown_verse_ids'] = all_shown_ids + [v.id for v in featured_verses]
-        
-        session['featured_verse_ids'] = [v.id for v in featured_verses]
-    else:
-        # Bestehende Session-Verse laden
-        verse_ids = session['featured_verse_ids']
-        featured_verses = Verse.query.filter(Verse.id.in_(verse_ids)).all()
-        
-        # Check ob Verse zwischenzeitlich gesponsert wurden
-        available_verses = [v for v in featured_verses if not v.is_sponsored]
-        
-        if len(available_verses) < len(featured_verses):
-            # Ersetze gesponserte Verse
-            missing_count = len(featured_verses) - len(available_verses)
-            all_shown_ids = session.get('shown_verse_ids', [])
-            
-            new_verses = Verse.get_adaptive_featured_verses(
-                missing_count, exclude_ids=all_shown_ids
-            )
-            
-            featured_verses = available_verses + new_verses
-            session['featured_verse_ids'] = [v.id for v in featured_verses]
-            # Update shown_verse_ids
-            session['shown_verse_ids'] = list(set(all_shown_ids + [v.id for v in new_verses]))
-    
-    return render_template("vers-auswaehlen.html", 
-                         featured_verses=featured_verses)
+# ==========================================
+# INFORMATION PAGES ROUTES
+# ==========================================
 
 @app.route("/ueber-ngue")
 def ueber_ngue():
@@ -333,16 +269,75 @@ def ueber_verlage():
     """About the publishing houses page"""
     return render_template("ueber-verlage.html")
 
-@app.route("/projektpartner")
-def projektpartner():
-    """Project partners page"""
-    flash("Die Projektpartner-Seite ist noch in Entwicklung.", "info")
-    return redirect(url_for("ueber_stiftung"))
-
 @app.route("/faq")
 def faq():
     """FAQ page"""
     return render_template("faq.html")
+
+# ==========================================
+# VERS-AUSWAEHLEN-ROUTES
+# ==========================================
+
+@app.route("/vers-auswaehlen")
+def vers_auswaehlen():
+    """Verse selection page with session-based persistence"""
+    # Check ob "andere Verse" explizit angefordert
+    refresh_verses = request.args.get('refresh') == 'true'
+    
+    # Get verses already in cart to exclude them
+    cart_verse_ids = []
+    if 'cart' in session:
+        cart_verse_ids = [item['verse_id'] for item in session['cart']]
+    
+    if 'featured_verse_ids' not in session:
+        # Erste Auswahl - exclude cart items
+        featured_verses = Verse.get_adaptive_featured_verses(3, exclude_ids=cart_verse_ids)
+        session['featured_verse_ids'] = [v.id for v in featured_verses]
+        session['shown_verse_ids'] = [v.id for v in featured_verses]  # Track all shown verses
+    elif refresh_verses:
+        # "Andere Verse anzeigen" - exclude ALL previously shown verses AND cart items
+        all_shown_ids = session.get('shown_verse_ids', [])
+        exclude_ids = list(set(all_shown_ids + cart_verse_ids))
+        featured_verses = Verse.get_adaptive_featured_verses(3, exclude_ids=exclude_ids)
+        
+        if len(featured_verses) == 0:
+            # Keine neuen Verse verfügbar - reset und zeige erste wieder
+            featured_verses = Verse.get_adaptive_featured_verses(3)
+            session['shown_verse_ids'] = [v.id for v in featured_verses]
+        else:
+            # Füge neue Verse zur "bereits gezeigt" Liste hinzu
+            session['shown_verse_ids'] = all_shown_ids + [v.id for v in featured_verses]
+        
+        session['featured_verse_ids'] = [v.id for v in featured_verses]
+    else:
+        # Bestehende Session-Verse laden
+        verse_ids = session['featured_verse_ids']
+        featured_verses = Verse.query.filter(Verse.id.in_(verse_ids)).all()
+        
+        # Check ob Verse zwischenzeitlich gesponsert wurden oder bereits im Warenkorb sind
+        cart_verse_ids = []
+        if 'cart' in session:
+            cart_verse_ids = [item['verse_id'] for item in session['cart']]
+        
+        available_verses = [v for v in featured_verses if not v.is_sponsored and v.id not in cart_verse_ids]
+        
+        if len(available_verses) < len(featured_verses):
+            # Ersetze gesponserte/bereits im Korb befindliche Verse
+            missing_count = len(featured_verses) - len(available_verses)
+            all_shown_ids = session.get('shown_verse_ids', [])
+            exclude_ids = list(set(all_shown_ids + cart_verse_ids))
+            
+            new_verses = Verse.get_adaptive_featured_verses(
+                missing_count, exclude_ids=exclude_ids
+            )
+            
+            featured_verses = available_verses + new_verses
+            session['featured_verse_ids'] = [v.id for v in featured_verses]
+            # Update shown_verse_ids
+            session['shown_verse_ids'] = list(set(all_shown_ids + [v.id for v in new_verses]))
+    
+    return render_template("vers-auswaehlen.html", 
+                         featured_verses=featured_verses)
 
 # ==========================================
 # VERSE SEARCH ROUTES
@@ -357,6 +352,340 @@ def vers_auswaehlen_referenz():
 def vers_auswaehlen_keyword():
     """Keyword search page"""
     return render_template("vers-auswaehlen-keyword.html")
+
+# ==========================================
+# REFERENCE SEARCH API ROUTES
+# ==========================================
+
+@app.route("/api/verse/reference/<book>/<int:chapter>/<int:verse_num>")
+def api_verse_by_reference(book, chapter, verse_num):
+    """API endpoint for verse reference search with enhanced error handling."""
+    # Input validation
+    if not book or not book.strip():
+        return {
+            'success': False,
+            'error': 'Book name is required'
+        }, 400
+    
+    if chapter <= 0 or verse_num <= 0:
+        return {
+            'success': False,
+            'error': 'Chapter and verse numbers must be positive'
+        }, 400
+    
+    if chapter > 200 or verse_num > 200:  # Reasonable limits
+        return {
+            'success': False,
+            'error': 'Chapter or verse number seems too large'
+        }, 400
+    
+    try:
+        verse = Verse.get_by_reference(book, chapter, verse_num)
+        
+        if not verse:
+            return {
+                'success': False,
+                'error': f'Verse {book} {chapter}:{verse_num} not found in database',
+                'suggestion': 'Please check the book name, chapter and verse numbers'
+            }, 404
+        
+        # If verse is sponsored, include similar verses
+        response_data = {
+            'success': True,
+            'verse': {
+                'id': verse.id,
+                'book': verse.book,
+                'chapter': verse.chapter,
+                'verse': verse.verse,
+                'text': verse.text,
+                'reference': verse.reference,
+                'positivity_score': verse.positivity_score,
+                'is_sponsored': verse.is_sponsored,
+                'url_slug': verse.url_slug
+            }
+        }
+        
+        # Add similar verses if this one is sponsored
+        if verse.is_sponsored:
+            similar_verses = verse.find_similar_verses(limit=3, positivity_tolerance=10)
+            response_data['similar_verses'] = [
+                {
+                    'id': alt.id,
+                    'reference': alt.reference,
+                    'text': alt.text,  # Show full text for alternative verses
+                    'positivity_score': alt.positivity_score,
+                    'url_slug': alt.url_slug
+                }
+                for alt in similar_verses
+            ]
+        
+        return response_data
+        
+    except Exception as e:
+        app.logger.error(f"Error in verse reference search: {e}")
+        return {
+            'success': False,
+            'error': 'Internal server error occurred while searching for verse'
+        }, 500
+
+@app.route("/api/verse/<int:verse_id>/similar")
+def api_similar_verses(verse_id):
+    """Get similar verses for a sponsored verse"""
+    try:
+        verse = Verse.query.get(verse_id)
+        if not verse:
+            return {
+                'success': False,
+                'error': 'Verse not found'
+            }, 404
+        
+        alternatives = verse.find_similar_verses(limit=3, positivity_tolerance=10)
+        
+        alternatives_data = []
+        for alt in alternatives:
+            alternatives_data.append({
+                'id': alt.id,
+                'book': alt.book,
+                'chapter': alt.chapter,
+                'verse': alt.verse,
+                'text': alt.text,
+                'reference': alt.reference,
+                'positivity_score': alt.positivity_score,
+                'url_slug': alt.url_slug
+            })
+        
+        return {
+            'success': True,
+            'original_verse': {
+                'id': verse.id,
+                'reference': verse.reference,
+                'is_sponsored': verse.is_sponsored
+            },
+            'alternatives': alternatives_data
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
+
+@app.route("/api/verse/books")
+def api_verse_books():
+    """Get list of all available books in biblical order"""
+    try:
+        # Get all available books from database
+        available_books_query = db.session.query(Verse.book.distinct()).all()
+        available_books = {book[0] for book in available_books_query if book[0]}
+        
+        # Biblical order for Old Testament books
+        biblical_order = [
+            # Missing: GEN, EXO, LEV, NUM, DEU, JOS, JDG, RUT, 1SA, 2SA (not in our AT-only dataset)
+            '1KI',      # 1.Könige  
+            '2KI',      # 2.Könige
+            '1CH',      # 1.Chronik
+            '2CH',      # 2.Chronik
+            'EZR',      # Esra
+            'NEH',      # Nehemia  
+            'EST',      # Esther
+            'JOB',      # Hiob
+            # Missing: PSA, PRO (not in available books)
+            'ECC',      # Prediger
+            'SNG',      # Hoheslied
+            'ISA',      # Jesaja
+            'JER',      # Jeremia
+            'LAM',      # Klagelieder
+            'EZK',      # Hesekiel
+            'DAN',      # Daniel
+            'HOS',      # Hosea
+            'JOL',      # Joel
+            'AMO',      # Amos
+            'OBA',      # Obadja
+            # Missing: JON (not in available books)
+            'MIC',      # Micha
+            'NAM',      # Nahum
+            'HAB',      # Habakuk
+            'ZEP',      # Zefanja
+            'HAG',      # Haggai
+            'ZEC',      # Sacharja
+            'MAL'       # Maleachi
+        ]
+        
+        # Return only books that exist in database, in biblical order
+        book_list = [book for book in biblical_order if book in available_books]
+        
+        return {
+            'success': True,
+            'books': book_list
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
+
+@app.route("/api/verse/chapters/<book>")
+def api_verse_chapters(book):
+    """Get list of chapters for a specific book"""
+    try:
+        book_upper = book.upper()
+        chapters = db.session.query(Verse.chapter.distinct()).filter(
+            Verse.book == book_upper
+        ).order_by(Verse.chapter).all()
+        
+        chapter_list = [chapter[0] for chapter in chapters if chapter[0]]
+        
+        return {
+            'success': True,
+            'chapters': chapter_list
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
+
+@app.route("/api/verse/verses/<book>/<int:chapter>")
+def api_verse_verses(book, chapter):
+    """Get list of verses for a specific book and chapter"""
+    try:
+        book_upper = book.upper()
+        verses = db.session.query(Verse.verse.distinct()).filter(
+            Verse.book == book_upper,
+            Verse.chapter == chapter
+        ).order_by(Verse.verse).all()
+        
+        verse_list = [verse[0] for verse in verses if verse[0]]
+        
+        return {
+            'success': True,
+            'verses': verse_list
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': 'Internal server error'
+        }, 500
+
+# ==========================================
+# KEYWORD SEARCH API ROUTE
+# ==========================================
+
+@app.route("/api/verse/search/keyword", methods=["POST"])
+@csrf.exempt
+def api_keyword_search():
+    """Keyword search API with positivity-based ranking and pagination"""
+    try:
+        # Validate request
+        if not request.is_json:
+            return {
+                'success': False,
+                'error': 'Request must be JSON'
+            }, 400
+        
+        data = request.get_json()
+        query = data.get('query', '').strip()
+        offset = data.get('offset', 0)
+        
+        # Validate parameters
+        if not query:
+            return {
+                'success': False,
+                'error': 'Query parameter is required'
+            }, 400
+        
+        if len(query) < 2:
+            return {
+                'success': False,
+                'error': 'Query must be at least 2 characters long'
+            }, 400
+        
+        if offset < 0:
+            offset = 0
+        
+        # Session management für Pagination
+        if 'keyword_search' not in session or session['keyword_search'].get('query') != query:
+            # Neue Suche oder geänderte Query - Session zurücksetzen
+            session['keyword_search'] = {
+                'query': query,
+                'shown_verse_ids': [],
+                'all_result_ids': None
+            }
+        
+        search_session = session['keyword_search']
+        
+        # Wenn noch keine Gesamtergebnisse geladen wurden
+        if search_session['all_result_ids'] is None:
+            # Führe Hybrid-Suche durch
+            all_results = Verse.search_hybrid(query, limit=100)
+            
+            # Nach kombiniertem Score sortieren (Positivity + Search Score)
+            scored_results = []
+            for verse in all_results:
+                if not verse.is_sponsored:  # Nur ungesponserte Verse
+                    # Kombinierter Score: 40% Search relevance + 60% Positivity
+                    search_relevance = 1.0  # Placeholder - alle Hybrid-Ergebnisse sind relevant
+                    positivity_normalized = (verse.positivity_score or 0) / 100.0
+                    combined_score = 0.4 * search_relevance + 0.6 * positivity_normalized
+                    scored_results.append((verse, combined_score))
+            
+            # Nach kombiniertem Score sortieren (höchste zuerst)
+            scored_results.sort(key=lambda x: x[1], reverse=True)
+            
+            # Nur die Verse-IDs speichern für Pagination
+            search_session['all_result_ids'] = [verse.id for verse, score in scored_results]
+            session.modified = True
+        
+        # Paginierung: 3 Verse ab Offset
+        all_ids = search_session['all_result_ids']
+        page_ids = all_ids[offset:offset + 3]
+        
+        # Verse laden
+        if page_ids:
+            # Lade Verse in der korrekten Reihenfolge
+            verses_dict = {v.id: v for v in Verse.query.filter(Verse.id.in_(page_ids)).all()}
+            verses = [verses_dict[vid] for vid in page_ids if vid in verses_dict]
+        else:
+            verses = []
+        
+        # Update shown_verse_ids
+        search_session['shown_verse_ids'].extend([v.id for v in verses])
+        session.modified = True
+        
+        # Response zusammenbauen
+        verses_data = []
+        for verse in verses:
+            verses_data.append({
+                'id': verse.id,
+                'book': verse.book,
+                'chapter': verse.chapter,
+                'verse': verse.verse,
+                'text': verse.text,
+                'reference': verse.reference,
+                'positivity_score': verse.positivity_score,
+                'is_sponsored': verse.is_sponsored,
+                'url_slug': verse.url_slug
+            })
+        
+        # Prüfe ob weitere Verse verfügbar sind
+        has_more = (offset + 3) < len(all_ids)
+        
+        return {
+            'success': True,
+            'query': query,
+            'verses': verses_data,
+            'has_more': has_more,
+            'total_found': len(all_ids),
+            'offset': offset
+        }
+        
+    except Exception as e:
+        app.logger.error(f"Error in keyword search: {e}")
+        return {
+            'success': False,
+            'error': 'Internal server error occurred'
+        }, 500
+
+
 
 # ==========================================
 # VERSE CONFIRMATION ROUTES
@@ -422,7 +751,7 @@ def vers_spendenart(verse_id):
 # CHECKOUT ROUTES
 # ==========================================
 
-@app.route("/checkout/<donation_type>/daten")
+@app.route("/checkout/<donation_type>/daten", methods=["GET", "POST"])
 def checkout_daten(donation_type):
     """Data collection for different donation types with reservation validation"""
     if donation_type not in ['einzelperson', 'gruppe', 'geschenk']:
@@ -452,38 +781,225 @@ def checkout_daten(donation_type):
     # Load verse for display
     verse = Verse.query.get(session['selected_verse_id'])
     
-    return render_template("checkout-daten.html", donation_type=donation_type, verse=verse)
+    if request.method == "POST":
+        # Collect and validate form data
+        form_data = {}
+        errors = []
+        
+        # Basic email (required for all types)
+        email = request.form.get('email', '').strip()
+        if not email or '@' not in email:
+            errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+        form_data['email'] = email
+        
+        # Privacy consent (required)
+        privacy_consent = request.form.get('privacy') == 'on'
+        if not privacy_consent:
+            errors.append("Bitte akzeptieren Sie die Datenschutzerklärung.")
+        form_data['privacy_consent'] = privacy_consent
+        
+        # Newsletter (optional)
+        form_data['newsletter'] = request.form.get('newsletter') == 'on'
+        
+        # Type-specific validation and data collection
+        if donation_type == 'gruppe':
+            # Group-specific fields
+            group_article = request.form.get('group_article', '').strip()
+            group_name = request.form.get('group_name', '').strip()
+            
+            if not group_article:
+                errors.append("Bitte wählen Sie einen Artikel für den Gruppennamen.")
+            if not group_name:
+                errors.append("Bitte geben Sie den Namen der Gruppe ein.")
+                
+            form_data['group_article'] = group_article
+            form_data['group_name'] = group_name
+            form_data['wants_receipt'] = False  # Groups can't get automatic receipts
+            
+        else:
+            # Individual and gift donations need receipt data
+            wants_receipt = request.form.get('wantReceipt') == 'on'
+            form_data['wants_receipt'] = wants_receipt
+            
+            if wants_receipt:
+                # Collect receipt data
+                salutation = request.form.get('salutation', '').strip()
+                first_name = request.form.get('firstName', '').strip()
+                last_name = request.form.get('lastName', '').strip()
+                street = request.form.get('street', '').strip()
+                house_number = request.form.get('houseNumber', '').strip()
+                postal_code = request.form.get('postalCode', '').strip()
+                city = request.form.get('city', '').strip()
+                country = request.form.get('country', 'DE').strip()
+                
+                # Validate required receipt fields
+                if not salutation:
+                    errors.append("Bitte wählen Sie eine Anrede.")
+                if not first_name:
+                    errors.append("Bitte geben Sie Ihren Vornamen ein.")
+                if not last_name:
+                    errors.append("Bitte geben Sie Ihren Nachnamen ein.")
+                if not street:
+                    errors.append("Bitte geben Sie Ihre Straße ein.")
+                if not house_number:
+                    errors.append("Bitte geben Sie Ihre Hausnummer ein.")
+                if not postal_code:
+                    errors.append("Bitte geben Sie Ihre Postleitzahl ein.")
+                if not city:
+                    errors.append("Bitte geben Sie Ihren Ort ein.")
+                    
+                form_data.update({
+                    'salutation': salutation,
+                    'title': request.form.get('title', '').strip(),
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'street': street,
+                    'house_number': house_number,
+                    'postal_code': postal_code,
+                    'city': city,
+                    'country': country
+                })
+        
+        # Gift-specific fields
+        if donation_type == 'geschenk':
+            gift_recipient_name = request.form.get('gift_recipient_name', '').strip()
+            gift_direct_send = request.form.get('gift_direct_send') == 'on'
+            
+            if not gift_recipient_name:
+                errors.append("Bitte geben Sie den Namen des Empfängers ein.")
+                
+            form_data['gift_recipient_name'] = gift_recipient_name
+            form_data['gift_direct_send'] = gift_direct_send
+            form_data['gift_message'] = request.form.get('gift_message', '').strip()
+            
+            if gift_direct_send:
+                gift_recipient_email = request.form.get('gift_recipient_email', '').strip()
+                if not gift_recipient_email or '@' not in gift_recipient_email:
+                    errors.append("Bitte geben Sie eine gültige E-Mail-Adresse des Empfängers ein.")
+                form_data['gift_recipient_email'] = gift_recipient_email
+        
+        # If validation failed, show errors and return form
+        if errors:
+            for error in errors:
+                flash(error, "danger")
+            return render_template("checkout-daten.html", donation_type=donation_type, verse=verse, form_data=form_data)
+        
+        # Initialize cart if not exists
+        if 'cart' not in session:
+            session['cart'] = []
+        
+        # Add verse to cart with all data
+        cart_item = {
+            'verse_id': session['selected_verse_id'],
+            'donation_type': donation_type,
+            'donor_data': form_data,
+            'reservation_id': session.get('reservation_id'),
+            'amount': 100.00,
+            'currency': 'EUR'
+        }
+        
+        # Add to cart
+        session['cart'].append(cart_item)
+        session.modified = True
+        
+        # Clear current verse selection (will be handled by cart now)
+        session.pop('selected_verse_id', None)
+        session.pop('reservation_id', None)
+        session.pop('checkout_data', None)
+        
+        # Store/Update shared donor data for future verse additions
+        session['shared_donor_data'] = form_data
+        
+        # Redirect to cart page
+        return redirect(url_for("spendenkorb"))
+    
+    # Pre-fill form with shared donor data if available
+    form_data = session.get('shared_donor_data', {})
+    
+    return render_template("checkout-daten.html", 
+                         donation_type=donation_type, 
+                         verse=verse, 
+                         form_data=form_data)
 
-@app.route("/checkout/zusammenfassung")
-def checkout_zusammenfassung():
-    """Checkout summary page with reservation validation"""
-    # Check ob Vers ausgewählt
-    if 'selected_verse_id' not in session:
-        flash("Bitte wählen Sie zuerst einen Vers aus.", "warning")
+@app.route("/spendenkorb")
+def spendenkorb():
+    """Donation cart page showing all selected verses"""
+    # Check if cart exists and has items
+    if 'cart' not in session or not session['cart']:
+        flash("Ihr Spendenkorb ist leer. Bitte wählen Sie zuerst einen Vers aus.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Check ob Reservierung noch gültig
-    if 'reservation_id' in session:
-        reservation = VerseReservation.query.get(session['reservation_id'])
-        if not reservation or reservation.is_expired:
-            flash("Ihre Reservierung ist abgelaufen. Bitte wählen Sie erneut.", "warning")
-            session.pop('selected_verse_id', None)
-            session.pop('reservation_id', None)
-            return redirect(url_for("vers_auswaehlen"))
-        
-        # Verlängere Reservierung bei Aktivität
-        reservation.extend_reservation(15)
+    # Load verse data for all items in cart
+    cart_items = []
+    total_amount = 0
     
-    # Load verse and build data from session
-    verse = Verse.query.get(session['selected_verse_id'])
-    donation_data = {
-        'verse_reference': verse.reference,
-        'verse_text': verse.text,
-        'donor_name': session.get('donor_name', 'Demo User'),
-        'donor_email': session.get('donor_email', 'demo@example.com'),
-        'amount': 100.00
-    }
-    return render_template("checkout-zusammenfassung.html", data=donation_data)
+    # Check and update reservations for cart items
+    for i, item in enumerate(session['cart']):
+        # Load verse data
+        verse = Verse.query.get(item['verse_id'])
+        if not verse:
+            continue
+            
+        # Check reservation status
+        reservation_valid = True
+        if item.get('reservation_id'):
+            reservation = VerseReservation.query.get(item['reservation_id'])
+            if not reservation or reservation.is_expired:
+                reservation_valid = False
+                flash(f"Die Reservierung für {verse.reference} ist abgelaufen.", "warning")
+            else:
+                # Extend reservation
+                reservation.extend_reservation(15)
+        
+        cart_item_display = {
+            'index': i,
+            'verse': verse,
+            'donation_type': item['donation_type'],
+            'donor_data': item['donor_data'],
+            'amount': item['amount'],
+            'currency': item['currency'],
+            'reservation_valid': reservation_valid
+        }
+        cart_items.append(cart_item_display)
+        total_amount += item['amount']
+    
+    return render_template("spendenkorb.html", 
+                         cart_items=cart_items, 
+                         total_amount=total_amount,
+                         cart_count=len(cart_items))
+
+
+@app.route("/spendenkorb/entfernen", methods=["POST"])
+def cart_remove_item():
+    """Remove item from cart via AJAX"""
+    try:
+        data = request.get_json()
+        item_index = data.get('item_index')
+        
+        if 'cart' not in session or item_index is None:
+            return jsonify({'success': False, 'message': 'Invalid request'})
+        
+        cart = session['cart']
+        if 0 <= item_index < len(cart):
+            # Clean up reservation if exists
+            removed_item = cart[item_index]
+            if removed_item.get('reservation_id'):
+                reservation = VerseReservation.query.get(removed_item['reservation_id'])
+                if reservation:
+                    db.session.delete(reservation)
+                    db.session.commit()
+            
+            # Remove item from cart
+            cart.pop(item_index)
+            session['cart'] = cart
+            session.modified = True
+            
+            return jsonify({'success': True, 'message': 'Item removed successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Item not found'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route("/checkout/erfolg")
 def checkout_erfolg():
@@ -781,333 +1297,6 @@ def dashboard():
     
     return render_template("dashboard.html", user=current_user, stats=stats)
 
-# ==========================================
-# REFERENCE SEARCH API ROUTES
-# ==========================================
-
-@app.route("/api/verse/reference/<book>/<int:chapter>/<int:verse_num>")
-def api_verse_by_reference(book, chapter, verse_num):
-    """API endpoint for verse reference search with enhanced error handling."""
-    # Input validation
-    if not book or not book.strip():
-        return {
-            'success': False,
-            'error': 'Book name is required'
-        }, 400
-    
-    if chapter <= 0 or verse_num <= 0:
-        return {
-            'success': False,
-            'error': 'Chapter and verse numbers must be positive'
-        }, 400
-    
-    if chapter > 200 or verse_num > 200:  # Reasonable limits
-        return {
-            'success': False,
-            'error': 'Chapter or verse number seems too large'
-        }, 400
-    
-    try:
-        verse = Verse.get_by_reference(book, chapter, verse_num)
-        
-        if not verse:
-            return {
-                'success': False,
-                'error': f'Verse {book} {chapter}:{verse_num} not found in database',
-                'suggestion': 'Please check the book name, chapter and verse numbers'
-            }, 404
-        
-        # If verse is sponsored, include similar verses
-        response_data = {
-            'success': True,
-            'verse': {
-                'id': verse.id,
-                'book': verse.book,
-                'chapter': verse.chapter,
-                'verse': verse.verse,
-                'text': verse.text,
-                'reference': verse.reference,
-                'positivity_score': verse.positivity_score,
-                'is_sponsored': verse.is_sponsored,
-                'url_slug': verse.url_slug
-            }
-        }
-        
-        # Add similar verses if this one is sponsored
-        if verse.is_sponsored:
-            similar_verses = verse.find_similar_verses(limit=3, positivity_tolerance=10)
-            response_data['similar_verses'] = [
-                {
-                    'id': alt.id,
-                    'reference': alt.reference,
-                    'text': alt.text,  # Show full text for alternative verses
-                    'positivity_score': alt.positivity_score,
-                    'url_slug': alt.url_slug
-                }
-                for alt in similar_verses
-            ]
-        
-        return response_data
-        
-    except Exception as e:
-        app.logger.error(f"Error in verse reference search: {e}")
-        return {
-            'success': False,
-            'error': 'Internal server error occurred while searching for verse'
-        }, 500
-
-@app.route("/api/verse/<int:verse_id>/similar")
-def api_similar_verses(verse_id):
-    """Get similar verses for a sponsored verse"""
-    try:
-        verse = Verse.query.get(verse_id)
-        if not verse:
-            return {
-                'success': False,
-                'error': 'Verse not found'
-            }, 404
-        
-        alternatives = verse.find_similar_verses(limit=3, positivity_tolerance=10)
-        
-        alternatives_data = []
-        for alt in alternatives:
-            alternatives_data.append({
-                'id': alt.id,
-                'book': alt.book,
-                'chapter': alt.chapter,
-                'verse': alt.verse,
-                'text': alt.text,
-                'reference': alt.reference,
-                'positivity_score': alt.positivity_score,
-                'url_slug': alt.url_slug
-            })
-        
-        return {
-            'success': True,
-            'original_verse': {
-                'id': verse.id,
-                'reference': verse.reference,
-                'is_sponsored': verse.is_sponsored
-            },
-            'alternatives': alternatives_data
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': 'Internal server error'
-        }, 500
-
-@app.route("/api/verse/books")
-def api_verse_books():
-    """Get list of all available books in biblical order"""
-    try:
-        # Get all available books from database
-        available_books_query = db.session.query(Verse.book.distinct()).all()
-        available_books = {book[0] for book in available_books_query if book[0]}
-        
-        # Biblical order for Old Testament books
-        biblical_order = [
-            # Missing: GEN, EXO, LEV, NUM, DEU, JOS, JDG, RUT, 1SA, 2SA (not in our AT-only dataset)
-            '1KI',      # 1.Könige  
-            '2KI',      # 2.Könige
-            '1CH',      # 1.Chronik
-            '2CH',      # 2.Chronik
-            'EZR',      # Esra
-            'NEH',      # Nehemia  
-            'EST',      # Esther
-            'JOB',      # Hiob
-            # Missing: PSA, PRO (not in available books)
-            'ECC',      # Prediger
-            'SNG',      # Hoheslied
-            'ISA',      # Jesaja
-            'JER',      # Jeremia
-            'LAM',      # Klagelieder
-            'EZK',      # Hesekiel
-            'DAN',      # Daniel
-            'HOS',      # Hosea
-            'JOL',      # Joel
-            'AMO',      # Amos
-            'OBA',      # Obadja
-            # Missing: JON (not in available books)
-            'MIC',      # Micha
-            'NAM',      # Nahum
-            'HAB',      # Habakuk
-            'ZEP',      # Zefanja
-            'HAG',      # Haggai
-            'ZEC',      # Sacharja
-            'MAL'       # Maleachi
-        ]
-        
-        # Return only books that exist in database, in biblical order
-        book_list = [book for book in biblical_order if book in available_books]
-        
-        return {
-            'success': True,
-            'books': book_list
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': 'Internal server error'
-        }, 500
-
-@app.route("/api/verse/chapters/<book>")
-def api_verse_chapters(book):
-    """Get list of chapters for a specific book"""
-    try:
-        book_upper = book.upper()
-        chapters = db.session.query(Verse.chapter.distinct()).filter(
-            Verse.book == book_upper
-        ).order_by(Verse.chapter).all()
-        
-        chapter_list = [chapter[0] for chapter in chapters if chapter[0]]
-        
-        return {
-            'success': True,
-            'chapters': chapter_list
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': 'Internal server error'
-        }, 500
-
-@app.route("/api/verse/verses/<book>/<int:chapter>")
-def api_verse_verses(book, chapter):
-    """Get list of verses for a specific book and chapter"""
-    try:
-        book_upper = book.upper()
-        verses = db.session.query(Verse.verse.distinct()).filter(
-            Verse.book == book_upper,
-            Verse.chapter == chapter
-        ).order_by(Verse.verse).all()
-        
-        verse_list = [verse[0] for verse in verses if verse[0]]
-        
-        return {
-            'success': True,
-            'verses': verse_list
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': 'Internal server error'
-        }, 500
-
-@app.route("/api/verse/search/keyword", methods=["POST"])
-@csrf.exempt
-def api_keyword_search():
-    """Keyword search API with positivity-based ranking and pagination"""
-    try:
-        # Validate request
-        if not request.is_json:
-            return {
-                'success': False,
-                'error': 'Request must be JSON'
-            }, 400
-        
-        data = request.get_json()
-        query = data.get('query', '').strip()
-        offset = data.get('offset', 0)
-        
-        # Validate parameters
-        if not query:
-            return {
-                'success': False,
-                'error': 'Query parameter is required'
-            }, 400
-        
-        if len(query) < 2:
-            return {
-                'success': False,
-                'error': 'Query must be at least 2 characters long'
-            }, 400
-        
-        if offset < 0:
-            offset = 0
-        
-        # Session management für Pagination
-        if 'keyword_search' not in session or session['keyword_search'].get('query') != query:
-            # Neue Suche oder geänderte Query - Session zurücksetzen
-            session['keyword_search'] = {
-                'query': query,
-                'shown_verse_ids': [],
-                'all_result_ids': None
-            }
-        
-        search_session = session['keyword_search']
-        
-        # Wenn noch keine Gesamtergebnisse geladen wurden
-        if search_session['all_result_ids'] is None:
-            # Führe Hybrid-Suche durch
-            all_results = Verse.search_hybrid(query, limit=100)
-            
-            # Nach kombiniertem Score sortieren (Positivity + Search Score)
-            scored_results = []
-            for verse in all_results:
-                if not verse.is_sponsored:  # Nur ungesponserte Verse
-                    # Kombinierter Score: 40% Search relevance + 60% Positivity
-                    search_relevance = 1.0  # Placeholder - alle Hybrid-Ergebnisse sind relevant
-                    positivity_normalized = (verse.positivity_score or 0) / 100.0
-                    combined_score = 0.4 * search_relevance + 0.6 * positivity_normalized
-                    scored_results.append((verse, combined_score))
-            
-            # Nach kombiniertem Score sortieren (höchste zuerst)
-            scored_results.sort(key=lambda x: x[1], reverse=True)
-            
-            # Nur die Verse-IDs speichern für Pagination
-            search_session['all_result_ids'] = [verse.id for verse, score in scored_results]
-            session.modified = True
-        
-        # Paginierung: 3 Verse ab Offset
-        all_ids = search_session['all_result_ids']
-        page_ids = all_ids[offset:offset + 3]
-        
-        # Verse laden
-        if page_ids:
-            # Lade Verse in der korrekten Reihenfolge
-            verses_dict = {v.id: v for v in Verse.query.filter(Verse.id.in_(page_ids)).all()}
-            verses = [verses_dict[vid] for vid in page_ids if vid in verses_dict]
-        else:
-            verses = []
-        
-        # Update shown_verse_ids
-        search_session['shown_verse_ids'].extend([v.id for v in verses])
-        session.modified = True
-        
-        # Response zusammenbauen
-        verses_data = []
-        for verse in verses:
-            verses_data.append({
-                'id': verse.id,
-                'book': verse.book,
-                'chapter': verse.chapter,
-                'verse': verse.verse,
-                'text': verse.text,
-                'reference': verse.reference,
-                'positivity_score': verse.positivity_score,
-                'is_sponsored': verse.is_sponsored,
-                'url_slug': verse.url_slug
-            })
-        
-        # Prüfe ob weitere Verse verfügbar sind
-        has_more = (offset + 3) < len(all_ids)
-        
-        return {
-            'success': True,
-            'query': query,
-            'verses': verses_data,
-            'has_more': has_more,
-            'total_found': len(all_ids),
-            'offset': offset
-        }
-        
-    except Exception as e:
-        app.logger.error(f"Error in keyword search: {e}")
-        return {
-            'success': False,
-            'error': 'Internal server error occurred'
-        }, 500
 
 # ==========================================
 # CONTACT ROUTES
@@ -1183,40 +1372,6 @@ def download_spendenbescheinigung():
     return render_template("dummy-spendenbescheinigung.html")
 
 # ==========================================
-# DONATION TYPE SPECIFIC ROUTES
-# ==========================================
-
-@app.route("/checkout/gruppe/daten", methods=["GET", "POST"])
-def checkout_gruppe_daten():
-    """Group donation contact data"""
-    if request.method == "POST":
-        # Store group contact data in session
-        session['group_contact'] = {
-            'email': request.form.get('email'),
-            'newsletter': request.form.get('newsletter') == 'on',
-            'privacy': request.form.get('privacy') == 'on'
-        }
-        return redirect(url_for("checkout_zusammenfassung"))
-    
-    return render_template("checkout-daten.html", donation_type='gruppe')
-
-@app.route("/checkout/geschenk/daten", methods=["GET", "POST"])
-def checkout_geschenk_daten():
-    """Gift donation donor data"""
-    if request.method == "POST":
-        # Store gift donor data in session
-        session['gift_donor'] = {
-            'email': request.form.get('email'),
-            'salutation': request.form.get('salutation'),
-            'first_name': request.form.get('firstName'),
-            'last_name': request.form.get('lastName'),
-            'want_receipt': request.form.get('wantReceipt') == 'on',
-            'newsletter': request.form.get('newsletter') == 'on',
-            'privacy': request.form.get('privacy') == 'on'
-        }
-        return redirect(url_for("checkout_zusammenfassung"))
-    
-    return render_template("checkout-daten.html", donation_type='geschenk')
 
 # ==========================================
 # ERROR HANDLERS
@@ -1247,6 +1402,18 @@ def agb():
     """Terms and conditions"""
     flash("Die AGB sind noch in Entwicklung.", "info")
     return redirect(url_for("datenschutz"))
+
+# ==========================================
+# DEBUG ROUTES (TEMPORARY)
+# ==========================================
+
+@app.route("/debug/session")
+def debug_session():
+    """Debug route to view session data"""
+    return {
+        'session_data': dict(session),
+        'session_keys': list(session.keys())
+    }
 
 if __name__ == "__main__":
     # Run in debug mode for development

@@ -117,21 +117,28 @@ const CheckoutPage = {
 
         // Setup form submission
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
+            // Only validate client-side, let the form submit normally to the backend
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                this.classList.add('was-validated');
+                return;
+            }
             
-            if (this.checkValidity()) {
-                const submitBtn = this.querySelector('button[type="submit"]');
+            // Show loading state while form submits
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
                 const originalText = submitBtn.innerHTML;
-                
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Speichere Daten...';
                 
+                // Re-enable button after a timeout in case of errors
                 setTimeout(() => {
-                    window.location.href = '/checkout/zusammenfassung';
-                }, 1000);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }, 5000);
             }
             
-            this.classList.add('was-validated');
+            // Form will submit normally to POST route
         });
     },
 

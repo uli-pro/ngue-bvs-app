@@ -42,7 +42,8 @@
                     </p>
                 </div>
                 <div class="card-body">
-                    <form id="contactForm" class="needs-validation" novalidate>
+                    <form id="contactForm" class="needs-validation" method="POST" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <!-- Basic Contact Data -->
                         <div class="card mb-4">
                             <div class="card-header bg-light">
@@ -51,7 +52,7 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label for="email" class="form-label">E-Mail-Adresse *</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ form_data.get('email', '') }}" required>
                                     <div class="form-text">
                                         {% if donation_type == 'gruppe' %}
                                             Das Gruppenzertifikat wird an diese Adresse gesendet.
@@ -129,19 +130,19 @@
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="title" class="form-label">Titel (optional)</label>
-                                        <input type="text" class="form-control" id="title" name="title" placeholder="z.B. Dr., Prof.">
+                                        <input type="text" class="form-control" id="title" name="title" value="{{ form_data.get('title', '') }}" placeholder="z.B. Dr., Prof.">
                                     </div>
                                 </div>
                                 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="firstName" class="form-label">Vorname *</label>
-                                        <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                        <input type="text" class="form-control" id="firstName" name="firstName" value="{{ form_data.get('first_name', '') }}" required>
                                         <div class="invalid-feedback">Bitte geben Sie Ihren Vornamen ein.</div>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="lastName" class="form-label">Nachname *</label>
-                                        <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                        <input type="text" class="form-control" id="lastName" name="lastName" value="{{ form_data.get('last_name', '') }}" required>
                                         <div class="invalid-feedback">Bitte geben Sie Ihren Nachnamen ein.</div>
                                     </div>
                                 </div>
@@ -149,12 +150,12 @@
                                 <div class="row">
                                     <div class="col-md-8 mb-3">
                                         <label for="street" class="form-label">Straße *</label>
-                                        <input type="text" class="form-control" id="street" name="street" required>
+                                        <input type="text" class="form-control" id="street" name="street" value="{{ form_data.get('street', '') }}" required>
                                         <div class="invalid-feedback">Bitte geben Sie Ihre Straße ein.</div>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="houseNumber" class="form-label">Hausnummer *</label>
-                                        <input type="text" class="form-control" id="houseNumber" name="houseNumber" required>
+                                        <input type="text" class="form-control" id="houseNumber" name="houseNumber" value="{{ form_data.get('house_number', '') }}" required>
                                         <div class="invalid-feedback">Bitte geben Sie Ihre Hausnummer ein.</div>
                                     </div>
                                 </div>
@@ -350,12 +351,12 @@
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label for="postalCode" class="form-label">PLZ *</label>
-                                        <input type="text" class="form-control" id="postalCode" name="postalCode" required maxlength="10">
+                                        <input type="text" class="form-control" id="postalCode" name="postalCode" value="{{ form_data.get('postal_code', '') }}" required maxlength="10">
                                         <div class="invalid-feedback">Bitte geben Sie Ihre Postleitzahl ein.</div>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="city" class="form-label">Ort *</label>
-                                        <input type="text" class="form-control" id="city" name="city" required>
+                                        <input type="text" class="form-control" id="city" name="city" value="{{ form_data.get('city', '') }}" required>
                                         <div class="invalid-feedback">Bitte geben Sie Ihren Ort ein.</div>
                                     </div>
                                 </div>
@@ -442,8 +443,8 @@
                                 <i class="fas fa-arrow-left me-2"></i>Zurück
                             </button>
                             <button type="submit" class="btn btn-primary btn-lg">
-                                Weiter zur Zusammenfassung
-                                <i class="fas fa-arrow-right ms-2"></i>
+                                In den Spendenkorb
+                                <i class="fas fa-shopping-cart ms-2"></i>
                             </button>
                         </div>
                     </form>

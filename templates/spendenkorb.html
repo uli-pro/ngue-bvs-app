@@ -1,0 +1,465 @@
+{% extends "layout.html" %}
+
+{% block title %}Spendenkorb{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 90%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donation Cart Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-hand-holding-heart text-primary me-3"></i>Ihr Spendenkorb</h1>
+            <p class="lead text-muted">Überprüfen Sie Ihre ausgewählten Verse vor der Zahlung ({{ cart_count }} {% if cart_count == 1 %}Vers{% else %}Verse{% endif %})</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-lg-8 mb-4">
+            <!-- Cart Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-list text-primary me-2"></i>
+                        Ausgewählte Verse
+                    </h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40%;">Vers</th>
+                                    <th style="width: 30%;">Spendentyp</th>
+                                    <th style="width: 15%;" class="text-end">Betrag</th>
+                                    <th style="width: 15%;" class="text-center">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr id="cart-item-{{ item.index }}" {% if not item.reservation_valid %}class="table-warning"{% endif %}>
+                                    <td>
+                                        <div class="d-flex align-items-start">
+                                            <div class="verse-preview flex-grow-1 verse-clickable" onclick="showVerseModal('{{ item.verse.id }}')" data-verse-id="{{ item.verse.id }}">
+                                                <h6 class="mb-1 text-primary">{{ item.verse.reference }}</h6>
+                                                <p class="mb-0 text-muted small">"{{ item.verse.text[:50] }}{% if item.verse.text|length > 50 %}...{% endif %}"</p>
+                                                {% if not item.reservation_valid %}
+                                                <small class="text-warning">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Reservierung abgelaufen
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.donation_type == 'einzelperson' %}
+                                            <span class="badge bg-green">Einzelspende</span>
+                                            <small class="d-block text-muted mt-1">Für mich selbst</small>
+                                        {% elif item.donation_type == 'geschenk' %}
+                                            <span class="badge bg-blue">Geschenk</span>
+                                            <small class="d-block text-muted mt-1">Für {{ item.donor_data.gift_recipient_name }}</small>
+                                        {% elif item.donation_type == 'gruppe' %}
+                                            <span class="badge bg-orange">Gruppe</span>
+                                            <small class="d-block text-muted mt-1">{{ item.donor_data.group_article }} {{ item.donor_data.group_name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ "%.2f"|format(item.amount) }} €</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-danger btn-sm" onclick="removeCartItem({{ item.index }})" title="Vers entfernen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="/vers-auswaehlen" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-2"></i>Weiteren Vers hinzufügen
+                            </a>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="mb-0">Gesamtbetrag: <strong id="cart-total">{{ "%.2f"|format(total_amount) }} €</strong></h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <!-- Payment Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator text-primary me-2"></i>
+                        Bestellübersicht
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ cart_count }} {% if cart_count == 1 %}Vers{% else %}Verse{% endif %} × 100,00 €</span>
+                        <span>{{ "%.2f"|format(total_amount) }} €</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Bearbeitungsgebühr</span>
+                        <span>0,00 €</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Versandkosten</span>
+                        <span>0,00 €</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Gesamtbetrag:</strong>
+                        <strong class="text-primary">{{ "%.2f"|format(total_amount) }} €</strong>
+                    </div>
+                    
+                    <div class="d-grid mb-3">
+                        <button class="btn btn-primary btn-lg" onclick="processPayment()">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Sicher spenden - {{ "%.2f"|format(total_amount) }} €
+                        </button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <small class="text-muted mb-2 d-block">
+                            <i class="fas fa-lock me-1"></i>
+                            Sichere Zahlung über Stripe
+                        </small>
+                        <div class="payment-icons">
+                            <span class="badge bg-light text-dark me-2">Visa</span>
+                            <span class="badge bg-light text-dark me-2">Mastercard</span>
+                            <span class="badge bg-light text-dark me-2">PayPal</span>
+                            <span class="badge bg-light text-dark">SEPA</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What happens next -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-arrow-right text-primary me-2"></i>
+                        Nach der Zahlung
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="step-item mb-3">
+                        <div class="d-flex">
+                            <div class="step-number me-3">1</div>
+                            <div>
+                                <h6 class="mb-1">Sofortige Bestätigung</h6>
+                                <small class="text-muted">Sie erhalten eine E-Mail-Bestätigung Ihrer Spende</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item mb-3">
+                        <div class="d-flex">
+                            <div class="step-number me-3">2</div>
+                            <div>
+                                <h6 class="mb-1">Automatischer Versand</h6>
+                                <small class="text-muted">Zertifikate und Spendenbescheinigungen werden automatisch versendet</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <div class="d-flex">
+                            <div class="step-number me-3">3</div>
+                            <div>
+                                <h6 class="mb-1">Übersetzung beginnt</h6>
+                                <small class="text-muted">Ihre gesponserten Verse werden in die Übersetzung aufgenommen</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verse Modal -->
+<div id="verseModal" class="verse-modal" onclick="closeVerseModal()">
+    <div class="verse-modal-content" onclick="event.stopPropagation()">
+        <div class="verse-modal-header">
+            <h4 id="modalVerseReference">Vers Referenz</h4>
+            <button class="verse-modal-close" onclick="closeVerseModal()">&times;</button>
+        </div>
+        <div class="verse-modal-body">
+            <blockquote id="modalVerseText">
+                Vers Text wird hier angezeigt...
+            </blockquote>
+            <footer class="verse-modal-footer">
+                <cite>Schlachter 1951 (zur Orientierung)</cite>
+                <small class="text-muted d-block mt-2">Klicken Sie außerhalb des Fensters oder auf × um zu schließen</small>
+            </footer>
+        </div>
+    </div>
+</div>
+
+<style>
+.verse-preview {
+    min-width: 0;
+}
+
+.step-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9em;
+    flex-shrink: 0;
+}
+
+.step-item {
+    position: relative;
+}
+
+.step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 35px;
+    bottom: -15px;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.05);
+}
+
+.cart-item-removed {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.verse-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.verse-clickable:hover {
+    background-color: rgba(0,123,255,0.1);
+}
+
+.verse-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.verse-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 600px;
+    animation: slideIn 0.3s ease;
+}
+
+.verse-modal-header {
+    padding: 20px 25px 10px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.verse-modal-header h4 {
+    margin: 0;
+    color: #007bff;
+    flex-grow: 1;
+}
+
+.verse-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.verse-modal-close:hover {
+    color: #000;
+}
+
+.verse-modal-body {
+    padding: 20px 25px 25px;
+}
+
+.verse-modal-body blockquote {
+    font-size: 1.1em;
+    line-height: 1.6;
+    font-style: italic;
+    color: #333;
+    margin-bottom: 15px;
+    padding: 0;
+    border: none;
+}
+
+.verse-modal-footer {
+    text-align: center;
+    color: #6c757d;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.payment-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cartTotal = {{ total_amount }};
+let cartItemCount = {{ cart_count }};
+
+function removeCartItem(itemIndex) {
+    if (confirm('Möchten Sie diesen Vers wirklich aus dem Spendenkorb entfernen?')) {
+        // Send AJAX request to remove item from session
+        fetch('/spendenkorb/entfernen', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                'item_index': itemIndex
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload page to update cart
+                window.location.reload();
+            } else {
+                alert('Fehler beim Entfernen des Verses: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten.');
+        });
+    }
+}
+
+function processPayment() {
+    if (cartItemCount === 0) {
+        alert('Ihr Spendenkorb ist leer.');
+        return;
+    }
+    
+    if (typeof ToastManager !== 'undefined') {
+        ToastManager.info('Weiterleitung zur Zahlungsabwicklung...');
+    }
+    
+    // Redirect to payment processing
+    window.location.href = '/checkout/zahlung';
+}
+
+// Verse modal functionality
+function showVerseModal(verseId) {
+    // Load verse data via AJAX or use data from template
+    {% if cart_items %}
+    const verseData = {
+        {% for item in cart_items %}
+        '{{ item.verse.id }}': {
+            reference: '{{ item.verse.reference }}',
+            text: '{{ item.verse.text|replace("'", "\\'") }}'
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+    {% endif %}
+    
+    const verse = verseData[verseId];
+    if (!verse) return;
+
+    // Update modal content
+    document.getElementById('modalVerseReference').textContent = verse.reference;
+    document.getElementById('modalVerseText').textContent = '"' + verse.text + '"';
+    
+    // Show modal
+    const modal = document.getElementById('verseModal');
+    modal.style.display = 'block';
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closeVerseModal() {
+    const modal = document.getElementById('verseModal');
+    modal.style.display = 'none';
+    
+    // Restore body scroll
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeVerseModal();
+    }
+});
+</script>
+{% endblock %}
