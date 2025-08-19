@@ -108,6 +108,81 @@ def generate_verification_token():
     """Generate a secure verification token."""
     return secrets.token_urlsafe(32)
 
+
+# ==========================================
+# CART VALIDATION AND RECOVERY FUNCTIONS
+# ==========================================
+
+def validate_cart_item(item):
+    """Validate cart item structure and content."""
+    if not isinstance(item, dict):
+        return False
+    
+    required_fields = ['verse_id', 'donation_type', 'donor_data', 'amount']
+    
+    # Check required fields exist
+    for field in required_fields:
+        if field not in item:
+            return False
+    
+    # Check field types and values
+    try:
+        verse_id = int(item['verse_id'])
+        if verse_id <= 0:
+            return False
+    except (ValueError, TypeError):
+        return False
+    
+    if item['donation_type'] not in ['einzelperson', 'gruppe', 'geschenk']:
+        return False
+    
+    if not isinstance(item['donor_data'], dict):
+        return False
+    
+    try:
+        amount = float(item['amount'])
+        if amount <= 0:
+            return False
+    except (ValueError, TypeError):
+        return False
+    
+    return True
+
+
+def sanitize_cart(cart):
+    """Clean up cart by removing invalid items."""
+    if not isinstance(cart, list):
+        return []
+    
+    valid_items = []
+    for item in cart:
+        if validate_cart_item(item):
+            # Ensure currency field exists
+            if 'currency' not in item:
+                item['currency'] = 'EUR'
+            valid_items.append(item)
+    
+    return valid_items
+
+
+def handle_corrupted_session():
+    """Handle corrupted session data gracefully."""
+    try:
+        # Initialize empty cart if missing or corrupted
+        if 'cart' not in session or not isinstance(session['cart'], list):
+            session['cart'] = []
+        else:
+            # Sanitize existing cart
+            session['cart'] = sanitize_cart(session['cart'])
+        
+        session.modified = True
+        
+    except Exception as e:
+        # If all else fails, reset cart completely
+        session['cart'] = []
+        session.modified = True
+        app.logger.error(f"Session corruption recovery failed: {e}")
+
 def validate_password(password):
     """Validate password strength."""
     if len(password) < 8:
@@ -697,7 +772,7 @@ def api_keyword_search():
 # VERSE CONFIRMATION ROUTES
 # ==========================================
 
-@app.route("/vers/<verse_id>/spendenart")
+@app.route("/vers/<verse_id>/spendenart", methods=["GET", "POST"])
 def vers_spendenart(verse_id):
     """Donation type selection page with reservation system"""
     # Parse verse_id (z.B. "jesaja-43-1" → book="JESAJA", chapter=43, verse=1)
@@ -750,6 +825,64 @@ def vers_spendenart(verse_id):
     # Speichere in Session
     session['selected_verse_id'] = verse.id
     session['reservation_id'] = reservation.id
+    
+    # Handle POST request (donation type selection)
+    if request.method == "POST":
+        donation_type = request.form.get('donation_type')
+        if donation_type in ['einzelperson', 'gruppe', 'geschenk']:
+            session['donation_type'] = donation_type
+            return redirect(url_for("checkout_daten", donation_type=donation_type))
+        else:
+            flash("Bitte wählen Sie eine gültige Spendenart.", "error")
+            return redirect(url_for("vers_auswaehlen"))
+    
+    return render_template("vers-spendenart.html", verse=verse)
+
+@app.route("/vers/<int:verse_id>/spendenart", methods=["GET", "POST"])
+def vers_spendenart_by_id(verse_id):
+    """Donation type selection page with reservation system (by numeric ID)"""
+    # Find verse by numeric ID
+    verse = Verse.query.get(verse_id)
+    
+    if not verse:
+        flash("Dieser Vers wurde nicht gefunden.", "error")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Check if already sponsored
+    if verse.is_sponsored:
+        flash(f"Dieser Vers wurde inzwischen gesponsert. Bitte wählen Sie einen anderen.", "warning")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Check if already reserved (by another user)
+    existing_reservation = VerseReservation.get_active_for_verse(
+        verse.id, 
+        exclude_session_id=session.sid
+    )
+    
+    if existing_reservation:
+        flash(f"Der Vers {verse.reference} wird gerade von einem anderen Nutzer reserviert. Bitte wählen Sie einen anderen.", "info")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Create/Update own reservation
+    reservation = VerseReservation.create_or_update(
+        verse_id=verse.id,
+        session_id=session.sid,
+        minutes=15
+    )
+    
+    # Store in session
+    session['selected_verse_id'] = verse.id
+    session['reservation_id'] = reservation.id
+    
+    # Handle POST request (donation type selection)
+    if request.method == "POST":
+        donation_type = request.form.get('donation_type')
+        if donation_type in ['einzelperson', 'gruppe', 'geschenk']:
+            session['donation_type'] = donation_type
+            return redirect(url_for("checkout_daten", donation_type=donation_type))
+        else:
+            flash("Bitte wählen Sie eine gültige Spendenart.", "error")
+            return redirect(url_for("vers_auswaehlen"))
     
     return render_template("vers-spendenart.html", verse=verse)
 
@@ -895,9 +1028,8 @@ def checkout_daten(donation_type):
                 flash(error, "danger")
             return render_template("checkout-daten.html", donation_type=donation_type, verse=verse, form_data=form_data)
         
-        # Initialize cart if not exists
-        if 'cart' not in session:
-            session['cart'] = []
+        # Initialize cart if not exists and handle corruption
+        handle_corrupted_session()
         
         # Check cart size limit (security: prevent session overflow)
         if len(session['cart']) >= 20:
@@ -946,6 +1078,9 @@ def checkout_daten(donation_type):
 @app.route("/spendenkorb")
 def spendenkorb():
     """Donation cart page showing all selected verses"""
+    # Handle corrupted session data gracefully
+    handle_corrupted_session()
+    
     # Check if cart exists and has items
     if 'cart' not in session or not session['cart']:
         flash("Ihr Spendenkorb ist leer. Bitte wählen Sie zuerst einen Vers aus.", "warning")
@@ -1001,7 +1136,7 @@ def spendenkorb():
             'donation_type': item['donation_type'],
             'donor_data': item['donor_data'],
             'amount': item['amount'],
-            'currency': item['currency'],
+            'currency': item.get('currency', 'EUR'),  # Safe fallback for missing currency
             'reservation_valid': reservation_valid
         }
         cart_items.append(cart_item_display)
@@ -1021,6 +1156,9 @@ def spendenkorb():
 def cart_remove_item():
     """Remove item from cart via AJAX"""
     try:
+        # Handle corrupted session data gracefully
+        handle_corrupted_session()
+        
         data = request.get_json()
         item_index = data.get('item_index') if data else None
         
