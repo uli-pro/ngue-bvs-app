@@ -9,6 +9,8 @@
 - Navbar: Über uns: NGÜ - Peter-Schöffer-Stiftung - Transparenz
 - Passwort-Hashing: argon2id
 - Eine Art Liveticker, wer zuletzt wie viele Verse gesponsert hat.
+- Bilder von NGUE einpflegen 
+- Wie groß ist der Spendenbedarf -> abklären
 
 #### zertifikat
 

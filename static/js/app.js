@@ -41,18 +41,26 @@ const NGUEApp = {
      * Initialize common events and functionality
      */
     initCommonEvents: function() {
-        // Track if form is being submitted normally
-        let formSubmitting = false;
+        // Track if navigation is intentional (form submit or link click)
+        let intentionalNavigation = false;
         
         // Mark when forms are being submitted normally
         document.addEventListener('submit', function(e) {
-            formSubmitting = true;
+            intentionalNavigation = true;
         });
         
-        // Prevent data loss warning for forms with content (but not during normal submit)
+        // Mark when links are clicked normally
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href]');
+            if (link && link.href) {
+                intentionalNavigation = true;
+            }
+        });
+        
+        // Prevent data loss warning for forms with content (but not during intentional navigation)
         window.addEventListener('beforeunload', function(e) {
-            // Don't warn if form is being submitted normally
-            if (formSubmitting) {
+            // Don't warn if navigation is intentional
+            if (intentionalNavigation) {
                 return;
             }
             

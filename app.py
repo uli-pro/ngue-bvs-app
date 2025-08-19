@@ -1409,12 +1409,6 @@ def datenschutz():
     """Privacy policy page"""
     return render_template("datenschutz.html")
 
-@app.route("/spendenbedingungen")
-def spendenbedingungen():
-    """Donation terms page"""
-    flash("Die Spendenbedingungen sind noch in Entwicklung.", "info")
-    return redirect(url_for("datenschutz"))
-
 @app.route("/transparenz")
 def transparenz():
     """Transparency page"""
