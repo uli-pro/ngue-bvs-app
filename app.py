@@ -91,6 +91,7 @@ def currency_filter(value):
     """Format value as EUR currency."""
     return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
+
 # Context processor to inject current year
 @app.context_processor
 def inject_context():
@@ -1198,13 +1199,6 @@ def cart_remove_item():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route("/checkout/erfolg")
-def checkout_erfolg():
-    """Success page after payment"""
-    # Clear cart after successful payment
-    session.pop('cart', None)
-    session.pop('shared_donor_data', None)
-    return render_template("checkout-erfolg.html")
 
 @app.route("/admin/cleanup-reservations", methods=["POST"])
 @limiter.limit("1 per minute")
@@ -1580,6 +1574,165 @@ def download_zertifikat():
 def download_spendenbescheinigung():
     """View demo donation receipt"""
     return render_template("dummy-spendenbescheinigung.html")
+
+# ==========================================
+# STRIPE PAYMENT ROUTES
+# ==========================================
+
+@app.route("/checkout/zahlung")
+def checkout_zahlung():
+    """Payment page with Stripe Elements (SEPA preference)"""
+    # Validate cart exists and has items
+    handle_corrupted_session()
+    
+    if 'cart' not in session or not session['cart']:
+        flash("Ihr Spendenkorb ist leer. Bitte wählen Sie zuerst einen Vers aus.", "warning")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    # Validate all cart items are still available
+    cart_items = session['cart']
+    unavailable_count = 0
+    
+    for item in cart_items:
+        verse = Verse.query.get(item['verse_id'])
+        if not verse or verse.is_sponsored:
+            unavailable_count += 1
+    
+    if unavailable_count > 0:
+        flash(f"Achtung: {unavailable_count} Vers(e) in Ihrem Korb sind zwischenzeitlich gesponsert worden. Bitte aktualisieren Sie Ihren Warenkorb.", "danger")
+        return redirect(url_for("spendenkorb"))
+    
+    # Calculate totals
+    total_amount = len(cart_items) * 100  # €100 per verse
+    
+    # Get donor data from first cart item (they should all be the same)
+    donor_data = cart_items[0]['donor_data'] if cart_items else {}
+    
+    # Load verses for display
+    verse_ids = [item['verse_id'] for item in cart_items]
+    verses = Verse.query.filter(Verse.id.in_(verse_ids)).all()
+    verses_dict = {v.id: v for v in verses}
+    
+    # Prepare cart display data
+    cart_display = []
+    for item in cart_items:
+        verse = verses_dict.get(item['verse_id'])
+        if verse:
+            cart_display.append({
+                'verse': verse,
+                'donation_type': item['donation_type'],
+                'donor_data': item['donor_data'],
+                'amount': item['amount']
+            })
+    
+    return render_template("checkout-zahlung.html", 
+                         cart_items=cart_display,
+                         total_amount=total_amount,
+                         donor_data=donor_data,
+                         stripe_public_key=os.environ.get('STRIPE_PUBLIC_KEY'))
+
+@app.route("/checkout/create-payment-intent", methods=["POST"])
+@csrf.exempt
+def create_payment_intent():
+    """Create Stripe PaymentIntent for cart"""
+    try:
+        # Import stripe service
+        from stripe_service import StripeService, StripeError
+        
+        # Validate cart
+        handle_corrupted_session()
+        
+        if 'cart' not in session or not session['cart']:
+            return jsonify({'error': 'Empty cart'}), 400
+        
+        cart_items = session['cart']
+        
+        # Validate all verses are still available
+        for item in cart_items:
+            verse = Verse.query.get(item['verse_id'])
+            if not verse or verse.is_sponsored:
+                return jsonify({'error': f'Verse {item["verse_id"]} is no longer available'}), 400
+        
+        # Get donor data from first item
+        donor_data = cart_items[0]['donor_data'] if cart_items else {}
+        
+        # Create PaymentIntent via service
+        payment_data = StripeService.create_payment_intent(cart_items, donor_data)
+        
+        # Store PaymentIntent ID in session for later verification
+        session['payment_intent_id'] = payment_data['payment_intent_id']
+        session.modified = True
+        
+        return jsonify({
+            'success': True,
+            'client_secret': payment_data['client_secret'],
+            'amount': payment_data['amount']
+        })
+        
+    except StripeError as e:
+        app.logger.error(f"Stripe error creating PaymentIntent: {e}")
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        app.logger.error(f"Unexpected error creating PaymentIntent: {e}")
+        return jsonify({'error': 'Payment initialization failed'}), 500
+
+@app.route("/stripe/webhook", methods=["POST"])
+@csrf.exempt
+def stripe_webhook():
+    """Handle Stripe webhook events"""
+    try:
+        # Import stripe service
+        from stripe_service import StripeService, StripeError
+        
+        payload = request.get_data()
+        signature = request.headers.get('Stripe-Signature')
+        webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+        
+        if not webhook_secret:
+            app.logger.error("STRIPE_WEBHOOK_SECRET not configured")
+            return 'Webhook secret not configured', 400
+        
+        # Verify webhook signature
+        try:
+            event = StripeService.verify_webhook_signature(payload, signature, webhook_secret)
+        except StripeError as e:
+            app.logger.error(f"Webhook signature verification failed: {e}")
+            return str(e), 400
+        
+        # Log received event
+        app.logger.info(f"Received webhook event: {event['type']} - {event['data']['object'].get('id')}")
+        
+        # Handle the event
+        success = StripeService.handle_webhook_event(event)
+        
+        if success:
+            return 'OK', 200
+        else:
+            app.logger.error(f"Failed to process webhook event: {event['type']}")
+            return 'Event processing failed', 500
+            
+    except Exception as e:
+        app.logger.error(f"Unexpected error in webhook handler: {e}")
+        return 'Internal server error', 500
+
+@app.route("/checkout/erfolg")
+def checkout_erfolg():
+    """Success page after payment with payment verification"""
+    # Get payment intent from URL parameters (Stripe redirects)
+    payment_intent_id = request.args.get('payment_intent')
+    
+    if payment_intent_id:
+        # Store payment intent ID for success page display
+        session['completed_payment_intent'] = payment_intent_id
+        session.modified = True
+    
+    # Clear cart after successful payment (will be cleared by webhook anyway)
+    session.pop('cart', None)
+    session.pop('shared_donor_data', None)
+    session.pop('payment_intent_id', None)
+    session.modified = True
+    
+    return render_template("checkout-erfolg.html")
 
 # ==========================================
 

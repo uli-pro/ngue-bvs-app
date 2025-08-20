@@ -1,0 +1,333 @@
+{% extends "layout.html" %}
+
+{% block title %}Sichere Zahlung{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-credit-card text-primary me-3"></i>Sichere Zahlung</h1>
+            <p class="lead text-muted">Schließen Sie Ihre Spende sicher ab</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Payment Form -->
+        <div class="col-lg-8 mb-4">
+            <!-- SEPA Information (Prominent) -->
+            <div class="alert alert-info mb-4">
+                <h5><i class="fas fa-university me-2"></i>Empfohlene Zahlungsmethode: SEPA-Lastschrift</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <ul class="mb-0">
+                            <li>Keine Kreditkarte erforderlich</li>
+                            <li>Sicher und vertraut</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <ul class="mb-0">
+                            <li>Niedrigere Gebühren</li>
+                            <li>Mehr Geld für die Übersetzung</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            SEPA-Abbuchung erfolgt in 2-14 Werktagen
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Form Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-lock text-success me-2"></i>
+                        Sichere Zahlungsabwicklung
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Payment Element Container -->
+                    <div id="payment-element">
+                        <!-- Stripe Elements will be inserted here -->
+                    </div>
+
+                    <!-- SEPA Mandate Information -->
+                    <div id="sepa-mandate-info" class="mt-3 p-3 bg-light rounded" style="display:none;">
+                        <h6 class="mb-2">
+                            <i class="fas fa-file-contract text-primary me-2"></i>
+                            SEPA-Lastschriftmandat
+                        </h6>
+                        <p class="small mb-2">
+                            Mit der Erteilung des SEPA-Mandats ermächtigen Sie die 
+                            <strong>Peter-Schöffer-Stiftung</strong>, den Betrag von 
+                            <strong>{{ "%.2f"|format(total_amount) }} €</strong> von Ihrem Konto einzuziehen.
+                        </p>
+                        <p class="small mb-0 text-muted">
+                            Sie können innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum, 
+                            die Erstattung des belasteten Betrages verlangen.
+                        </p>
+                    </div>
+
+                    <!-- 3D Secure Information -->
+                    <div id="secure-payment-info" class="mt-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-shield-alt text-success me-2"></i>
+                            <small class="text-muted">
+                                Sichere Zahlung mit SSL-Verschlüsselung und 3D Secure Authentifizierung
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Error Messages -->
+                    <div id="payment-errors" class="alert alert-danger mt-3" style="display:none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="error-message"></span>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="payment-loading" class="text-center mt-3" style="display:none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 mb-0">Zahlung wird verarbeitet...</p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid mt-4">
+                        <button id="submit-payment" class="btn btn-primary btn-lg" disabled>
+                            <i class="fas fa-lock me-2"></i>
+                            Jetzt sicher spenden - {{ "%.2f"|format(total_amount) }} €
+                        </button>
+                    </div>
+
+                    <!-- Payment Methods Info -->
+                    <div class="text-center mt-3">
+                        <small class="text-muted mb-2 d-block">
+                            Unterstützte Zahlungsmethoden:
+                        </small>
+                        <div class="payment-icons">
+                            <span class="badge bg-primary me-2">SEPA</span>
+                            <span class="badge bg-light text-dark me-2">Visa</span>
+                            <span class="badge bg-light text-dark me-2">Mastercard</span>
+                            <span class="badge bg-light text-dark">Giropay</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <!-- Payment Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator text-primary me-2"></i>
+                        Bestellübersicht
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Cart Items Summary -->
+                    {% for item in cart_items %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ item.verse.reference }}</h6>
+                            <small class="text-muted">{{ item.verse.text[:50] }}{% if item.verse.text|length > 50 %}...{% endif %}</small>
+                        </div>
+                        <div class="text-end ms-3">
+                            <strong>{{ "%.2f"|format(item.amount) }} €</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr class="my-3">
+                    
+                    <!-- Totals -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ cart_items|length }} {% if cart_items|length == 1 %}Vers{% else %}Verse{% endif %}</span>
+                        <span>{{ "%.2f"|format(total_amount) }} €</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <small>Bearbeitungsgebühr</small>
+                        <small>0,00 €</small>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3 text-success">
+                        <small>Versandkosten</small>
+                        <small>0,00 €</small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Gesamtbetrag:</strong>
+                        <strong class="text-primary">{{ "%.2f"|format(total_amount) }} €</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donor Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user text-primary me-2"></i>
+                        Spenderdaten
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if donor_data %}
+                    <p class="mb-1">
+                        <strong>
+                            {% if donor_data.first_name and donor_data.last_name %}
+                                {{ donor_data.first_name }} {{ donor_data.last_name }}
+                            {% else %}
+                                {{ donor_data.email }}
+                            {% endif %}
+                        </strong>
+                    </p>
+                    <p class="mb-1 text-muted">{{ donor_data.email }}</p>
+                    {% if donor_data.street %}
+                    <p class="mb-0 small text-muted">
+                        {{ donor_data.street }} {{ donor_data.house_number }}<br>
+                        {{ donor_data.postal_code }} {{ donor_data.city }}
+                    </p>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Security Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-shield-alt text-success me-2"></i>
+                        Sicherheit
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="security-item mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-lock text-success me-2"></i>
+                            <div>
+                                <small class="fw-bold">SSL-Verschlüsselung</small>
+                                <small class="d-block text-muted">Ihre Daten werden sicher übertragen</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="security-item mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-credit-card text-success me-2"></i>
+                            <div>
+                                <small class="fw-bold">PCI-DSS zertifiziert</small>
+                                <small class="d-block text-muted">Höchste Sicherheitsstandards</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="security-item">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-shield text-success me-2"></i>
+                            <div>
+                                <small class="fw-bold">3D Secure</small>
+                                <small class="d-block text-muted">Zusätzliche Authentifizierung</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.security-item:not(:last-child) {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.75rem;
+}
+
+#payment-element {
+    min-height: 40px;
+}
+
+.StripeElement {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.StripeElement:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.StripeElement--invalid {
+    border-color: #dc3545;
+}
+
+.StripeElement--complete {
+    border-color: #28a745;
+}
+
+/* SEPA specific styling */
+.p-TabsPaymentElement-tab--selected {
+    background-color: #007bff !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .payment-icons {
+        justify-content: center;
+        gap: 4px;
+    }
+    
+    .payment-icons .badge {
+        font-size: 0.7rem;
+    }
+}
+</style>
+
+<!-- Pass data to JavaScript -->
+<script>
+    window.stripeConfig = {
+        publicKey: '{{ stripe_public_key }}',
+        totalAmount: {{ total_amount }},
+        donorData: {
+            name: '{% if donor_data.first_name and donor_data.last_name %}{{ donor_data.first_name }} {{ donor_data.last_name }}{% endif %}',
+            email: '{{ donor_data.email or "" }}',
+            address: {
+                line1: '{% if donor_data.street %}{{ donor_data.street }} {{ donor_data.house_number }}{% endif %}',
+                city: '{{ donor_data.city or "" }}',
+                postal_code: '{{ donor_data.postal_code or "" }}',
+                country: '{{ donor_data.country or "DE" }}'
+            }
+        }
+    };
+</script>
+{% endblock %}
+
+{% block scripts %}
+<!-- Stripe.js -->
+<script src="https://js.stripe.com/v3/"></script>
+
+<!-- Payment Processing Script -->
+<script src="{{ url_for('static', filename='js/stripe-checkout.js') }}"></script>
+{% endblock %}

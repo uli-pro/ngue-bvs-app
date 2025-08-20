@@ -7,7 +7,7 @@
 - Farben müssen vereinheitlicht werden (css) -> Color Picker Complementing / Contrasting (Canva) https://www.canva.com/colors/color-wheel/
 - iPad Pro Größe Breakpoints stimmen nicht (Navbar u.a.)
 - Passwort-Hashing: argon2id
-- Idee: Eine Art Liveticker, wer zuletzt wie viele Verse gesponsert hat.
+- 
 - Retry-Strategie für Zahlungen überlegen.
 
 #### zertifikat
