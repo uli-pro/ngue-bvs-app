@@ -4,11 +4,17 @@
 
 {% block main %}
 
-<!-- Header -->
+<!-- Hero Section -->
 <section class="hero-section">
     <div class="container">
-        <h1 class="text-center mb-3">Wohin fließt Ihre Spende?</h1>
-        <p class="lead text-center text-secondary">Vollständige Transparenz über die Mittelverwendung</p>
+        <div class="row align-items-center">
+            <div class="col-lg-8 mx-auto text-center">
+                <h1 class="hero-title mb-4">Transparenz<br><small class="text-primary">Wohin fließt Ihre Spende?</small></h1>
+                <p class="hero-subtitle">
+                    Vollständige Transparenz über die Mittelverwendung – 100% Ihrer Spende fließen direkt in die professionelle NGÜ-Übersetzungsarbeit.
+                </p>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -18,36 +24,43 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="card border-primary mb-5">
-                    <div class="text-center mb-5">
-                        <h2>Mittelverwendung pro 100€ Spende</h2>
+                    <div class="card-header bg-white text-center">
+                        <h2 class="mb-0 text-dark">Mittelverwendung pro 50€ Spende</h2>
                     </div>
                     <div class="card-body p-5">
-                        <div class="row text-center mb-4">
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: #28a745; color: white;">
+                        <div class="row text-center mb-4 justify-content-between">
+                            <div class="col">
+                                <div class="bg-green p-4 rounded mb-3">
                                     <h3 class="mb-2">50%</h3>
-                                    <h4>50,00€</h4>
+                                    <h4>25,00€</h4>
                                     <p class="mb-0">Erstübersetzung</p>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: #dc3545; color: white;">
-                                    <h3 class="mb-2">35%</h3>
-                                    <h4>35,00€</h4>
+                            <div class="col">
+                                <div class="bg-red p-4 rounded mb-3">
+                                    <h3 class="mb-2">17%</h3>
+                                    <h4>8,50€</h4>
                                     <p class="mb-0">Revision</p>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: #007bff; color: white;">
-                                    <h3 class="mb-2">10%</h3>
-                                    <h4>10,00€</h4>
+                            <div class="col">
+                                <div class="bg-blue p-4 rounded mb-3">
+                                    <h3 class="mb-2">17%</h3>
+                                    <h4>8,50€</h4>
+                                    <p class="mb-0">Gemeinsame Arbeit</p>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="bg-orange p-4 rounded mb-3">
+                                    <h3 class="mb-2">8%</h3>
+                                    <h4>4,00€</h4>
                                     <p class="mb-0">Supervision</p>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: #fd7e14; color: white;">
-                                    <h3 class="mb-2">5%</h3>
-                                    <h4>5,00€</h4>
+                            <div class="col">
+                                <div class="bg-gray p-4 rounded mb-3">
+                                    <h3 class="mb-2">8%</h3>
+                                    <h4>4,00€</h4>
                                     <p class="mb-0">Qualitätssicherung</p>
                                 </div>
                             </div>
@@ -55,17 +68,20 @@
                         
                         <!-- Progress Bar Visualization -->
                         <div class="progress mb-4" style="height: 40px;">
-                            <div class="progress-bar" role="progressbar" style="width: 50%; background-color: #28a745;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar bg-green" role="progressbar" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
                                 <strong>50% Erstübersetzung</strong>
                             </div>
-                            <div class="progress-bar" role="progressbar" style="width: 35%; background-color: #dc3545;" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100">
-                                <strong>35% Revision</strong>
+                            <div class="progress-bar bg-red" role="progressbar" style="width: 17%;" aria-valuenow="17" aria-valuemin="0" aria-valuemax="100">
+                                <strong>17% Revision</strong>
                             </div>
-                            <div class="progress-bar" role="progressbar" style="width: 10%; background-color: #007bff;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
-                                <strong>10% Supervision</strong>
+                            <div class="progress-bar bg-blue" role="progressbar" style="width: 17%;" aria-valuenow="17" aria-valuemin="0" aria-valuemax="100">
+                                <strong>17% Gemeinsam</strong>
                             </div>
-                            <div class="progress-bar" role="progressbar" style="width: 5%; background-color: #fd7e14;" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100">
-                                <strong>5% QS</strong>
+                            <div class="progress-bar bg-orange" role="progressbar" style="width: 8%;" aria-valuenow="8" aria-valuemin="0" aria-valuemax="100">
+                                <strong>8% Supervision</strong>
+                            </div>
+                            <div class="progress-bar bg-gray" role="progressbar" style="width: 8%;" aria-valuenow="8" aria-valuemin="0" aria-valuemax="100">
+                                <strong>8% Qualitätssicherung</strong>
                             </div>
                         </div>
                         
@@ -87,30 +103,31 @@
         </div>
         
         <div class="row g-4">
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: #28a745;">
-                    <div class="card-header text-white" style="background-color: #28a745;">
+            <div class="col-lg-4">
+                <div class="card h-100 border-green">
+                    <div class="card-header bg-green">
                         <h5 class="mb-0">
                             <i class="fas fa-language me-2"></i>
-                            Erstübersetzung (50,00€)
+                            Erstübersetzung (25,00€)
                         </h5>
                     </div>
                     <div class="card-body">
+                        <p class="mb-3"><strong>30 Minuten Arbeitszeit</strong></p>
                         <ul class="list-unstyled">
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
+                                <i class="fas fa-check text-green me-2"></i>
                                 Übersetzung vom Grundtext
                             </li>
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
+                                <i class="fas fa-check text-green me-2"></i>
                                 Exegetische Arbeit
                             </li>
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
+                                <i class="fas fa-check text-green me-2"></i>
                                 Wissenschaftliche Recherche
                             </li>
                             <li>
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
+                                <i class="fas fa-check text-green me-2"></i>
                                 Sprachliche Erstfassung
                             </li>
                         </ul>
@@ -118,98 +135,149 @@
                 </div>
             </div>
             
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: #dc3545;">
-                    <div class="card-header text-white" style="background-color: #dc3545;">
+            <div class="col-lg-4">
+                <div class="card h-100 border-red">
+                    <div class="card-header bg-red">
                         <h5 class="mb-0">
                             <i class="fas fa-edit me-2"></i>
-                            Revision (35,00€)
+                            Revision (8,50€)
                         </h5>
                     </div>
                     <div class="card-body">
+                        <p class="mb-3"><strong>10 Minuten Arbeitszeit</strong></p>
                         <ul class="list-unstyled">
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #dc3545;"></i>
-                                Kritische Durcharbeitung anhand Grundtext
+                                <i class="fas fa-check text-red me-2"></i>
+                                Zweiter Übersetzer
                             </li>
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #dc3545;"></i>
-                                Eigene exegetische Recherchen
+                                <i class="fas fa-check text-red me-2"></i>
+                                Sprachliche Überarbeitung
                             </li>
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #dc3545;"></i>
-                                Gemeinsame Diskussion und Ringen um Lösungen
+                                <i class="fas fa-check text-red me-2"></i>
+                                Theologische Prüfung
                             </li>
                             <li>
-                                <i class="fas fa-check me-2" style="color: #dc3545;"></i>
-                                Erstellung gemeinsamer Textfassung
+                                <i class="fas fa-check text-red me-2"></i>
+                                Stilistische Verbesserung
                             </li>
                         </ul>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: #007bff;">
-                    <div class="card-header text-white" style="background-color: #007bff;">
+            <div class="col-lg-4">
+                <div class="card h-100 border-blue">
+                    <div class="card-header bg-blue">
                         <h5 class="mb-0">
-                            <i class="fas fa-user-graduate me-2"></i>
-                            Fachliche Begleitung (10,00€)
+                            <i class="fas fa-users me-2"></i>
+                            Gemeinsame Arbeit (8,50€)
                         </h5>
                     </div>
                     <div class="card-body">
+                        <p class="mb-3"><strong>10 Minuten Arbeitszeit</strong></p>
                         <ul class="list-unstyled">
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Kritische Durchsicht durch Alttestamentler
+                                <i class="fas fa-check text-blue me-2"></i>
+                                Erstübersetzer und Revisor
                             </li>
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Philologische Expertise
+                                <i class="fas fa-check text-blue me-2"></i>
+                                Gemeinsame Textbearbeitung
                             </li>
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Hinterfragen von Übersetzungsentscheidungen
+                                <i class="fas fa-check text-blue me-2"></i>
+                                Diskussion und Abstimmung
                             </li>
                             <li>
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Redaktionskonferenz bei offenen Fragen
+                                <i class="fas fa-check text-blue me-2"></i>
+                                Konsensbildung
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-4 mt-2">
+            <div class="col-lg-4">
+                <div class="card h-100 border-orange">
+                    <div class="card-header bg-orange">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-check me-2"></i>
+                            Supervision (4,00€)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3"><strong>5 Minuten Arbeitszeit</strong></p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-orange me-2"></i>
+                                Korrekturvorschläge
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-orange me-2"></i>
+                                Diskussion der Vorschläge
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-orange me-2"></i>
+                                Einarbeitung der Korrekturen
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-orange me-2"></i>
+                                Fachliche Begleitung
                             </li>
                         </ul>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: #fd7e14;">
-                    <div class="card-header text-white" style="background-color: #fd7e14;">
+            <div class="col-lg-4">
+                <div class="card h-100 border-gray">
+                    <div class="card-header bg-gray">
                         <h5 class="mb-0">
                             <i class="fas fa-shield-alt me-2"></i>
-                            Qualitätssicherung (5,00€)
+                            Qualitätssicherung (4,00€)
                         </h5>
                     </div>
                     <div class="card-body">
+                        <p class="mb-3"><strong>5 Minuten Arbeitszeit</strong></p>
                         <ul class="list-unstyled">
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
-                                Finale Korrektur
+                                <i class="fas fa-check text-gray me-2"></i>
+                                Redaktionskonferenz (2 Min.)
                             </li>
                             <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
+                                <i class="fas fa-check text-gray me-2"></i>
+                                Finale Korrektur (2 Min.)
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-gray me-2"></i>
                                 Konsistenzprüfung
                             </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
-                                Formatierung
-                            </li>
                             <li>
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
-                                Freigabe zur Veröffentlichung
+                                <i class="fas fa-check text-gray me-2"></i>
+                                Teamleitung (1 Min.)
                             </li>
                         </ul>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section after Detailed Breakdown -->
+<section class="section-padding">
+    <div class="container">
+        <div class="text-center">
+            <h3 class="mb-4">Unterstützen Sie hochwertige Bibelübersetzung</h3>
+            <p class="lead mb-4">Jeder Euro fließt direkt in die fünf beschriebenen Arbeitsbereiche</p>
+            <a href="/vers-auswaehlen" class="btn btn-primary btn-lg">
+                <i class="fas fa-hands-helping me-2"></i>
+                QUALITÄT FINANZIEREN
+            </a>
         </div>
     </div>
 </section>
@@ -225,7 +293,7 @@
                         
                         <div class="row">
                             <div class="col-md-6 mb-4">
-                                <h4>Mit 100€ ermöglichen Sie:</h4>
+                                <h4>Mit 50€ ermöglichen Sie:</h4>
                                 <ul class="list-unstyled text-start">
                                     <li class="mb-2">
                                         <i class="fas fa-check-circle text-success me-2"></i>
@@ -233,7 +301,7 @@
                                     </li>
                                     <li class="mb-2">
                                         <i class="fas fa-check-circle text-success me-2"></i>
-                                        Mehrere Korrektur- und Lektoratsdurchgänge
+                                        Alle Korrektur- und Lektoratsdurchgänge
                                     </li>
                                     <li class="mb-2">
                                         <i class="fas fa-check-circle text-success me-2"></i>
@@ -241,32 +309,36 @@
                                     </li>
                                     <li>
                                         <i class="fas fa-check-circle text-success me-2"></i>
-                                        Einen nachhaltigen Beitrag zur Verbereitung der biblsischen Botschaft
+                                        Nachhaltige Verbreitung der biblischen Botschaft
                                     </li>
                                 </ul>
                             </div>
-                            <div class="col-md-6">
-                                <div class="bg-secondary text-white p-4 rounded" style="background-color: #343a40;">
-                                    <h4 class="mb-3">Durchschnittlicher Arbeitsaufwand pro Vers:</h4>
+                            <div class="col-md-6 mb-4">
+                               <div class="bg-gray p-4 rounded">
+                                    <h4 class="mb-3 text-white">Arbeitsaufwand pro Vers:</h4>
                                     <div class="mb-2">
-                                        <strong>60 Minuten</strong><br>
+                                        <strong>30 Minuten</strong><br>
                                         <small>Erstübersetzung</small>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>42 Minuten</strong><br>
-                                        <small>Revision & gemeinsame Arbeit</small>
+                                        <strong>10 Minuten</strong><br>
+                                        <small>Revision</small>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>12 Minuten</strong><br>
-                                        <small>Fachliche Begleitung</small>
+                                        <strong>10 Minuten</strong><br>
+                                        <small>Gemeinsame Arbeit</small>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>6 Minuten</strong><br>
+                                        <strong>5 Minuten</strong><br>
+                                        <small>Supervision</small>
+                                    </div>
+                                    <div>
+                                        <strong>5 Minuten</strong><br>
                                         <small>Qualitätssicherung</small>
                                     </div>
                                     <hr class="my-3" style="border-color: rgba(255,255,255,0.3);">
                                     <div>
-                                        <strong>120 Minuten = 2 Stunden</strong><br>
+                                        <strong>60 Minuten = 1 Stunde</strong><br>
                                         <small>Gesamtaufwand pro Vers</small>
                                     </div>
                                 </div>
