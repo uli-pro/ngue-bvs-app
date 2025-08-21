@@ -18,6 +18,9 @@
     <!-- Custom CSS -->
     <link href="/static/styles.css" rel="stylesheet">
     
+    <!-- CSRF Token für AJAX Requests -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <title>NGÜ Bibelvers-Sponsoring - {% block title %}{% endblock %}</title>
 </head>
 <body>

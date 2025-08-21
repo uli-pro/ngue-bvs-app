@@ -37,8 +37,9 @@ app.config["SESSION_TYPE"] = "sqlalchemy"
 app.config["SESSION_SQLALCHEMY"] = db
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=31)  # Set session lifetime
 
-# CSRF Protection
+# CSRF Protection  
 csrf = CSRFProtect(app)
+# Note: Stripe webhook routes use @csrf.exempt decorator individually
 
 # Rate Limiting
 limiter = Limiter(
@@ -1633,6 +1634,7 @@ def checkout_zahlung():
 
 @app.route("/checkout/create-payment-intent", methods=["POST"])
 @csrf.exempt
+@limiter.limit("10 per minute")  # Prevent DoS attacks on payment API
 def create_payment_intent():
     """Create Stripe PaymentIntent for cart"""
     try:
@@ -1676,10 +1678,24 @@ def create_payment_intent():
         app.logger.error(f"Unexpected error creating PaymentIntent: {e}")
         return jsonify({'error': 'Payment initialization failed'}), 500
 
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limit exceeded errors"""
+    app.logger.warning(f"Rate limit exceeded from IP: {request.remote_addr}")
+    return jsonify({
+        'error': 'Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
+        'retry_after': getattr(e, 'retry_after', 60)
+    }), 429
+
 @app.route("/stripe/webhook", methods=["POST"])
 @csrf.exempt
+@limiter.limit("100 per minute") # Allow high webhook volume but prevent abuse
 def stripe_webhook():
-    """Handle Stripe webhook events"""
+    """Handle Stripe webhook events with improved error handling"""
+    
+    event_type = None
+    event_id = None
+    
     try:
         # Import stripe service
         from stripe_service import StripeService, StripeError
@@ -1688,31 +1704,56 @@ def stripe_webhook():
         signature = request.headers.get('Stripe-Signature')
         webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
         
+        # Validate configuration
         if not webhook_secret:
             app.logger.error("STRIPE_WEBHOOK_SECRET not configured")
-            return 'Webhook secret not configured', 400
+            return 'Webhook configuration error', 400
+        
+        if not signature:
+            app.logger.warning("Webhook request missing Stripe-Signature header")
+            return 'Missing signature', 400
         
         # Verify webhook signature
         try:
             event = StripeService.verify_webhook_signature(payload, signature, webhook_secret)
+            event_type = event.get('type')
+            event_id = event.get('id')
         except StripeError as e:
-            app.logger.error(f"Webhook signature verification failed: {e}")
-            return str(e), 400
+            app.logger.error(f"Webhook signature verification failed for event: {str(e)}")
+            return 'Invalid signature', 400
+        except ValueError as e:
+            app.logger.error(f"Invalid webhook payload format: {str(e)}")
+            return 'Invalid payload', 400
         
-        # Log received event
-        app.logger.info(f"Received webhook event: {event['type']} - {event['data']['object'].get('id')}")
+        # Log received event (safe data only)
+        app.logger.info(f"Processing webhook: {event_type} (ID: {event_id})")
         
-        # Handle the event
-        success = StripeService.handle_webhook_event(event)
-        
-        if success:
-            return 'OK', 200
-        else:
-            app.logger.error(f"Failed to process webhook event: {event['type']}")
-            return 'Event processing failed', 500
+        # Handle the event with detailed error tracking
+        try:
+            success = StripeService.handle_webhook_event(event)
             
+            if success:
+                app.logger.info(f"Successfully processed webhook: {event_type} (ID: {event_id})")
+                return 'OK', 200
+            else:
+                app.logger.error(f"Failed to process webhook: {event_type} (ID: {event_id}) - Business logic error")
+                # Return 500 to trigger Stripe retry
+                return 'Event processing failed', 500
+                
+        except Exception as processing_error:
+            app.logger.error(f"Exception processing webhook {event_type} (ID: {event_id}): {str(processing_error)}")
+            app.logger.error(f"Processing error details: {processing_error.__class__.__name__}")
+            # Return 500 to trigger Stripe retry
+            return 'Processing exception', 500
+            
+    except ImportError as e:
+        app.logger.critical(f"Failed to import StripeService: {e}")
+        return 'Service unavailable', 503
+        
     except Exception as e:
-        app.logger.error(f"Unexpected error in webhook handler: {e}")
+        app.logger.error(f"Unexpected webhook handler error: {str(e)} (Type: {event_type}, ID: {event_id})")
+        app.logger.error(f"Error class: {e.__class__.__name__}")
+        # Return 500 to ensure Stripe retries the webhook
         return 'Internal server error', 500
 
 @app.route("/checkout/erfolg")

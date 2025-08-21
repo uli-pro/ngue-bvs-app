@@ -14,6 +14,11 @@ class StripeCheckout {
         // Get configuration from window
         this.config = window.stripeConfig || {};
         
+        // Debug mode detection (only in development)
+        this.debugMode = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.port === '5000';
+        
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.init());
@@ -40,17 +45,17 @@ class StripeCheckout {
             // Setup event listeners
             this.setupEventListeners();
             
-            console.log('Stripe checkout initialized successfully');
+            this.debugLog('Stripe checkout initialized successfully');
             
         } catch (error) {
-            console.error('Error initializing Stripe checkout:', error);
+            this.debugError('Error initializing Stripe checkout:', error);
             this.showError('Fehler beim Laden der Zahlungsabwicklung. Bitte laden Sie die Seite neu.');
         }
     }
     
     async createPaymentIntent() {
         try {
-            console.log('🔄 Creating PaymentIntent...');
+            this.debugLog('🔄 Creating PaymentIntent...');
             
             const response = await fetch('/checkout/create-payment-intent', {
                 method: 'POST',
@@ -60,28 +65,33 @@ class StripeCheckout {
                 }
             });
             
-            console.log('📡 Response status:', response.status);
-            console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+            this.debugLog('📡 Response status:', response.status);
+            this.debugLog('📡 Response headers:', Object.fromEntries(response.headers.entries()));
             
             const data = await response.json();
-            console.log('📦 Response data:', data);
+            // Remove sensitive data from logs
+            const safeData = { ...data };
+            if (safeData.client_secret) {
+                safeData.client_secret = data.client_secret.substring(0, 20) + '...';
+            }
+            this.debugLog('📦 Response data:', safeData);
             
             if (!response.ok) {
-                console.error('❌ HTTP Error:', response.status, data);
+                this.debugError('❌ HTTP Error:', response.status, safeData);
                 throw new Error(data.error || `HTTP ${response.status}: PaymentIntent creation failed`);
             }
             
             if (!data.success || !data.client_secret) {
-                console.error('❌ Invalid response format:', data);
+                this.debugError('❌ Invalid response format:', safeData);
                 throw new Error('Invalid PaymentIntent response format');
             }
             
             this.clientSecret = data.client_secret;
-            console.log('✅ PaymentIntent created successfully:', data.client_secret.substring(0, 20) + '...');
+            this.debugLog('✅ PaymentIntent created successfully:', data.client_secret.substring(0, 20) + '...');
             
         } catch (error) {
-            console.error('💥 Error creating PaymentIntent:', error);
-            console.error('💥 Error stack:', error.stack);
+            this.debugError('💥 Error creating PaymentIntent:', error);
+            this.debugError('💥 Error stack:', error.stack);
             throw new Error(`Zahlung konnte nicht initialisiert werden: ${error.message}`);
         }
     }
@@ -175,7 +185,7 @@ class StripeCheckout {
             
             // Setup Payment Element event listeners
             this.paymentElement.on('ready', () => {
-                console.log('Payment Element is ready');
+                this.debugLog('Payment Element is ready');
                 this.enableSubmitButton();
             });
             
@@ -188,7 +198,7 @@ class StripeCheckout {
             });
             
         } catch (error) {
-            console.error('Error setting up Payment Element:', error);
+            this.debugError('Error setting up Payment Element:', error);
             throw new Error(`Zahlungsformular konnte nicht geladen werden: ${error.message}`);
         }
     }
@@ -270,7 +280,7 @@ class StripeCheckout {
             }
             
         } catch (error) {
-            console.error('Error processing payment:', error);
+            this.debugError('Error processing payment:', error);
             this.showError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
         } finally {
             this.processing = false;
@@ -280,7 +290,7 @@ class StripeCheckout {
     }
     
     handlePaymentError(error) {
-        console.error('Payment error:', error);
+        this.debugError('Payment error:', error);
         
         let errorMessage = 'Die Zahlung konnte nicht verarbeitet werden.';
         
@@ -329,7 +339,7 @@ class StripeCheckout {
     }
     
     handlePaymentSuccess(paymentIntent) {
-        console.log('Payment succeeded:', paymentIntent.id);
+        this.debugLog('Payment succeeded:', paymentIntent.id);
         
         // Show success message briefly before redirect
         this.showSuccess('Zahlung erfolgreich! Sie werden weitergeleitet...');
@@ -352,7 +362,7 @@ class StripeCheckout {
             errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
-        console.error('Payment error shown to user:', message);
+        this.debugError('Payment error shown to user:', message);
     }
     
     clearError() {
@@ -436,6 +446,22 @@ class StripeCheckout {
         }
         
         return '';
+    }
+    
+    // Debug helper methods - only log in development
+    debugLog(...args) {
+        if (this.debugMode) {
+            console.log(...args);
+        }
+    }
+    
+    debugError(...args) {
+        if (this.debugMode) {
+            console.error(...args);
+        } else {
+            // In production, only log critical errors without sensitive data
+            console.error('Payment processing error occurred');
+        }
     }
 }
 
