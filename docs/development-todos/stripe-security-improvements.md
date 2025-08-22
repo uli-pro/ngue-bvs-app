@@ -1,29 +1,43 @@
- Perfect! I've completed a comprehensive security and robustness
-  review of your Stripe Elements integration. Here's my detailed
-  analysis:
+# Korrekter Listener: 
+
+stripe listen --forward-to 127.0.0.1:5000/stripe/webhook
+
+
+
+# Security Fixes
+
+
 
   Stripe Elements Code Review - Sicherheit und Robustheit
 
-  🔴 KRITISCHE SICHERHEITSPROBLEME
+---
 
-  1. Fehlende CSRF-Meta-Tag Implementation
-  - Das JavaScript versucht CSRF-Token aus Meta-Tag zu holen, aber es
-    wird nirgends gesetzt
-  - Stripe-Requests sind dadurch ungeschützt gegen CSRF-Attacken
+>  🔴 KRITISCHE SICHERHEITSPROBLEME
 
-  2. Debugging-Daten im Frontend
-  - Extensive console.logs zeigen sensible Daten wie Client Secrets
-  - In Produktion sollten diese entfernt oder konditionell deaktiviert
+>  1. Fehlende CSRF-Meta-Tag Implementation
+>  - Das JavaScript versucht CSRF-Token aus Meta-Tag zu holen, aber es
+>    wird nirgends gesetzt
+>  - Stripe-Requests sind dadurch ungeschützt gegen CSRF-Attacken
+
+>  2. Debugging-Daten im Frontend
+>  - Extensive console.logs zeigen sensible Daten wie Client Secrets
+>  - In Produktion sollten diese entfernt oder konditionell deaktiviert
       werden
 
-  3. Webhook Exception-Handling
-  - Bei Webhook-Verarbeitungsfehlern wird 500 zurückgegeben ohne
-    Details zu loggen
-  - Könnte zu unbemerkten fehlgeschlagenen Zahlungen führen
+>  3. Webhook Exception-Handling
+>  - Bei Webhook-Verarbeitungsfehlern wird 500 zurückgegeben ohne
+>    Details zu loggen
+>  - Könnte zu unbemerkten fehlgeschlagenen Zahlungen führen
 
-  4. Fehlende Rate-Limiting für Payment-Endpoints
-  - /checkout/create-payment-intent hat kein Rate-Limiting
-  - Könnte für DoS-Attacken missbraucht werden
+>  4. Fehlende Rate-Limiting für Payment-Endpoints
+>  - /checkout/create-payment-intent hat kein Rate-Limiting
+>  - Könnte für DoS-Attacken missbraucht werden
+
+**--> Diese 4 sind gefixt (21.8.25 - 18:15 Uhr)**
+
+---
+
+
 
   ⚠️ MITTLERE SICHERHEITSRISIKEN
 

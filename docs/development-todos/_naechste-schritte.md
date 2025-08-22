@@ -14,64 +14,17 @@
 
 ---
 
-# Entscheidungen im Team
+# Todo's nach Meeting am 21.08.2025
 
-- Können wir die Webseiten zusammenführen? 
-
-- Plan: Bis Weihnachten in eine integrierte Webseite zusammenführen.
-
-- Über Hubspot tracken
-
-- Verlage, 
-
-- Mailgun
-
-- Ionos -> hosting
-
-- App lean machen.
-
-- Landing-Page für Sponsoring-Projekt -> 3 Infos 
-
-  - 100% fließen ins ÜbersetzungsPROJEKT? 
-  - 10% fließen in allgemeine Kosten / Übersetzungsprojekt -> FAQ's
-
-- Kommunikation
-
-  - Ich rede mit Uwe 
-  - Daniel redet mit Christophe (sobald er von mir den Alpha-Link bekommt)
-
-- Roadmap: Beta bis Ende September
-  Produktion bis Ende Oktober
-
-- Design Zertifikat
-
-  - Logo Schoeffer oben
-
-  - Genfer Bibelgesellschaft / Brunnen
-
-    --> Niki macht Design
-
-- Spendenbescheinigung: mach ich.
-
-- Mailgun-Zugang
-
-- Mail: suppport@schoeffer.org
-
-- Hubspot Cookies -> 
-
+- In Erfahrung bringen, wie Hubspot-Integration technisch und rechtlich aussehen kann
+- Hubspot-Integration programmieren
 - Cookie-Einwilligung programmieren
-
-- Link zu Schoeffer-Stiftung -> Link unter Hero-Section
-
-- Bilder 
-
-- NGÜ-Text muss in Database -> Wenn Text eingepflegt, werden Spender informiert.
-
-- 
-
-
-
-
+- Spendenbescheinigung-Template im Hinblick auf Konformität überprüfen und anpassen
+- Mailgun-Integration
+- Link zur Schöffer-Stiftung unter Hero-Section einbauen
+- NGÜ-Text von fertig übersetzten Büchern in Datenbank einpflegen und automatische Nachricht an Spender mit neuem Zertifikat? Ergänzung zum Zertifikat? programmieren.
+- Bei Brunnen nach den NGÜ-Produktbildern fragen
+- mit Uwe über die App reden
 
 ---
 

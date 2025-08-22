@@ -1,0 +1,198 @@
+{% extends "layout.html" %}
+
+{% block title %}Zahlung wird verarbeitet{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress mb-3" style="height: 5px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: 90%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <div class="mb-4">
+                <i class="fas fa-clock text-warning" style="font-size: 4rem;"></i>
+            </div>
+            <h1 class="display-5 mb-3">Zahlung wird verarbeitet</h1>
+            <p class="lead text-muted">
+                Bitte haben Sie einen Moment Geduld...
+            </p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- DYNAMIC STATUS BOX - This is the only element that changes -->
+            <div id="status-box" class="alert alert-info mb-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm text-info me-3" role="status" id="status-spinner">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div>
+                        <strong id="status-title">Zahlung wird verarbeitet...</strong>
+                        <div class="small mt-1" id="status-message">
+                            Wir überprüfen den aktuellen Status Ihrer Zahlung.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATIC SEPA INFORMATION - Always visible, never changes -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-university text-primary me-2"></i>
+                        So funktioniert SEPA-Lastschrift
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-clock me-2"></i>
+                                Bearbeitungszeit
+                            </h6>
+                            <p class="mb-3">
+                                SEPA-Lastschriften werden in der Regel innerhalb von 
+                                <strong>2-14 Werktagen</strong> von Ihrer Bank abgebucht.
+                            </p>
+                            
+                            <h6 class="text-primary">
+                                <i class="fas fa-envelope me-2"></i>
+                                Bestätigung
+                            </h6>
+                            <p class="mb-3">
+                                Sie erhalten eine E-Mail-Bestätigung, sobald die Zahlung 
+                                bei uns eingegangen ist.
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-certificate me-2"></i>
+                                Ihre Zertifikate
+                            </h6>
+                            <p class="mb-3">
+                                Nach erfolgreichem Zahlungseingang werden Ihre personalisierten 
+                                Zertifikate automatisch erstellt und per E-Mail versendet.
+                            </p>
+                            
+                            <h6 class="text-primary">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Sicherheit
+                            </h6>
+                            <p class="mb-0">
+                                SEPA-Lastschriften können innerhalb von 8 Wochen 
+                                ohne Angabe von Gründen widerrufen werden.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-shopping-cart text-primary me-2"></i>
+                        Bestellübersicht
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Verse gesponsert:</span>
+                        <strong>{{ verse_count or '1' }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Gesamtbetrag:</span>
+                        <strong class="text-primary">{{ total_amount or '100,00' }} €</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small text-muted">Payment Intent ID:</span>
+                        <small class="text-muted font-monospace">{{ payment_intent_id or 'pi_xxx' }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Information -->
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    <h6>
+                        <i class="fas fa-question-circle text-info me-2"></i>
+                        Fragen zu Ihrer Zahlung?
+                    </h6>
+                    <p class="text-muted mb-0">
+                        Bei Problemen können Sie uns gerne kontaktieren: 
+                        <a href="mailto:info@schoeffer.org">info@schoeffer.org</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Manual Refresh Option (hidden by default) -->
+            <div id="manual-refresh" class="text-center mt-4" style="display: none;">
+                <p class="text-muted small">
+                    Status wird nicht automatisch aktualisiert?
+                </p>
+                <button class="btn btn-outline-secondary btn-sm" onclick="window.paymentStatus.checkStatus()">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Manuell aktualisieren
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.font-monospace {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.8rem;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+/* Ensure status box has consistent styling */
+#status-box {
+    min-height: 80px;
+    border: 1px solid;
+}
+
+/* Status-specific styles */
+#status-box.alert-info {
+    border-color: #bee5eb;
+}
+
+#status-box.alert-success {
+    border-color: #d4edda;
+}
+
+#status-box.alert-danger {
+    border-color: #f5c6cb;
+}
+
+#status-box.alert-warning {
+    border-color: #ffeeba;
+}
+</style>
+
+<!-- Pass data to JavaScript -->
+<script>
+    window.paymentStatusConfig = {
+        paymentIntentId: '{{ payment_intent_id or "" }}',
+        checkInterval: 3000, // Check every 3 seconds
+        maxChecks: 100, // Stop after ~5 minutes
+        debugMode: false
+    };
+</script>
+{% endblock %}
+
+{% block scripts %}
+<!-- Payment Status Checking Script -->
+<script src="{{ url_for('static', filename='js/payment-status.js') }}"></script>
+{% endblock %}

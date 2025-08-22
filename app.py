@@ -1775,6 +1775,88 @@ def checkout_erfolg():
     
     return render_template("checkout-erfolg.html")
 
+@app.route("/checkout/verarbeitung")
+def checkout_verarbeitung():
+    """Processing page for pending payments (especially SEPA)"""
+    # Get payment intent ID from URL parameters or session
+    payment_intent_id = request.args.get('payment_intent') or session.get('payment_intent_id')
+    
+    if not payment_intent_id:
+        flash("Kein gültiger Zahlungsvorgang gefunden.", "error")
+        return redirect(url_for("checkout_zahlung"))
+    
+    # Get cart information from session for display
+    cart_items = session.get('cart', [])
+    verse_count = len(cart_items)
+    total_amount = verse_count * 100.00
+    
+    return render_template("checkout-verarbeitung.html",
+                         payment_intent_id=payment_intent_id,
+                         verse_count=verse_count,
+                         total_amount=f"{total_amount:.2f}")
+
+@app.route("/api/payment/status/<payment_intent_id>")
+@csrf.exempt
+@limiter.limit("30 per minute")  # Allow frequent status checks but prevent abuse
+def api_payment_status(payment_intent_id):
+    """API endpoint to check payment status"""
+    try:
+        # Import stripe service
+        from stripe_service import StripeService, StripeError
+        import stripe
+        
+        # Validate payment intent ID format
+        if not payment_intent_id or not payment_intent_id.startswith('pi_'):
+            return jsonify({'error': 'Invalid payment intent ID'}), 400
+        
+        # Retrieve PaymentIntent from Stripe
+        try:
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        except stripe.error.InvalidRequestError:
+            return jsonify({'error': 'Payment intent not found'}), 404
+        except stripe.error.StripeError as e:
+            app.logger.error(f"Stripe error retrieving PaymentIntent {payment_intent_id}: {e}")
+            return jsonify({'error': 'Unable to retrieve payment status'}), 500
+        
+        # Determine payment method type
+        payment_method_type = None
+        if payment_intent.payment_method:
+            try:
+                payment_method = stripe.PaymentMethod.retrieve(payment_intent.payment_method)
+                payment_method_type = payment_method.type
+            except stripe.error.StripeError:
+                payment_method_type = 'unknown'
+        
+        # Get last payment error if any
+        error_message = None
+        if payment_intent.last_payment_error:
+            error_message = payment_intent.last_payment_error.get('message', 'Payment failed')
+        
+        # Build response
+        response_data = {
+            'success': True,
+            'payment_intent_id': payment_intent.id,
+            'status': payment_intent.status,
+            'payment_method_type': payment_method_type,
+            'amount': payment_intent.amount,
+            'currency': payment_intent.currency,
+            'error_message': error_message,
+            'created': payment_intent.created,
+            'metadata': payment_intent.metadata
+        }
+        
+        # Add status-specific information
+        if payment_intent.status == 'succeeded':
+            response_data['redirect_url'] = f"/checkout/erfolg?payment_intent={payment_intent.id}"
+        elif payment_intent.status in ['canceled', 'requires_payment_method']:
+            response_data['redirect_url'] = "/checkout/fehler"
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        app.logger.error(f"Unexpected error checking payment status for {payment_intent_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 # ==========================================
 
 # ==========================================

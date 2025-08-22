@@ -467,8 +467,13 @@ class StripeService:
         
         elif event_type == 'payment_intent.requires_action':
             # 3D Secure or other action required - usually handled on frontend
+            # For SEPA, this might indicate additional verification needed
             logger.info(f"PaymentIntent {payment_intent.get('id')} requires action")
-            return True
+            return StripeService.handle_requires_action_payment(payment_intent)
+        
+        elif event_type == 'payment_intent.canceled':
+            # Payment was canceled (could be SEPA cancellation)
+            return StripeService.handle_canceled_payment(payment_intent)
         
         elif event_type == 'charge.dispute.created':
             # Handle SEPA chargeback/dispute
@@ -512,4 +517,84 @@ class StripeService:
         except Exception as e:
             db.session.rollback()
             logger.error(f"Error handling chargeback: {e}")
+            return False
+    
+    @staticmethod
+    def handle_requires_action_payment(payment_intent):
+        """
+        Handle payment that requires additional action (3DS, SEPA verification, etc.)
+        
+        Args:
+            payment_intent: Stripe PaymentIntent object
+        """
+        try:
+            # Get donation IDs from metadata
+            donation_ids = payment_intent.metadata.get('donation_ids', '').split(',')
+            donation_ids = [int(did) for did in donation_ids if did.isdigit()]
+            
+            if not donation_ids:
+                logger.error(f"No valid donation IDs in requires_action PaymentIntent {payment_intent.id}")
+                return False
+            
+            donations = Donation.query.filter(
+                Donation.id.in_(donation_ids),
+                Donation.payment_status.in_(['pending', 'processing'])
+            ).all()
+            
+            for donation in donations:
+                # Keep status as processing for now - user needs to complete action
+                if donation.payment_status == 'pending':
+                    donation.payment_status = 'processing'
+                
+                if donation.payment:
+                    donation.payment.update_stripe_data(payment_intent)
+            
+            db.session.commit()
+            logger.info(f"Updated {len(donations)} donations requiring action")
+            return True
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error handling requires_action payment: {e}")
+            return False
+    
+    @staticmethod
+    def handle_canceled_payment(payment_intent):
+        """
+        Handle canceled payment (user canceled or SEPA declined)
+        
+        Args:
+            payment_intent: Stripe PaymentIntent object
+        """
+        try:
+            # Get donation IDs from metadata
+            donation_ids = payment_intent.metadata.get('donation_ids', '').split(',')
+            donation_ids = [int(did) for did in donation_ids if did.isdigit()]
+            
+            if not donation_ids:
+                logger.error(f"No valid donation IDs in canceled PaymentIntent {payment_intent.id}")
+                return False
+            
+            donations = Donation.query.filter(
+                Donation.id.in_(donation_ids),
+                Donation.payment_status.in_(['pending', 'processing'])
+            ).all()
+            
+            cancellation_reason = payment_intent.cancellation_reason or 'canceled'
+            error_message = f"Payment canceled: {cancellation_reason}"
+            
+            for donation in donations:
+                donation.mark_failed(error_message)
+                
+                if donation.payment:
+                    donation.payment.update_stripe_data(payment_intent)
+                    donation.payment.mark_failed(error_message)
+            
+            db.session.commit()
+            logger.info(f"Marked {len(donations)} donations as canceled/failed")
+            return True
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error handling canceled payment: {e}")
             return False

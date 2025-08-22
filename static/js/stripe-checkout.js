@@ -10,6 +10,7 @@ class StripeCheckout {
         this.paymentElement = null;
         this.clientSecret = null;
         this.processing = false;
+        this.isIntentionalRedirect = false; // Flag for planned redirects
         
         // Get configuration from window
         this.config = window.stripeConfig || {};
@@ -213,9 +214,9 @@ class StripeCheckout {
             });
         }
         
-        // Handle browser back button
+        // Handle browser back button - only warn for unintentional navigation
         window.addEventListener('beforeunload', (e) => {
-            if (this.processing) {
+            if (this.processing && !this.isIntentionalRedirect) {
                 e.preventDefault();
                 const message = 'Zahlung wird gerade verarbeitet. Möchten Sie wirklich die Seite verlassen?';
                 e.returnValue = message; // For older browsers
@@ -225,6 +226,9 @@ class StripeCheckout {
     }
     
     handlePaymentElementChange(event) {
+        // Store selected payment method type for later use
+        this.selectedPaymentMethodType = event.value ? event.value.type : null;
+        
         // Show/hide SEPA mandate info based on selected payment method
         const sepaInfo = document.getElementById('sepa-mandate-info');
         if (sepaInfo) {
@@ -257,36 +261,82 @@ class StripeCheckout {
         
         try {
             this.processing = true;
-            this.showLoading();
+            
+            // Provide immediate visual feedback
             this.disableSubmitButton();
+            this.showLoading();
             this.clearError();
+            
+            this.debugLog('🚀 Starting payment confirmation with method type:', this.selectedPaymentMethodType);
             
             // Confirm payment with Stripe
             const { error, paymentIntent } = await this.stripe.confirmPayment({
                 elements: this.elements,
                 confirmParams: {
                     return_url: `${window.location.origin}/checkout/erfolg`
-                    // Removed payment_method_data - let Stripe Elements handle billing details
                 },
-                redirect: 'if_required'  // Only redirect for 3DS or SEPA redirects
+                redirect: 'if_required'  // Only redirect for 3DS or specific requirements
             });
             
             if (error) {
                 // Payment failed or requires action
                 this.handlePaymentError(error);
             } else if (paymentIntent) {
-                // Payment succeeded without redirect
-                this.handlePaymentSuccess(paymentIntent);
+                // Payment confirmed - check if it's SEPA
+                this.handlePaymentConfirmed(paymentIntent);
             }
             
         } catch (error) {
             this.debugError('Error processing payment:', error);
             this.showError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
-        } finally {
             this.processing = false;
             this.hideLoading();
             this.enableSubmitButton();
         }
+    }
+    
+    handlePaymentConfirmed(paymentIntent) {
+        this.debugLog('Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
+        
+        // Check if this is a SEPA payment or if payment is still processing
+        const isSepaPayment = this.selectedPaymentMethodType === 'sepa_debit';
+        const isProcessing = paymentIntent.status === 'processing';
+        const isRequiresAction = paymentIntent.status === 'requires_action';
+        
+        if (isSepaPayment || isProcessing || isRequiresAction) {
+            // Redirect to processing page for SEPA or processing payments
+            this.debugLog('🏦 SEPA or processing payment detected, redirecting to processing page');
+            this.showProcessingMessage();
+            
+            // Mark as intentional redirect to prevent browser warning
+            this.isIntentionalRedirect = true;
+            
+            setTimeout(() => {
+                window.location.href = `/checkout/verarbeitung?payment_intent=${paymentIntent.id}`;
+            }, 1000);
+        } else if (paymentIntent.status === 'succeeded') {
+            // Direct success for instant payments (cards)
+            this.handlePaymentSuccess(paymentIntent);
+        } else {
+            // Unknown status - redirect to processing page to be safe
+            this.debugLog('⚠️ Unknown payment status, redirecting to processing page');
+            
+            // Mark as intentional redirect to prevent browser warning
+            this.isIntentionalRedirect = true;
+            
+            setTimeout(() => {
+                window.location.href = `/checkout/verarbeitung?payment_intent=${paymentIntent.id}`;
+            }, 1000);
+        }
+    }
+    
+    showProcessingMessage() {
+        // Show specific message for SEPA payments
+        const message = this.selectedPaymentMethodType === 'sepa_debit' 
+            ? 'SEPA-Lastschrift wurde eingereicht. Sie werden zur Statusseite weitergeleitet...'
+            : 'Zahlung wird verarbeitet. Sie werden zur Statusseite weitergeleitet...';
+            
+        this.showSuccess(message);
     }
     
     handlePaymentError(error) {
@@ -343,6 +393,9 @@ class StripeCheckout {
         
         // Show success message briefly before redirect
         this.showSuccess('Zahlung erfolgreich! Sie werden weitergeleitet...');
+        
+        // Mark as intentional redirect to prevent browser warning
+        this.isIntentionalRedirect = true;
         
         // Redirect to success page after short delay
         setTimeout(() => {
