@@ -7,7 +7,7 @@ import os
 import stripe
 from flask import current_app, request, session, url_for, has_request_context
 from decimal import Decimal
-from models import db, Donation, PaymentTransaction, Verse
+from models import db, Person, Donation, PaymentTransaction, Verse
 from datetime import datetime
 import logging
 
@@ -160,7 +160,7 @@ class StripeService:
     @staticmethod
     def create_donations_from_cart(cart_items):
         """
-        Create Donation records from cart items
+        Create Donation records from cart items using new Person/Donation structure
         
         Args:
             cart_items: List of cart items from session
@@ -178,41 +178,52 @@ class StripeService:
                     continue
                 
                 donor_data = item['donor_data']
+                donation_type = item['donation_type']
                 
-                # Create donation record
+                # Create or find person
+                person = Person.find_or_create(
+                    email=donor_data.get('email'),
+                    first_name=donor_data.get('first_name'),
+                    last_name=donor_data.get('last_name'),
+                    salutation=donor_data.get('salutation'),
+                    title=donor_data.get('title'),
+                    street=donor_data.get('street'),
+                    house_number=donor_data.get('house_number'),
+                    postal_code=donor_data.get('postal_code'),
+                    city=donor_data.get('city'),
+                    country=donor_data.get('country', 'DE'),
+                    newsletter_opt_in=donor_data.get('newsletter', False)
+                )
+                
+                # Commit person to get ID
+                db.session.commit()
+                
+                # Prepare donation_details based on type
+                donation_details = {}
+                if donation_type == 'gruppe':
+                    donation_details = {
+                        'group_name': donor_data.get('group_name'),
+                        'group_article': donor_data.get('group_article')
+                    }
+                elif donation_type == 'geschenk':
+                    donation_details = {
+                        'recipient_name': donor_data.get('gift_recipient_name'),
+                        'recipient_email': donor_data.get('gift_recipient_email'),
+                        'gift_message': donor_data.get('gift_message'),
+                        'direct_send': donor_data.get('gift_direct_send', False)
+                    }
+                
+                # Create donation record with new structure
                 donation = Donation(
+                    person_id=person.id,
                     verse_id=verse.id,
-                    user_id=None,  # Will be set if user is authenticated
-                    donation_type=item['donation_type'],
-                    amount=item['amount'],
+                    donation_type=donation_type,
+                    donation_details=donation_details,
+                    person_snapshot=person.to_snapshot(),
+                    amount=Decimal(str(item['amount'])),
                     currency=item.get('currency', 'EUR'),
-                    
-                    # Donor contact data
-                    donor_email=donor_data.get('email'),
-                    donor_salutation=donor_data.get('salutation'),
-                    donor_title=donor_data.get('title'),
-                    donor_first_name=donor_data.get('first_name'),
-                    donor_last_name=donor_data.get('last_name'),
-                    donor_street=donor_data.get('street'),
-                    donor_house_number=donor_data.get('house_number'),
-                    donor_postal_code=donor_data.get('postal_code'),
-                    donor_city=donor_data.get('city'),
-                    donor_country=donor_data.get('country', 'DE'),
-                    
-                    # Type-specific fields
-                    group_name=donor_data.get('group_name'),
-                    group_article=donor_data.get('group_article'),
-                    gift_recipient_name=donor_data.get('gift_recipient_name'),
-                    gift_recipient_email=donor_data.get('gift_recipient_email'),
-                    gift_message=donor_data.get('gift_message'),
-                    gift_direct_send=donor_data.get('gift_direct_send', False),
-                    
-                    # Preferences
-                    wants_receipt=donor_data.get('wants_receipt', False),
-                    newsletter_opt_in=donor_data.get('newsletter', False),
+                    wants_receipt=donor_data.get('wants_receipt', True),
                     privacy_consent=donor_data.get('privacy_consent', True),
-                    
-                    # Status
                     payment_status='pending'
                 )
                 
@@ -224,8 +235,14 @@ class StripeService:
             
             # Create payment transactions
             for donation in donations:
-                donation.create_payment_transaction('stripe')
+                payment_transaction = PaymentTransaction(
+                    donation_id=donation.id,
+                    provider='stripe'
+                )
+                db.session.add(payment_transaction)
+                donation.payment = payment_transaction
             
+            db.session.commit()
             return donations
             
         except Exception as e:

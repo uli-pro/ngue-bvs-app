@@ -149,10 +149,10 @@ class VectorizeService:
                 
                 # Prepare batch
                 for verse in batch:
-                    verse_id, book, chapter, verse_num, text = verse
+                    verse_id, book, chapter, verse_num, verse_text = verse
                     
                     # Create contextual text for better embeddings
-                    contextual_text = f"{book} {chapter},{verse_num}: {text}"
+                    contextual_text = f"{book} {chapter},{verse_num}: {verse_text}"
                     batch_texts.append(contextual_text)
                     batch_ids.append(verse_id)
                 
@@ -170,16 +170,13 @@ class VectorizeService:
                             # Convert to PostgreSQL vector format
                             embedding_str = '[' + ','.join(map(str, embedding)) + ']'
                             
-                            update_query = text("""
+                            update_query = text(f"""
                                 UPDATE verses 
-                                SET text_embedding = :embedding::vector
-                                WHERE id = :id
+                                SET text_embedding = '{embedding_str}'::vector
+                                WHERE id = {verse_id}
                             """)
                             
-                            db.session.execute(update_query, {
-                                'embedding': embedding_str,
-                                'id': verse_id
-                            })
+                            db.session.execute(update_query)
                             
                             success_count += 1
                             self.total_processed += 1
@@ -251,22 +248,20 @@ class VectorizeService:
                 # Search for similar verses
                 embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
                 
-                search_query = text("""
+                search_query = text(f"""
                     SELECT 
                         id, book, chapter, verse, 
                         SUBSTRING(text, 1, 100) as text_preview,
                         positivity_score,
-                        1 - (text_embedding <=> :query_embedding::vector) as similarity
+                        1 - (text_embedding <=> '{embedding_str}'::vector) as similarity
                     FROM verses
                     WHERE text_embedding IS NOT NULL
                     AND is_sponsored = false
-                    ORDER BY text_embedding <=> :query_embedding::vector
+                    ORDER BY text_embedding <=> '{embedding_str}'::vector
                     LIMIT 3
                 """)
                 
-                results = db.session.execute(search_query, {
-                    'query_embedding': embedding_str
-                }).fetchall()
+                results = db.session.execute(search_query).fetchall()
                 
                 for idx, result in enumerate(results, 1):
                     logger.info(f"  {idx}. {result.book} {result.chapter},{result.verse} "

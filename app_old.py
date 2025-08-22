@@ -28,7 +28,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, PersonLogin, Verse, Donation, VerificationToken, VerseReservation
+from models import db, User, Verse, Donation, VerificationToken, ResetToken, VerseReservation
 db.init_app(app)
 
 # Configure session to use database (production-ready)
@@ -67,10 +67,9 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Bitte melden Sie sich an, um diese Seite zu sehen.'
 login_manager.login_message_category = 'warning'
 
-# TODO(human): Update user_loader for new PersonLogin model
 @login_manager.user_loader
-def load_user(person_id):
-    return PersonLogin.query.get(int(person_id))
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # Initialize Flask-Session
 sess = Session(app)
@@ -1241,30 +1240,27 @@ def login():
             flash("Bitte geben Sie E-Mail und Passwort ein.", "danger")
             return render_template("login.html")
         
-# TODO(human): Update login logic for new Person/PersonLogin structure
-        # Check if person and login exist
-        person = Person.query.filter_by(email=email.lower()).first()
+        # Check if user exists in database
+        user = User.query.filter_by(email=email.lower()).first()
         
-        if not person or not person.login:
+        if not user:
             flash("Unbekannte E-Mail-Adresse oder falsches Passwort.", "danger")
             return render_template("login.html")
         
-        login_record = person.login
-        
         # Check if user is verified
-        if not login_record.is_verified:
+        if not user.is_verified:
             flash("Bitte bestätigen Sie erst Ihre E-Mail-Adresse.", "warning")
             return render_template("login.html")
         
         # Verify password
-        if not login_record.check_password(password):
+        if not user.check_password(password):
             flash("Unbekannte E-Mail-Adresse oder falsches Passwort.", "danger")
             return render_template("login.html")
         
         # Login user with Flask-Login
-        login_user(login_record, remember=remember)
+        login_user(user, remember=remember)
         
-        flash(f"Willkommen, {person.first_name}!", "success")
+        flash(f"Willkommen, {user.first_name}!", "success")
         
         # Redirect to next URL or dashboard
         next_url = session.pop("next_url", None)
@@ -1510,9 +1506,7 @@ def dashboard():
         'total_amount': sponsored_verses * 100  # Calculate total amount raised
     }
     
-# TODO(human): Update dashboard to use current_user.person instead of current_user
-    # current_user is now PersonLogin, person data is at current_user.person
-    return render_template("dashboard.html", user=current_user.person, stats=stats)
+    return render_template("dashboard.html", user=current_user, stats=stats)
 
 
 # ==========================================
