@@ -828,3 +828,309 @@ a:hover {
     border-color: var(--color-rose-border) !important;
     box-shadow: 0 0 0 0.25rem rgba(216, 197, 202, 0.25) !important;
 }
+
+/* ============================================
+   NEW CHECKOUT FLOW - Mobile-First Responsive CSS
+   ============================================ */
+
+/* Progressive Disclosure Donation Cards */
+.donation-option {
+    transition: all 0.3s ease;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+}
+
+.donation-option:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(221, 51, 51, 0.15);
+}
+
+.donation-option.expanded {
+    border-color: var(--color-green);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+}
+
+.expansion-content {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Success overlay animations */
+.success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.success-overlay.show {
+    opacity: 1;
+}
+
+.success-content {
+    text-align: center;
+    animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Enhanced Cart Styling */
+.cart-item-card {
+    transition: all 0.3s ease;
+}
+
+.cart-item-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.remove-item {
+    transition: all 0.2s ease;
+}
+
+.remove-item:hover {
+    transform: scale(1.1);
+}
+
+/* Checkout Form Enhancements */
+.form-check-input:checked {
+    background-color: var(--color-green);
+    border-color: var(--color-green);
+}
+
+.progress-bar {
+    background-color: var(--color-green);
+}
+
+/* ============================================
+   MOBILE-FIRST RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Mobile (default) - 320px and up */
+.donation-option .row {
+    flex-direction: column;
+    text-align: center;
+}
+
+.donation-option .col-auto {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.donation-option .btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.75rem;
+}
+
+/* Compact verse preview on mobile */
+.verse-preview .card-body {
+    padding: 0.75rem !important;
+}
+
+.verse-preview h5 {
+    font-size: 1rem;
+}
+
+.verse-preview p {
+    font-size: 0.875rem;
+}
+
+/* Cart items mobile layout */
+.cart-item-card .row {
+    flex-direction: column;
+    text-align: center;
+}
+
+.cart-item-card .col-auto {
+    margin-top: 1rem;
+}
+
+/* Sticky summary disabled on mobile */
+.sticky-top {
+    position: relative !important;
+}
+
+/* Mobile form optimizations */
+.btn-lg {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+}
+
+.row.mb-3 .col-md-3,
+.row.mb-3 .col-md-4,
+.row.mb-3 .col-md-5,
+.row.mb-3 .col-md-8 {
+    margin-bottom: 1rem;
+}
+
+/* ============================================
+   TABLET AND UP - 768px and up
+   ============================================ */
+@media (min-width: 768px) {
+    /* Donation options horizontal layout */
+    .donation-option .row {
+        flex-direction: row;
+        text-align: left;
+    }
+    
+    .donation-option .col-auto {
+        width: auto;
+        margin-top: 0;
+    }
+    
+    .donation-option .btn {
+        width: auto;
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Cart items horizontal layout */
+    .cart-item-card .row {
+        flex-direction: row;
+        text-align: left;
+    }
+    
+    .cart-item-card .col-auto {
+        margin-top: 0;
+    }
+    
+    /* Verse preview normal padding */
+    .verse-preview .card-body {
+        padding: 1rem !important;
+    }
+    
+    .verse-preview h5 {
+        font-size: 1.25rem;
+    }
+    
+    .verse-preview p {
+        font-size: 1rem;
+    }
+    
+    /* Form improvements */
+    .btn-lg {
+        width: auto;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.125rem;
+    }
+    
+    .row.mb-3 .col-md-3,
+    .row.mb-3 .col-md-4,
+    .row.mb-3 .col-md-5,
+    .row.mb-3 .col-md-8 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* ============================================
+   DESKTOP - 992px and up
+   ============================================ */
+@media (min-width: 992px) {
+    /* Enable sticky sidebar */
+    .sticky-top {
+        position: sticky !important;
+        top: 2rem;
+    }
+    
+    /* Larger buttons for better desktop UX */
+    .donation-option .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    /* Desktop form layout */
+    .row.mb-3 .col-md-3,
+    .row.mb-3 .col-md-4,
+    .row.mb-3 .col-md-5,
+    .row.mb-3 .col-md-8 {
+        margin-bottom: 0;
+    }
+}
+
+/* ============================================
+   LARGE DESKTOP - 1200px and up
+   ============================================ */
+@media (min-width: 1200px) {
+    /* Optimized spacing for large screens */
+    .container {
+        max-width: 1140px;
+    }
+    
+    /* Enhanced card spacing */
+    .donation-option,
+    .cart-item-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY AND TOUCH IMPROVEMENTS
+   ============================================ */
+
+/* Larger touch targets for mobile */
+@media (max-width: 767px) {
+    .btn,
+    .form-control,
+    .form-select {
+        min-height: 48px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    
+    .form-check-label {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+}
+
+/* Focus states for keyboard navigation */
+.donation-option:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(221, 51, 51, 0.25);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .donation-option {
+        border-width: 3px;
+    }
+    
+    .donation-option:hover,
+    .donation-option.expanded {
+        border-width: 4px;
+    }
+}

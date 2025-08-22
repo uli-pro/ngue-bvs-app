@@ -839,7 +839,7 @@ def vers_spendenart(verse_id):
             flash("Bitte wählen Sie eine gültige Spendenart.", "error")
             return redirect(url_for("vers_auswaehlen"))
     
-    return render_template("vers-spendenart.html", verse=verse)
+    return render_template("vers-spendenart-enhanced.html", verse=verse)
 
 @app.route("/vers/<int:verse_id>/spendenart", methods=["GET", "POST"])
 def vers_spendenart_by_id(verse_id):
@@ -887,7 +887,7 @@ def vers_spendenart_by_id(verse_id):
             flash("Bitte wählen Sie eine gültige Spendenart.", "error")
             return redirect(url_for("vers_auswaehlen"))
     
-    return render_template("vers-spendenart.html", verse=verse)
+    return render_template("vers-spendenart-enhanced.html", verse=verse)
 
 # ==========================================
 # CHECKOUT ROUTES
@@ -1137,7 +1137,8 @@ def spendenkorb():
             'index': i,
             'verse': verse,
             'donation_type': item['donation_type'],
-            'donor_data': item['donor_data'],
+            'donation_details': item.get('donation_details', {}),  # New structure
+            'donor_data': item.get('donor_data', {}),  # Legacy fallback
             'amount': item['amount'],
             'currency': item.get('currency', 'EUR'),  # Safe fallback for missing currency
             'reservation_valid': reservation_valid
@@ -1149,7 +1150,7 @@ def spendenkorb():
     if expired_count > 0:
         flash(f"Achtung: {expired_count} Vers(e) in Ihrem Korb sind zwischenzeitlich nicht mehr verfügbar und müssen entfernt werden.", "danger")
     
-    return render_template("spendenkorb.html", 
+    return render_template("spendenkorb-enhanced.html", 
                          cart_items=cart_items, 
                          total_amount=total_amount,
                          cart_count=len(cart_items))
@@ -1612,8 +1613,15 @@ def checkout_zahlung():
     # Calculate totals
     total_amount = len(cart_items) * 100  # €100 per verse
     
-    # Get donor data from first cart item (they should all be the same)
-    donor_data = cart_items[0]['donor_data'] if cart_items else {}
+    # Get person from database (required for new checkout flow)
+    if 'checkout_person_id' not in session:
+        flash("Bitte füllen Sie zuerst Ihre Daten aus.", "warning")
+        return redirect(url_for("checkout_spendendaten"))
+    
+    person = Person.query.get(session['checkout_person_id'])
+    if not person:
+        flash("Ihre Daten konnten nicht gefunden werden.", "danger")
+        return redirect(url_for("checkout_spendendaten"))
     
     # Load verses for display
     verse_ids = [item['verse_id'] for item in cart_items]
@@ -1635,7 +1643,7 @@ def checkout_zahlung():
     return render_template("checkout-zahlung.html", 
                          cart_items=cart_display,
                          total_amount=total_amount,
-                         donor_data=donor_data,
+                         person=person,
                          stripe_public_key=os.environ.get('STRIPE_PUBLIC_KEY'))
 
 @app.route("/checkout/create-payment-intent", methods=["POST"])
@@ -1661,11 +1669,24 @@ def create_payment_intent():
             if not verse or verse.is_sponsored:
                 return jsonify({'error': f'Verse {item["verse_id"]} is no longer available'}), 400
         
-        # Get donor data from first item
-        donor_data = cart_items[0]['donor_data'] if cart_items else {}
-        
-        # Create PaymentIntent via service
-        payment_data = StripeService.create_payment_intent(cart_items, donor_data)
+        # Get person data and create PaymentIntent
+        if 'checkout_person_id' in session:
+            # New checkout flow: get person from session
+            person = Person.query.get(session['checkout_person_id'])
+            if not person:
+                return jsonify({'error': 'Invalid person data'}), 400
+            
+            # Create PaymentIntent with person object directly
+            payment_data = StripeService.create_payment_intent(
+                cart_items,
+                person=person
+            )
+        else:
+            # Legacy flow: get from cart items
+            donor_data = cart_items[0]['donor_data'] if cart_items else {}
+            
+            # Create PaymentIntent via service (legacy)
+            payment_data = StripeService.create_payment_intent(cart_items, donor_data)
         
         # Store PaymentIntent ID in session for later verification
         session['payment_intent_id'] = payment_data['payment_intent_id']
@@ -1864,6 +1885,255 @@ def api_payment_status(payment_intent_id):
         return jsonify({'error': 'Internal server error'}), 500
 
 # ==========================================
+
+# ==========================================
+# NEW CHECKOUT FLOW API ROUTES
+# ==========================================
+
+@app.route("/api/cart/add", methods=["POST"])
+@csrf.exempt
+@limiter.limit("60 per minute")
+def api_cart_add():
+    """Add item to cart with donation details"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'Keine Daten erhalten'}), 400
+        
+        # Validate input
+        verse_id = data.get('verse_id')
+        donation_type = data.get('donation_type')
+        donation_details = data.get('donation_details', {})
+        
+        if not verse_id or not donation_type:
+            return jsonify({'success': False, 'error': 'Ungültige Anfrage'}), 400
+        
+        if donation_type not in ['einzelperson', 'gruppe', 'geschenk']:
+            return jsonify({'success': False, 'error': 'Ungültiger Spendentyp'}), 400
+        
+        # Check verse availability
+        verse = Verse.query.get(verse_id)
+        if not verse:
+            return jsonify({'success': False, 'error': 'Vers nicht gefunden'}), 404
+        
+        if verse.is_sponsored:
+            return jsonify({'success': False, 'error': 'Vers bereits gesponsert'}), 400
+        
+        # Check if verse is reserved by someone else
+        existing_reservation = VerseReservation.get_active_for_verse(
+            verse.id, 
+            exclude_session_id=session.sid
+        )
+        
+        if existing_reservation:
+            return jsonify({'success': False, 'error': 'Vers wird bereits reserviert'}), 400
+        
+        # Initialize cart if needed and handle corruption
+        handle_corrupted_session()
+        
+        # Check cart size limit
+        if len(session['cart']) >= 20:
+            return jsonify({
+                'success': False, 
+                'error': 'Maximale Anzahl Verse (20) erreicht'
+            }), 400
+        
+        # Check for duplicate verses in cart
+        if any(item['verse_id'] == verse_id for item in session['cart']):
+            return jsonify({'success': False, 'error': 'Vers bereits im Korb'}), 400
+        
+        # Create/Update reservation for this verse
+        try:
+            reservation = VerseReservation.create_or_update(
+                verse_id=verse.id,
+                session_id=session.sid,
+                minutes=60  # Extended reservation for cart items
+            )
+        except Exception as e:
+            app.logger.error(f"Failed to create reservation: {e}")
+            return jsonify({'success': False, 'error': 'Reservierung fehlgeschlagen'}), 500
+        
+        # Add to cart with new structure
+        cart_item = {
+            'verse_id': verse_id,
+            'donation_type': donation_type,
+            'donor_data': donation_details,  # Use donor_data for compatibility with validate_cart_item
+            'reservation_id': reservation.id,
+            'amount': 100.00,
+            'currency': 'EUR',
+            'added_at': datetime.utcnow().isoformat()
+        }
+        
+        session['cart'].append(cart_item)
+        session.modified = True
+        
+        return jsonify({
+            'success': True, 
+            'cart_count': len(session['cart']),
+            'item': {
+                'verse_reference': verse.reference,
+                'donation_type': donation_type,
+                'amount': 100.00
+            }
+        })
+        
+    except Exception as e:
+        app.logger.error(f"API cart add error: {e}")
+        return jsonify({'success': False, 'error': 'Interner Serverfehler'}), 500
+
+@app.route("/checkout/spendendaten", methods=["GET", "POST"])
+@limiter.limit("30 per minute")
+def checkout_spendendaten():
+    """Unified data collection after cart"""
+    
+    # Check cart exists
+    if 'cart' not in session or not session['cart']:
+        flash("Ihr Spendenkorb ist leer.", "warning")
+        return redirect(url_for("vers_auswaehlen"))
+    
+    cart_items = []
+    has_only_groups = True
+    
+    # Load cart data with new structure
+    for item in session['cart']:
+        verse = Verse.query.get(item['verse_id'])
+        if verse:
+            cart_items.append({
+                'verse': verse,
+                'donation_type': item['donation_type'],
+                'donor_data': item.get('donor_data', {})  # Use donor_data for consistency
+            })
+            
+            if item['donation_type'] != 'gruppe':
+                has_only_groups = False
+    
+    total_amount = len(cart_items) * 100
+    
+    if request.method == "POST":
+        email = request.form.get('email', '').strip().lower()
+        
+        if not email or '@' not in email:
+            flash("Bitte geben Sie eine gültige E-Mail-Adresse ein.", "danger")
+            return render_template("checkout-spendendaten.html",
+                                 cart_items=cart_items,
+                                 total_amount=total_amount,
+                                 has_only_groups=has_only_groups,
+                                 form_data=request.form)
+        
+        wants_receipt = request.form.get('wantsReceipt') == 'on'
+        
+        # Validate receipt data if requested
+        if wants_receipt and not has_only_groups:
+            required_fields = ['salutation', 'firstName', 'lastName', 'street', 'houseNumber', 'postalCode', 'city']
+            missing_fields = []
+            
+            for field in required_fields:
+                if not request.form.get(field, '').strip():
+                    missing_fields.append(field)
+            
+            if missing_fields:
+                flash("Bitte füllen Sie alle Pflichtfelder für die Spendenbescheinigung aus.", "danger")
+                return render_template("checkout-spendendaten.html",
+                                     cart_items=cart_items,
+                                     total_amount=total_amount,
+                                     has_only_groups=has_only_groups,
+                                     form_data=request.form)
+        
+        # Check privacy consent
+        if not request.form.get('privacy'):
+            flash("Bitte akzeptieren Sie die Datenschutzerklärung.", "danger")
+            return render_template("checkout-spendendaten.html",
+                                 cart_items=cart_items,
+                                 total_amount=total_amount,
+                                 has_only_groups=has_only_groups,
+                                 form_data=request.form)
+        
+        # Find or create person
+        person = Person.find_or_create(
+            email=email,
+            first_name=request.form.get('firstName'),
+            last_name=request.form.get('lastName'),
+            salutation=request.form.get('salutation'),
+            street=request.form.get('street'),
+            house_number=request.form.get('houseNumber'),
+            postal_code=request.form.get('postalCode'),
+            city=request.form.get('city'),
+            newsletter_opt_in=request.form.get('newsletter') == 'on',
+            save_data_consent=request.form.get('saveData') != 'off'
+        )
+        
+        db.session.commit()
+        
+        # Store person_id for payment processing
+        session['checkout_person_id'] = person.id
+        session['wants_receipt'] = wants_receipt
+        
+        return redirect(url_for('checkout_zahlung'))
+    
+    return render_template("checkout-spendendaten.html",
+                         cart_items=cart_items,
+                         total_amount=total_amount,
+                         has_only_groups=has_only_groups,
+                         form_data={})
+
+@app.route("/api/person/check", methods=["GET"])
+@limiter.limit("30 per minute")
+def api_person_check():
+    """Check if person exists and has data"""
+    email = request.args.get('email', '').strip().lower()
+    
+    if not email or '@' not in email:
+        return jsonify({'exists': False, 'hasData': False})
+    
+    person = Person.query.filter_by(email=email).first()
+    
+    if not person:
+        return jsonify({'exists': False, 'hasData': False})
+    
+    # Check if person has complete address data
+    has_data = bool(person.first_name and person.last_name and person.postal_code)
+    
+    return jsonify({
+        'exists': True,
+        'hasData': has_data
+    })
+
+@app.route("/api/verify-plz", methods=["POST"])
+@limiter.limit("30 per minute")
+def api_verify_plz():
+    """Verify postal code and return person data"""
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'success': False, 'error': 'No data provided'}), 400
+    
+    email = data.get('email', '').strip().lower()
+    plz = data.get('plz', '').strip()
+    
+    if not email or not plz:
+        return jsonify({'success': False, 'error': 'Email and PLZ required'}), 400
+    
+    person = Person.query.filter_by(email=email).first()
+    
+    if not person or person.postal_code != plz:
+        return jsonify({'success': False, 'error': 'Verification failed'}), 400
+    
+    # Return person data for form filling
+    return jsonify({
+        'success': True,
+        'data': {
+            'email': person.email,
+            'firstName': person.first_name,
+            'lastName': person.last_name,
+            'salutation': person.salutation,
+            'street': person.street,
+            'houseNumber': person.house_number,
+            'postalCode': person.postal_code,
+            'city': person.city,
+            'newsletter': person.newsletter_opt_in,
+            'wantsReceipt': True if person.has_complete_address else False
+        }
+    })
 
 # ==========================================
 # ERROR HANDLERS

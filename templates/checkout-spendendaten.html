@@ -1,0 +1,363 @@
+{% extends "layout.html" %}
+
+{% block title %}Ihre Daten{% endblock %}
+
+{% block main %}
+<div class="container py-5">
+    <!-- Progress Bar -->
+    <div class="progress mb-4" style="height: 5px;">
+        <div class="progress-bar" style="width: 60%;"></div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Ihre Kontaktdaten</h2>
+            
+            <form id="checkoutForm" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <!-- Email (always required) -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">E-Mail-Adresse</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">E-Mail *</label>
+                            <input type="email" class="form-control" id="email" 
+                                   name="email" required value="{{ form_data.get('email', '') }}">
+                            <small class="text-muted">
+                                Für den Versand der Zertifikate und Kommunikation
+                            </small>
+                        </div>
+                        
+                        <!-- Auto-fill notification -->
+                        <div id="autoFillNotice" class="alert alert-success" style="display:none;">
+                            <i class="fas fa-check-circle"></i>
+                            Wir haben Ihre Daten vom letzten Besuch. Bitte überprüfen Sie diese.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Receipt Section (conditional) -->
+                {% set needs_receipt = not has_only_groups %}
+                {% if needs_receipt %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Spendenbescheinigung</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input type="checkbox" class="form-check-input" 
+                                   id="wantsReceipt" name="wantsReceipt" 
+                                   {% if form_data.get('wantsReceipt') %}checked{% endif %}>
+                            <label class="form-check-label" for="wantsReceipt">
+                                Ich möchte eine Spendenbescheinigung erhalten
+                            </label>
+                        </div>
+                        
+                        <!-- Receipt Form (hidden by default) -->
+                        <div id="receiptForm" style="display:{% if form_data.get('wantsReceipt') %}block{% else %}none{% endif %};">
+                            <hr>
+                            <h6 class="mb-3">Angaben für die Spendenbescheinigung</h6>
+                            
+                            <!-- Name Fields -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Anrede *</label>
+                                    <select class="form-select" name="salutation">
+                                        <option value="">Bitte wählen</option>
+                                        <option value="Herr" {% if form_data.get('salutation') == 'Herr' %}selected{% endif %}>Herr</option>
+                                        <option value="Frau" {% if form_data.get('salutation') == 'Frau' %}selected{% endif %}>Frau</option>
+                                        <option value="Eheleute" {% if form_data.get('salutation') == 'Eheleute' %}selected{% endif %}>Eheleute</option>
+                                        <option value="Firma" {% if form_data.get('salutation') == 'Firma' %}selected{% endif %}>Firma</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Vorname *</label>
+                                    <input type="text" class="form-control" name="firstName" 
+                                           value="{{ form_data.get('firstName', '') }}">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label">Nachname *</label>
+                                    <input type="text" class="form-control" name="lastName" 
+                                           value="{{ form_data.get('lastName', '') }}">
+                                </div>
+                            </div>
+                            
+                            <!-- Address Fields -->
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Straße *</label>
+                                    <input type="text" class="form-control" name="street" 
+                                           value="{{ form_data.get('street', '') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Hausnummer *</label>
+                                    <input type="text" class="form-control" name="houseNumber" 
+                                           value="{{ form_data.get('houseNumber', '') }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">PLZ *</label>
+                                    <input type="text" class="form-control" name="postalCode" 
+                                           value="{{ form_data.get('postalCode', '') }}">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Ort *</label>
+                                    <input type="text" class="form-control" name="city" 
+                                           value="{{ form_data.get('city', '') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Info for group-only donations -->
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Hinweis:</strong> Für reine Gruppenspenden ist keine automatische 
+                    Spendenbescheinigung möglich. Bei Bedarf kontaktieren Sie uns unter 
+                    info@schoeffer.org.
+                </div>
+                {% endif %}
+                
+                <!-- Newsletter & Privacy -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" 
+                                   id="newsletter" name="newsletter" 
+                                   {% if form_data.get('newsletter') %}checked{% endif %}>
+                            <label class="form-check-label" for="newsletter">
+                                Ich möchte über den Fortschritt der NGÜ-Übersetzung informiert werden
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" 
+                                   id="privacy" name="privacy" required>
+                            <label class="form-check-label" for="privacy">
+                                Ich habe die <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> 
+                                gelesen und akzeptiere diese *
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mt-2">
+                            <input type="checkbox" class="form-check-input" 
+                                   id="saveData" name="saveData" checked>
+                            <label class="form-check-label" for="saveData">
+                                Meine Daten für zukünftige Spenden speichern (Vorausfüllung)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-lg">
+                    Weiter zur Zahlung
+                    <i class="fas fa-lock"></i>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Side Summary -->
+        <div class="col-lg-4">
+            <div class="card sticky-top">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Ihre Spende</h5>
+                </div>
+                <div class="card-body">
+                    <!-- List cart items -->
+                    {% for item in cart_items %}
+                    <div class="mb-2">
+                        <strong>{{ item.verse.reference }}</strong><br>
+                        <small class="text-muted">
+                            {% if item.donation_type == 'gruppe' %}
+                                Gruppe: {{ item.donor_data.group_name }}
+                            {% elif item.donation_type == 'geschenk' %}
+                                Geschenk für: {{ item.donor_data.recipient_name }}
+                            {% else %}
+                                Einzelspende
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% if not loop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                    
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Gesamt:</strong>
+                        <strong>{{ total_amount|currency }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PLZ Verification Modal -->
+<div class="modal fade" id="plzModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Willkommen zurück!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Wir haben Ihre Daten von einem früheren Besuch gefunden.</p>
+                <p>Bitte geben Sie Ihre Postleitzahl zur Bestätigung ein:</p>
+                <input type="text" class="form-control" id="plzVerify" 
+                       placeholder="Ihre PLZ" maxlength="5">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Neu eingeben
+                </button>
+                <button type="button" class="btn btn-primary" id="verifyBtn">
+                    Daten laden
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Sticky sidebar only on desktop */
+@media (max-width: 991px) {
+    .sticky-top {
+        position: relative !important;
+        margin-top: 2rem;
+    }
+}
+
+/* Form styling */
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.card-header h5 {
+    font-weight: 600;
+}
+
+/* Progress bar styling */
+.progress-bar {
+    background-color: #198754;
+}
+
+/* Mobile optimization */
+@media (max-width: 576px) {
+    .btn-lg {
+        width: 100%;
+        padding: 1rem;
+    }
+    
+    .row.mb-3 .col-md-3,
+    .row.mb-3 .col-md-4,
+    .row.mb-3 .col-md-5,
+    .row.mb-3 .col-md-8 {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.getElementById('email');
+    const receiptCheckbox = document.getElementById('wantsReceipt');
+    const receiptForm = document.getElementById('receiptForm');
+    const autoFillNotice = document.getElementById('autoFillNotice');
+    
+    // Toggle receipt form
+    if (receiptCheckbox) {
+        receiptCheckbox.addEventListener('change', function() {
+            receiptForm.style.display = this.checked ? 'block' : 'none';
+            
+            // Make fields required when shown
+            const fields = receiptForm.querySelectorAll('input[name="firstName"], input[name="lastName"], input[name="street"], input[name="houseNumber"], input[name="postalCode"], input[name="city"], select[name="salutation"]');
+            fields.forEach(field => {
+                field.required = this.checked;
+            });
+        });
+        
+        // Trigger change on page load to set initial state
+        receiptCheckbox.dispatchEvent(new Event('change'));
+    }
+    
+    // Email auto-fill check (simplified version)
+    if (emailInput) {
+        emailInput.addEventListener('blur', async function() {
+            const email = this.value.trim();
+            if (!email || !email.includes('@')) return;
+            
+            try {
+                const response = await fetch(`/api/person/check?email=${encodeURIComponent(email)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.exists && data.hasData) {
+                        showPlzVerification(email);
+                    }
+                }
+            } catch (error) {
+                console.log('Auto-fill check failed:', error);
+            }
+        });
+    }
+    
+    function showPlzVerification(email) {
+        const modal = new bootstrap.Modal(document.getElementById('plzModal'));
+        modal.show();
+        
+        // Handle verification
+        document.getElementById('verifyBtn').onclick = async function() {
+            const plz = document.getElementById('plzVerify').value;
+            
+            try {
+                const response = await fetch('/api/verify-plz', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: email, plz: plz})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    fillForm(data.data);
+                    autoFillNotice.style.display = 'block';
+                    modal.hide();
+                } else {
+                    alert('Die Postleitzahl stimmt nicht überein.');
+                }
+            } catch (error) {
+                alert('Verifikation fehlgeschlagen.');
+            }
+        };
+    }
+    
+    function fillForm(data) {
+        // Fill all matching fields
+        for (const [key, value] of Object.entries(data)) {
+            const field = document.querySelector(`[name="${key}"]`);
+            if (field && value) {
+                if (field.type === 'checkbox') {
+                    field.checked = value;
+                } else {
+                    field.value = value;
+                }
+            }
+        }
+        
+        // Show receipt form if data available
+        if (data.firstName && receiptCheckbox) {
+            receiptCheckbox.checked = true;
+            receiptCheckbox.dispatchEvent(new Event('change'));
+        }
+    }
+});
+</script>
+{% endblock %}

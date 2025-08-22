@@ -26,13 +26,13 @@ class StripeService:
     """Service class for Stripe payment operations"""
     
     @staticmethod
-    def create_payment_intent(cart_items, donor_data, preferred_payment_methods=None):
+    def create_payment_intent(cart_items, person, preferred_payment_methods=None):
         """
         Create Stripe PaymentIntent with SEPA preference and 3D Secure support
         
         Args:
             cart_items: List of cart items with verse and donation data
-            donor_data: Donor information from session
+            person: Person object with donor information
             preferred_payment_methods: List of preferred payment methods
             
         Returns:
@@ -40,7 +40,7 @@ class StripeService:
         """
         try:
             # First, create donation records
-            donations = StripeService.create_donations_from_cart(cart_items)
+            donations = StripeService.create_donations_from_cart(cart_items, person.id)
             
             if not donations:
                 raise StripeError("No valid donations could be created")
@@ -55,21 +55,13 @@ class StripeService:
             if not preferred_payment_methods:
                 preferred_payment_methods = ['sepa_debit', 'card']
             
-            # Prepare billing details
-            billing_details = StripeService._prepare_billing_details(donor_data)
+            # Prepare billing details using Person object
+            billing_details = StripeService._prepare_billing_details_from_person(person)
             
-            # Prepare metadata for tracking (use donation IDs instead of cart items)
+            # Minimal metadata - only what we actually need
             donation_ids = [str(d.id) for d in donations]
-            verse_ids = [str(d.verse_id) for d in donations]
-            
             metadata = {
-                'donation_ids': ','.join(donation_ids),
-                'verse_ids': ','.join(verse_ids),
-                'verse_count': str(len(donations)),
-                'donor_email': donor_data.get('email', ''),
-                'session_id': session.get('session_id', ''),
-                'project': 'ngue_bible_sponsoring',
-                'version': '1.0'
+                'donation_ids': ','.join(donation_ids)
             }
             
             # Add donation type info
@@ -93,7 +85,7 @@ class StripeService:
                 },
                 
                 # Customer information
-                receipt_email=donor_data.get('email'),
+                receipt_email=person.email,
                 description=f"NGÜ Bibelvers-Sponsoring: {len(donations)} Verse",
                 
                 # Metadata for webhook processing
@@ -118,52 +110,32 @@ class StripeService:
             raise StripeError(f"Unexpected error during payment initialization: {str(e)}")
     
     @staticmethod
-    def _prepare_billing_details(donor_data):
-        """Prepare billing details from donor data"""
+    def _prepare_billing_details_from_person(person):
+        """Prepare billing details from Person object"""
         billing_details = {
-            'name': f"{donor_data.get('first_name', '')} {donor_data.get('last_name', '')}".strip(),
-            'email': donor_data.get('email'),
+            'name': f"{person.first_name or ''} {person.last_name or ''}".strip(),
+            'email': person.email,
         }
         
         # Add address if available
-        if donor_data.get('street') and donor_data.get('city'):
+        if person.street and person.city:
             billing_details['address'] = {
-                'line1': f"{donor_data.get('street', '')} {donor_data.get('house_number', '')}".strip(),
-                'city': donor_data.get('city'),
-                'postal_code': donor_data.get('postal_code'),
-                'country': donor_data.get('country', 'DE').upper()
+                'line1': f"{person.street or ''} {person.house_number or ''}".strip(),
+                'city': person.city,
+                'postal_code': person.postal_code,
+                'country': (person.country or 'DE').upper()
             }
         
         return billing_details
     
     @staticmethod
-    def _prepare_metadata(cart_items, donor_data):
-        """Prepare metadata for PaymentIntent"""
-        verse_ids = [str(item.get('verse_id')) for item in cart_items]
-        
-        metadata = {
-            'verse_ids': ','.join(verse_ids),
-            'verse_count': str(len(cart_items)),
-            'donor_email': donor_data.get('email', ''),
-            'session_id': session.get('session_id', ''),
-            'project': 'ngue_bible_sponsoring',
-            'version': '1.0'
-        }
-        
-        # Add donation type info
-        if cart_items:
-            first_item = cart_items[0]
-            metadata['donation_type'] = first_item.get('donation_type', 'einzelperson')
-        
-        return metadata
-    
-    @staticmethod
-    def create_donations_from_cart(cart_items):
+    def create_donations_from_cart(cart_items, person_id):
         """
-        Create Donation records from cart items using new Person/Donation structure
+        Create Donation records from cart items using Person/Donation structure
         
         Args:
             cart_items: List of cart items from session
+            person_id: Person ID (required)
             
         Returns:
             list: Created Donation objects
@@ -171,47 +143,39 @@ class StripeService:
         donations = []
         
         try:
+            # Get person from database
+            person = Person.query.get(person_id)
+            if not person:
+                raise StripeError("Invalid person ID")
+            
+            # Create donations for all cart items using the same person
             for item in cart_items:
                 # Get verse
                 verse = Verse.query.get(item['verse_id'])
                 if not verse or verse.is_sponsored:
                     continue
                 
-                donor_data = item['donor_data']
                 donation_type = item['donation_type']
-                
-                # Create or find person
-                person = Person.find_or_create(
-                    email=donor_data.get('email'),
-                    first_name=donor_data.get('first_name'),
-                    last_name=donor_data.get('last_name'),
-                    salutation=donor_data.get('salutation'),
-                    title=donor_data.get('title'),
-                    street=donor_data.get('street'),
-                    house_number=donor_data.get('house_number'),
-                    postal_code=donor_data.get('postal_code'),
-                    city=donor_data.get('city'),
-                    country=donor_data.get('country', 'DE'),
-                    newsletter_opt_in=donor_data.get('newsletter', False)
-                )
-                
-                # Commit person to get ID
-                db.session.commit()
+                item_data = item.get('donor_data', {})  # Get item-specific data
                 
                 # Prepare donation_details based on type
                 donation_details = {}
                 if donation_type == 'gruppe':
                     donation_details = {
-                        'group_name': donor_data.get('group_name'),
-                        'group_article': donor_data.get('group_article')
+                        'group_name': item_data.get('group_name'),
+                        'group_article': item_data.get('group_article')
                     }
                 elif donation_type == 'geschenk':
                     donation_details = {
-                        'recipient_name': donor_data.get('gift_recipient_name'),
-                        'recipient_email': donor_data.get('gift_recipient_email'),
-                        'gift_message': donor_data.get('gift_message'),
-                        'direct_send': donor_data.get('gift_direct_send', False)
+                        'recipient_name': item_data.get('recipient_name'),
+                        'recipient_email': item_data.get('recipient_email'),
+                        'gift_message': item_data.get('gift_message'),
+                        'direct_send': item_data.get('direct_send', False)
                     }
+                
+                # Get wants_receipt from session
+                from flask import session
+                wants_receipt = session.get('wants_receipt', True)
                 
                 # Create donation record with new structure
                 donation = Donation(
@@ -222,8 +186,8 @@ class StripeService:
                     person_snapshot=person.to_snapshot(),
                     amount=Decimal(str(item['amount'])),
                     currency=item.get('currency', 'EUR'),
-                    wants_receipt=donor_data.get('wants_receipt', True),
-                    privacy_consent=donor_data.get('privacy_consent', True),
+                    wants_receipt=wants_receipt,
+                    privacy_consent=True,  # Always true for new flow, required for legacy
                     payment_status='pending'
                 )
                 
@@ -251,23 +215,22 @@ class StripeService:
             raise StripeError(f"Failed to create donation records: {str(e)}")
     
     @staticmethod
-    def get_or_create_customer(donor_data):
+    def get_or_create_customer(person):
         """
         Get existing or create new Stripe Customer
         
         Args:
-            donor_data: Donor information
+            person: Person object with donor information
             
         Returns:
             str: Stripe Customer ID or None
         """
         try:
-            email = donor_data.get('email')
-            if not email:
+            if not person.email:
                 return None
             
             # Search for existing customer by email
-            customers = stripe.Customer.list(email=email, limit=1)
+            customers = stripe.Customer.list(email=person.email, limit=1)
             
             if customers.data:
                 logger.info(f"Found existing Stripe customer: {customers.data[0].id}")
@@ -275,8 +238,8 @@ class StripeService:
             
             # Create new customer
             customer_data = {
-                'email': email,
-                'name': f"{donor_data.get('first_name', '')} {donor_data.get('last_name', '')}".strip(),
+                'email': person.email,
+                'name': f"{person.first_name or ''} {person.last_name or ''}".strip(),
                 'metadata': {
                     'source': 'ngue_bible_sponsoring',
                     'created_at': datetime.utcnow().isoformat()
@@ -284,12 +247,12 @@ class StripeService:
             }
             
             # Add address if available
-            if donor_data.get('street') and donor_data.get('city'):
+            if person.street and person.city:
                 customer_data['address'] = {
-                    'line1': f"{donor_data.get('street', '')} {donor_data.get('house_number', '')}".strip(),
-                    'city': donor_data.get('city'),
-                    'postal_code': donor_data.get('postal_code'),
-                    'country': donor_data.get('country', 'DE').upper()
+                    'line1': f"{person.street or ''} {person.house_number or ''}".strip(),
+                    'city': person.city,
+                    'postal_code': person.postal_code,
+                    'country': (person.country or 'DE').upper()
                 }
             
             customer = stripe.Customer.create(**customer_data)

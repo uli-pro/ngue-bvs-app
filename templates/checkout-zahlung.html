@@ -184,21 +184,21 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    {% if donor_data %}
+                    {% if person %}
                     <p class="mb-1">
                         <strong>
-                            {% if donor_data.first_name and donor_data.last_name %}
-                                {{ donor_data.first_name }} {{ donor_data.last_name }}
+                            {% if person.first_name and person.last_name %}
+                                {{ person.first_name }} {{ person.last_name }}
                             {% else %}
-                                {{ donor_data.email }}
+                                {{ person.email }}
                             {% endif %}
                         </strong>
                     </p>
-                    <p class="mb-1 text-muted">{{ donor_data.email }}</p>
-                    {% if donor_data.street %}
+                    <p class="mb-1 text-muted">{{ person.email }}</p>
+                    {% if person.street %}
                     <p class="mb-0 small text-muted">
-                        {{ donor_data.street }} {{ donor_data.house_number }}<br>
-                        {{ donor_data.postal_code }} {{ donor_data.city }}
+                        {{ person.street }} {{ person.house_number }}<br>
+                        {{ person.postal_code }} {{ person.city }}
                     </p>
                     {% endif %}
                     {% endif %}
@@ -311,13 +311,13 @@
         publicKey: '{{ stripe_public_key }}',
         totalAmount: {{ total_amount }},
         donorData: {
-            name: '{% if donor_data.first_name and donor_data.last_name %}{{ donor_data.first_name }} {{ donor_data.last_name }}{% endif %}',
-            email: '{{ donor_data.email or "" }}',
+            name: '{% if person.first_name and person.last_name %}{{ person.first_name }} {{ person.last_name }}{% endif %}',
+            email: '{{ person.email or "" }}',
             address: {
-                line1: '{% if donor_data.street %}{{ donor_data.street }} {{ donor_data.house_number }}{% endif %}',
-                city: '{{ donor_data.city or "" }}',
-                postal_code: '{{ donor_data.postal_code or "" }}',
-                country: '{{ donor_data.country or "DE" }}'
+                line1: '{% if person.street %}{{ person.street }} {{ person.house_number }}{% endif %}',
+                city: '{{ person.city or "" }}',
+                postal_code: '{{ person.postal_code or "" }}',
+                country: '{{ person.country or "DE" }}'
             }
         }
     };

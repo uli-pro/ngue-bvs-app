@@ -1,0 +1,421 @@
+{% extends "layout.html" %}
+
+{% block title %}Spendenart auswählen{% endblock %}
+
+{% block main %}
+
+<!-- Selected Verse Display (kompakter) -->
+<section class="verse-preview py-3 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h5 class="text-primary mb-2">{{ verse.reference }}</h5>
+                        <p class="mb-0 text-truncate">{{ verse.text[:150] }}...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Donation Types with Progressive Disclosure -->
+<section class="donation-types py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="text-center mb-4">Wie möchten Sie spenden?</h2>
+                
+                <!-- Einzelspende -->
+                <div class="donation-option card mb-3" data-type="einzelperson">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <i class="fas fa-user fa-3x text-success"></i>
+                            </div>
+                            <div class="col">
+                                <h4 class="mb-1">Einzelspende</h4>
+                                <p class="text-muted mb-0">Ich spende als Privatperson</p>
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle"></i> 
+                                    Zertifikat & Spendenbescheinigung möglich
+                                </small>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary select-btn" data-type="einzelperson">
+                                    Auswählen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gruppenspende -->
+                <div class="donation-option card mb-3" data-type="gruppe">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <i class="fas fa-users fa-3x text-warning"></i>
+                            </div>
+                            <div class="col">
+                                <h4 class="mb-1">Gruppenspende</h4>
+                                <p class="text-muted mb-0">Wir spenden als Gruppe/Organisation</p>
+                                <small class="text-warning">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Gruppenzertifikat, keine automatische Spendenbescheinigung
+                                </small>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary expand-btn" data-type="gruppe">
+                                    Auswählen
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Progressive Disclosure Content -->
+                        <div class="expansion-content mt-4" style="display: none;">
+                            <hr>
+                            <form class="group-form">
+                                <h5 class="mb-3">Gruppeninformationen</h5>
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Artikel</label>
+                                        <select class="form-select" name="group_article" required>
+                                            <option value="">Wählen...</option>
+                                            <option value="Der">Der</option>
+                                            <option value="Die">Die</option>
+                                            <option value="Das">Das</option>
+                                            <option value="">Ohne</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-9 mb-3">
+                                        <label class="form-label">Gruppenname</label>
+                                        <input type="text" class="form-control" name="group_name" 
+                                               placeholder="z.B. Familie Schmidt" required>
+                                        <small class="text-muted">Dieser Name erscheint auf dem Zertifikat</small>
+                                    </div>
+                                </div>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Hinweis:</strong> Für Gruppenspenden ist keine automatische 
+                                    Spendenbescheinigung möglich. Kontaktieren Sie uns bei Bedarf unter 
+                                    info@schoeffer.org.
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-shopping-cart"></i> 
+                                    Zum Spendenkorb hinzufügen
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Geschenkspende -->
+                <div class="donation-option card mb-3" data-type="geschenk">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <i class="fas fa-gift fa-3x text-info"></i>
+                            </div>
+                            <div class="col">
+                                <h4 class="mb-1">Geschenkspende</h4>
+                                <p class="text-muted mb-0">Ich verschenke diesen Vers</p>
+                                <small class="text-info">
+                                    <i class="fas fa-check-circle"></i> 
+                                    Geschenkzertifikat & Ihre Spendenbescheinigung
+                                </small>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary expand-btn" data-type="geschenk">
+                                    Auswählen
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Progressive Disclosure Content -->
+                        <div class="expansion-content mt-4" style="display: none;">
+                            <hr>
+                            <form class="gift-form">
+                                <h5 class="mb-3">Empfänger-Informationen</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Name des Empfängers</label>
+                                    <input type="text" class="form-control" name="recipient_name" 
+                                           placeholder="Max Mustermann" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">E-Mail des Empfängers (optional)</label>
+                                    <input type="email" class="form-control" name="recipient_email" 
+                                           placeholder="empfaenger@example.com">
+                                    <small class="text-muted">
+                                        Wenn angegeben, senden wir das Zertifikat direkt an den Empfänger
+                                    </small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Persönliche Nachricht (optional)</label>
+                                    <textarea class="form-control" name="gift_message" rows="3" 
+                                              placeholder="Herzlichen Glückwunsch zum Geburtstag!"></textarea>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="directSend" name="direct_send">
+                                    <label class="form-check-label" for="directSend">
+                                        Zertifikat direkt an Empfänger senden
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-shopping-cart"></i> 
+                                    Zum Spendenkorb hinzufügen
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Back Navigation -->
+<div class="container mb-4">
+    <a href="/vers-auswaehlen" class="btn btn-link">
+        <i class="fas fa-arrow-left"></i> Anderen Vers wählen
+    </a>
+</div>
+
+<style>
+.donation-option {
+    transition: all 0.3s ease;
+    border: 2px solid #e0e0e0;
+}
+
+.donation-option:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+}
+
+.donation-option.expanded {
+    border-color: #28a745;
+    box-shadow: 0 4px 12px rgba(40,167,69,0.2);
+}
+
+.expansion-content {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.text-truncate {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .donation-option .row {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .donation-option .col-auto {
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .donation-option .btn {
+        width: 100%;
+    }
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+    .donation-option .row {
+        flex-direction: row;
+        text-align: left;
+    }
+    
+    .donation-option .col-auto {
+        width: auto;
+        margin-top: 0;
+    }
+    
+    .donation-option .btn {
+        width: auto;
+    }
+}
+
+/* Compact verse preview on mobile */
+@media (max-width: 576px) {
+    .verse-preview .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    .verse-preview h5 {
+        font-size: 1rem;
+    }
+    
+    .verse-preview p {
+        font-size: 0.875rem;
+    }
+}
+
+/* Success overlay styles */
+.success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.success-overlay.show {
+    opacity: 1;
+}
+
+.success-content {
+    text-align: center;
+    animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle Einzelspende (direct to cart)
+    document.querySelectorAll('.select-btn[data-type="einzelperson"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            addToCart('einzelperson', {});
+        });
+    });
+    
+    // Handle expansion for Gruppe and Geschenk
+    document.querySelectorAll('.expand-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const card = this.closest('.donation-option');
+            const expansion = card.querySelector('.expansion-content');
+            const wasExpanded = card.classList.contains('expanded');
+            
+            // Close all other expansions
+            document.querySelectorAll('.donation-option').forEach(opt => {
+                opt.classList.remove('expanded');
+                const expansionEl = opt.querySelector('.expansion-content');
+                if (expansionEl) expansionEl.style.display = 'none';
+            });
+            
+            // Toggle current
+            if (!wasExpanded) {
+                card.classList.add('expanded');
+                expansion.style.display = 'block';
+                // Focus first input
+                const firstInput = expansion.querySelector('input, select');
+                if (firstInput) firstInput.focus();
+            }
+        });
+    });
+    
+    // Handle group form submission
+    document.querySelector('.group-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        addToCart('gruppe', {
+            group_article: formData.get('group_article'),
+            group_name: formData.get('group_name')
+        });
+    });
+    
+    // Handle gift form submission
+    document.querySelector('.gift-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        addToCart('geschenk', {
+            recipient_name: formData.get('recipient_name'),
+            recipient_email: formData.get('recipient_email'),
+            gift_message: formData.get('gift_message'),
+            direct_send: formData.get('direct_send') === 'on'
+        });
+    });
+    
+    // Add to cart function
+    function addToCart(donationType, donationDetails) {
+        const cartItem = {
+            verse_id: {{ verse.id }},
+            donation_type: donationType,
+            donation_details: donationDetails
+        };
+        
+        // Add to session cart via AJAX
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(cartItem)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success animation
+                showSuccessAnimation();
+                
+                // Redirect to cart after animation
+                setTimeout(() => {
+                    window.location.href = '/spendenkorb';
+                }, 1000);
+            } else {
+                // Show error
+                alert(data.error || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+        });
+    }
+    
+    function showSuccessAnimation() {
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'success-overlay';
+        overlay.innerHTML = `
+            <div class="success-content">
+                <i class="fas fa-check-circle fa-5x text-success"></i>
+                <h3 class="mt-3">Zum Korb hinzugefügt!</h3>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        // Add animation class
+        setTimeout(() => overlay.classList.add('show'), 10);
+    }
+});
+</script>
+{% endblock %}
