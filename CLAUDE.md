@@ -4,295 +4,210 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **NGÜ Bibelvers-Sponsoring App** - a Flask web application that enables individual verse sponsoring for the NGÜ (Neue Genfer Übersetzung) Bible translation project. This is a CS50 final project that allows donors to sponsor individual Old Testament verses for €100 each and receive personalized certificates.
+This is the **NGÜ Bibelvers-Sponsoring App** - a simplified Flask web application that enables individual verse sponsoring for the NGÜ (Neue Genfer Übersetzung) Bible translation project. Donors can sponsor individual Old Testament verses for €100 each through a streamlined checkout process with Stripe payments.
 
-### Current Development Status (August 12, 2025)
-- ✅ **Phase 1 - Session 1**: User Journey Mapping completed
-  - Comprehensive user flow documented with Mermaid diagram
-  - 30 routes/pages identified
-  - 12 decision points documented
-- ✅ **Phase 1 - Session 2**: Wireframes completed
-  - All 20+ pages wireframed
-  - Mobile-first approach
-  - Consistent navigation patterns
-- ✅ **Phase 1 - Session 2b**: Content for main pages completed
-  - Homepage, verse selection, about pages
-  - Content structure established
-- ✅ **Phase 1 - Session 3**: Content completion finished
-  - FAQ with 18 entries in 5 categories
-  - Email templates (4 variants)
-  - All 13 forms documented
-  - Error messages and UI texts
-  - GDPR-compliant privacy policy
-  - Switzerland Phase 2 preparations
-- ✅ **Design Phase**: Website Demos completed (August 10, 2025)
-  - Complete design system with NGÜ branding established
-  - Functional website prototype created with Claude-Entwurf (17 templates, Bootstrap 5.3, mobile-first)
-  - NGÜ logo files integrated (multiple sizes)
-  - Official NGÜ sponsoring documentation included
-- ✅ **Phase 1 - Session 4A**: Account-System implementiert (August 11, 2025)
-  - Vollständige User-Registrierung mit E-Mail-Verifizierung
-  - Login-System mit Rate-Limiting und Session-Management
-  - Passwort-Zurücksetzen-Funktionalität
-  - Login-geschützte Bereiche mit @login_required Decorator
-  - Personalisierte Navigation und Dashboard-Integration
-- ✅ **Phase 1 - Session 4B**: UI-Verbesserungen und Bugfixes (August 11, 2025)
-  - Übersetzungsfortschritts-Anzeige entfernt (zu aufwändig in der Datenpflege)
-  - Peter-Schöffer-Stiftung Kontaktdaten aktualisiert (neue Adresse, E-Mail @schoeffer.org)
-  - Navigation bereinigt ("Projektpartner" Menüpunkt entfernt)
-  - Demo-Login vereinfacht für Testzwecke
-- ✅ **Phase 1 - Session 6**: Frontend-Polish und Content-Refinement (August 11, 2025)
-  - Account-Templates erstellt und integriert
-  - UI/UX-Konsistenz über alle Seiten sichergestellt
-  - Content-Anpassungen basierend auf finalen Anforderungen
-- ✅ **Project Restructuring** (August 12, 2025)
-  - Claude-Entwurf Demo promoted to main application codebase
-  - Historical files moved to /archive for documentation purposes
-  - Main Flask application now ready for further development
-- 🚧 **Phase 1 - Session 5**: Backend-Architektur (noch offen)
-  - Technische Architektur für Datenbank und APIs planen
-
-## Technology Stack
-
-- **Backend**: Python 3.8+ with Flask web framework
-- **Database**: PostgreSQL with SQLAlchemy ORM and pgvector extension for semantic search
-- **Frontend**: HTML5, CSS3, JavaScript with Jinja2 templating
-- **Payments**: Stripe integration
-- **Email**: Flask-Mail for automated certificate delivery
-- **PDF Generation**: ReportLab or WeasyPrint for certificates
-- **Authentication**: Flask-Login
-- **Testing**: pytest
+### Current Status (August 2025)
+- **Functional Application**: Working verse sponsoring platform ready for production
+- **Simplified Architecture**: No user accounts - person-based donations only
+- **Complete UI/UX**: 21 responsive templates with NGÜ branding
+- **Payment Integration**: Stripe with SEPA Direct Debit preference
+- **Advanced Search**: Hybrid keyword + semantic search with AI positivity scoring
 
 ## Architecture Overview
 
-### Bible Text Management
-The application uses a single-translation approach:
-- **Schlachter 1951**: Public domain German translation used for both display AND vectorization
-- Based on POC results showing 72.7% accuracy with Schlachter vs. 18.2% with modern translations
-- Simplifies architecture and reduces complexity
+### **Simplified Design Philosophy**
+The app has been significantly streamlined, removing complex features like user accounts, bible translation progress tracking, and complex session management. The focus is on core functionality: **verse selection → donation data → payment → certificate delivery**.
 
-### Semantic Search Architecture
-The app implements advanced verse search using:
-- **Vector Embeddings**: Each verse is converted to a high-dimensional vector representation
-- **Cosine Similarity**: Mathematical method to find semantically similar verses
-- **pgvector Extension**: PostgreSQL extension for efficient vector operations and similarity searches
-- **Hybrid Search**: Dynamic weighting between keyword and vector search based on query length
-  - 1-2 words: 80% keyword, 20% vector
-  - 3-5 words: 50% keyword, 50% vector
-  - 6+ words: 20% keyword, 80% vector
-- **Use Cases**:
-  - Finding alternative verses when desired verse is already sponsored
-  - Thematic search based on keywords or phrases
-  - Discovering related verses across different books
+### **Core Data Model**
+- **Person**: Central donor management (replaces User model)
+- **Verse**: ~11,000 Old Testament verses with sponsorship status
+- **Donation**: Simplified donations with JSONB details
+- **VerseReservation**: Temporary verse reservations during checkout
+- **PaymentTransaction**: Stripe payment tracking
 
-### Positivity Ranking System (NEW)
-Based on extensive testing, a critical insight emerged: Users search for positive, encouraging verses, but both keyword and semantic searches often return negative or difficult verses as top results.
+### **No User Accounts**
+The app operates without traditional user registration/login:
+- Donors provide email and personal data per donation
+- `Person` records created/updated automatically based on email
+- No passwords, sessions, or user dashboards
+- Guest checkout is the primary flow
 
-**Solution**: Curated Top-1000 positive verses
-- Pre-ranked list of 1000 verses by positivity factor using LLM
-- Default: Show top 3 unsponsored positive verses
-- Optional: User can search or enter specific reference
-- Fallback: Return to top 3 if search unsuccessful
+## Technology Stack
 
-**Technical Implementation**:
-- LLM-based positivity scoring for all 11,000 verses
-- Stored positivity index in database
-- Combined with search scores for final ranking
+- **Backend**: Flask 3.0 with SQLAlchemy
+- **Database**: PostgreSQL with pgvector extension for semantic search
+- **Payments**: Stripe 12.4 (SEPA Direct Debit preference)
+- **Search**: Hybrid keyword + vector similarity search
+- **Security**: Flask-WTF CSRF, Flask-Limiter rate limiting
+- **PDF**: WeasyPrint + ReportLab for certificate generation
+- **Frontend**: Bootstrap 5.3, vanilla JavaScript
 
-### Core Data Model
-The application revolves around three main entities:
-- **BibelVerse**: ~11,000 Old Testament verses with sponsorship status
-- **User**: Optional user accounts for sponsors (guest donations allowed)
-- **Purchase**: Donation transactions linked to verses via Stripe
+## Key Features
 
-### Key Features
-- Uniform €100 pricing model (no premium tiers based on user feedback)
-- Advanced verse search (full-text, thematic, book browsing)
-- Intelligent alternatives when desired verses are already sponsored
-- **Automated dual PDF generation: personalized certificate + official donation receipt**
-- Automated certificate generation and email delivery
-- Guest checkout without registration requirement
-- Animated verse sponsoring visualization
+### **Verse Selection**
+- **Featured Verses**: AI-curated positive verses on homepage (adaptive algorithm)
+- **Keyword Search**: Full-text PostgreSQL search with German language support
+- **Reference Search**: Direct biblical reference lookup (e.g., "Jesaja 43,1")
+- **Semantic Search**: Vector similarity using OpenAI embeddings
+- **Hybrid Search**: Dynamic weighting based on query complexity
 
-### Required Data for Donation Receipt
-The app collects the following information for automatic donation receipt generation:
-- Salutation (Herr, Frau, Eheleute, Firma)
-- First name and last name
-- Street and house number
-- Postal code and city
-- Email address
-- Donation amount (€100)
-- Donation date
-- Donation project: NGÜ
-- Data processing consent
+### **Smart Donation Flow**
+- **Shopping Cart**: Multiple verses can be added before checkout
+- **Reservation System**: Temporary verse reservations prevent conflicts
+- **Unified Checkout**: Single form for all donation types
+- **Person Management**: Automatic person creation/updates based on email
 
-## Development Commands
-
-The Flask application is now set up and functional. Here are the current development commands:
-
-```bash
-# Virtual environment setup
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the development server
-python app.py
-# or
-flask run
-
-# Database operations (when Flask-Migrate is set up)
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
-
-# Testing (when tests are implemented)
-pytest
-pytest --cov=app tests/
-```
+### **Payment & Certificates**
+- **Stripe Integration**: SEPA-first payment with card fallback
+- **Automatic Certificates**: PDF generation on successful payment
+- **Email Delivery**: Automated certificate and receipt sending
+- **Multiple Donation Types**: Individual, group, and gift donations
 
 ## Project Structure
 
 ```
 ngue-bvs-app/
-├── app.py                  # Main Flask application
-├── requirements.txt        # Python dependencies
-├── .env.example           # Environment variables template
-├── content/               # Website content structure
-│   ├── seiten/           # Page content
-│   ├── formulare/        # Form templates
-│   ├── email-templates/  # Email templates
-│   ├── meta/             # Certificates, privacy policy
-│   ├── fehler-nachrichten/ # Error messages
-│   └── ui-texte/         # UI text and tooltips
-├── data/                  # Bible text data
-│   └── schlachter-1951/  # Schlachter 1951 Bible files (HTML)
-├── design/                # Design system and assets
-│   ├── design-system-preliminary.md  # Complete design system
-│   ├── Logo NGU *.png    # NGÜ logos in various sizes
-│   └── NGÜ Sponsoring[3720].pdf     # Official documentation
-├── static/                # CSS, JS, images
-│   ├── styles.css        # Main stylesheet
-│   ├── logo-navbar.png   # Navigation logo
-│   └── logo-footer.png   # Footer logo
-├── templates/             # Jinja2 HTML templates (17 templates)
-│   ├── layout.html       # Base template
-│   ├── index.html        # Homepage
-│   ├── vers-*.html       # Verse selection pages
-│   ├── checkout-*.html   # Payment flow
-│   ├── login.html        # User authentication
-│   └── ...              # Additional templates
-├── tests/                 # Test suite
-├── docs/                  # Project documentation
-│   ├── development-plan.md
-│   ├── phase-2-schweiz-vorbereitung.md
-│   └── user-journey*.md  # User flow documentation
-├── dev-diary/             # Development diary and sessions
-├── archive/               # Historical files and documentation
-├── prompts/               # AI prompt templates
-├── flask_session/         # Session storage
-└── migrations/            # Database migrations (to be created)
+├── app.py                    # Main Flask application (1750+ lines)
+├── models.py                 # Database models (Person, Verse, Donation, etc.)
+├── stripe_service.py         # Stripe payment integration
+├── requirements.txt          # Python dependencies
+├── templates/                # 21 HTML templates
+│   ├── layout.html          # Base template with NGÜ branding
+│   ├── index.html           # Homepage with featured verses
+│   ├── vers-auswaehlen*.html # Verse selection pages
+│   ├── checkout-*.html      # Payment flow templates
+│   └── ...                  # Additional templates
+├── static/                   # CSS, JavaScript, images
+│   ├── styles.css           # Main stylesheet
+│   ├── js/                  # JavaScript modules
+│   └── logo-*.png           # NGÜ logos
+├── data/
+│   └── verses/
+│       └── verses.json      # ~11,000 verses with positivity scores
+├── docs/                    # Development documentation
+├── tests/                   # Comprehensive test suite
+├── demo/                    # Demo version (separate implementation)
+└── archive/                 # Historical files (ignore for development)
 ```
 
-## Key Development Phases
+## Development Guidelines
 
-The project follows a 7-week development plan documented in `docs/development-plan.md`:
+### **Working with the Codebase**
+- **Ignore `/archive`**: Contains outdated files from previous iterations
+- **Focus on root level**: Main application files are in project root
+- **Demo vs Production**: `/demo` is separate; main app is in root directory
 
-1. **Week 0-1**: Concept and design (user feedback incorporated - single pricing model)
-2. **Week 2**: Backend structure and user authentication
-3. **Week 3**: Frontend development and verse search implementation
-   - Hybrid search with dynamic weighting
-   - Positivity ranking integration
-4. **Week 4**: Stripe payment integration
-5. **Week 5**: Email automation and certificate generation
-6. **Week 6**: Testing and optimization
-7. **Week 7**: Deployment and launch
+### **Database Operations**
+- **Models**: Use SQLAlchemy models in `models.py`
+- **Person Management**: `Person.find_or_create()` for automatic person handling
+- **Verse Search**: Use `Verse.search_hybrid()` for best search results
+- **Reservations**: `VerseReservation.create_or_update()` prevents conflicts
 
-### Recent Testing Insights (August 2, 2025)
-- Extensive testing with 100, 1,000, and 11,000 verse datasets
-- Hybrid search implemented combining keyword and vector search
-- Critical discovery: Need for positivity ranking to match user expectations
-- Decision: Implement LLM-based positivity scoring for all verses
+### **Payment Flow**
+- **Cart Management**: Session-based shopping cart with validation
+- **Stripe Service**: Use `stripe_service.py` for all payment operations
+- **Webhook Handling**: Automated donation completion via Stripe webhooks
 
-## Development Context
+### **Key Route Patterns**
+- `/vers-auswaehlen*` - Verse selection and search
+- `/checkout/*` - Payment flow (spendendaten → zahlung → erfolg)
+- `/spendenkorb` - Shopping cart management
+- `/api/*` - AJAX endpoints for search and cart operations
 
-### Important Design Decisions
-- **Single pricing model**: All verses cost €100 (no premium tiers)
-- **Guest-friendly**: Registration optional, guest donations supported
-- **Search-centric**: Advanced search capabilities for 11,000+ verses
-- **Automation focus**: Minimal manual intervention after donation
+## Current Features Status
 
-### Technical Considerations
-- **Scalability**: SQLAlchemy chosen for easy database migration from SQLite to PostgreSQL
-- **Security**: HTTPS mandatory, no credit card storage (handled by Stripe)
-- **GDPR Compliance**: Careful handling of donor personal data
-- **Performance**: Database optimization needed for 11,000 verse records
+### **✅ Complete & Working**
+- Verse selection with multiple search methods
+- Shopping cart with reservation system
+- Simplified checkout flow (no accounts required)
+- Stripe payment integration with SEPA preference
+- PDF certificate generation (dummy templates ready)
+- Email automation framework
+- Comprehensive error handling and validation
+
+### **🔄 In Development**
+- Real PDF certificate generation (templates exist)
+- Email service integration (Flask-Mail configured)
+- Admin cleanup endpoints
+- Performance optimizations
+
+### **⏳ Planned**
+- Production deployment configuration
+- Admin dashboard for monitoring
+- Switzerland expansion preparation
+- Advanced analytics and reporting
+
+## Development Commands
+
+```bash
+# Setup
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Database setup
+python setup_db_v2.py  # Initialize database with verses
+
+# Run application
+python app.py  # Development server on port 5000
+
+# Testing
+pytest  # Run test suite
+pytest --cov  # With coverage
+```
 
 ## Environment Configuration
 
-A `.env.example` file is provided as a template. Copy it to `.env` and configure:
-```
-FLASK_APP=app.py
-FLASK_ENV=development
+Required environment variables:
+```bash
 SECRET_KEY=your-secret-key
-DATABASE_URL=postgresql://user:password@localhost/ngue_bvs_db
-STRIPE_PUBLIC_KEY=your-stripe-public-key
-STRIPE_SECRET_KEY=your-stripe-secret-key
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-email-password
+SQLALCHEMY_DATABASE_URI=postgresql://user:pass@localhost/ngue_db
+STRIPE_PUBLIC_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
-
-## Development Workflow
-
-The project uses a structured development diary system in `dev-diary/` with:
-- Session templates for consistent documentation
-- Weekly milestone tracking
-- Detailed progress logging per session
-
-When developing new features:
-1. Follow the planned session structure in development-plan.md
-2. Document progress in the appropriate week file
-3. Test incrementally rather than waiting for full completion
-4. Commit frequently with descriptive messages
 
 ## Integration Notes
 
-This application is designed to integrate with the existing NGÜ WordPress website, with options for:
-- iFrame integration
-- Subdomain deployment
-- WordPress plugin conversion (future consideration)
+### **Stripe Webhooks**
+- **Endpoint**: `/stripe/webhook`
+- **Events**: `payment_intent.succeeded`, `payment_intent.payment_failed`
+- **Function**: Automatic donation completion and verse marking
+
+### **Search Implementation**
+- **Keyword**: PostgreSQL full-text search with German language support
+- **Semantic**: pgvector cosine similarity using OpenAI embeddings
+- **Hybrid**: Dynamic weighting (1-2 words: 80% keyword, 6+ words: 80% semantic)
+- **Positivity**: AI-scored verses (0-100) prioritized in results
+
+### **Session Management**
+- **Flask-Session**: Database-backed sessions (not file-based)
+- **Shopping Cart**: Session-based with corruption handling
+- **Reservations**: Session-tied verse reservations with expiration
 
 ## CS50 Context
 
-This serves as the final project for Harvard's CS50 course, balancing educational objectives with real-world application for the Peter-Schöffer-Stiftung's Bible translation funding initiative.
+This Flask application serves as a CS50 final project, demonstrating:
+- **Web Development**: Flask, SQLAlchemy, responsive design
+- **Database Design**: PostgreSQL with advanced features (pgvector)
+- **Payment Integration**: Stripe API with webhook handling
+- **AI/ML**: Semantic search using vector embeddings
+- **Real-world Application**: Solving actual funding needs for Bible translation
 
-## Future Extensions (Phase 2)
+The app balances academic learning objectives with practical functionality for the Peter-Schöffer-Stiftung's NGÜ Bible translation funding initiative.
 
-### Switzerland Integration Planned
-The project is designed with future expansion in mind:
-- **Phase 1**: Germany only (Peter-Schöffer-Stiftung)
-- **Phase 2**: Switzerland integration (Genfer Bibelgesellschaft)
+## Security Considerations
 
-For detailed planning and architectural preparations, see `docs/phase-2-schweiz-vorbereitung.md`.
+- **CSRF Protection**: Flask-WTF on all forms
+- **Rate Limiting**: Flask-Limiter on API endpoints and payment routes
+- **Input Validation**: Comprehensive form validation and sanitization
+- **Session Security**: HTTPOnly, Secure (in production), SameSite cookies
+- **Payment Security**: No credit card data stored (handled by Stripe)
+- **Data Privacy**: GDPR-compliant data collection with explicit consent
 
-### Development Guidelines for Extensibility
-When developing features, follow these principles to ensure smooth Phase 2 integration:
-- **Use template variables** instead of hardcoding organization names, currencies, etc.
-- **Structure the database** with multi-organization support in mind
-- **Keep templates modular** for easy localization
-- **Use configuration files** for organization-specific settings
+## Performance Features
 
-Example:
-```python
-# Good: Using variables
-org_name = config.get('ORGANIZATION_NAME')
-amount = f"{config.get('AMOUNT')} {config.get('CURRENCY_SYMBOL')}"
-
-# Bad: Hardcoding
-org_name = "Peter-Schöffer-Stiftung"
-amount = "100€"
-```
+- **Database Indexes**: Optimized for verse search operations
+- **Caching Strategy**: Session-based verse selection caching
+- **Efficient Search**: Combined tsvector and vector similarity search
+- **Background Tasks**: Webhook-based async donation processing

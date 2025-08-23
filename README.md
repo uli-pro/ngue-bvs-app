@@ -1,259 +1,217 @@
 # NGÜ Bibelvers-Sponsoring App
 
-Flask-basierte Web-Anwendung für das Sponsoring einzelner Bibelverse zur Finanzierung der NGÜ (Neue Genfer Übersetzung) des Alten Testaments.
+Vereinfachte Flask-Web-Anwendung für das Sponsoring einzelner Bibelverse zur Finanzierung der NGÜ (Neue Genfer Übersetzung) des Alten Testaments.
 
-## Projektstruktur
+## 📋 Überblick
+
+**Vereinfachtes Spendenmodell**: Einzelne Altes Testament Verse für je €100 sponsern  
+**Keine Benutzerkonten**: Direkter Spendenvorgang ohne Registrierung  
+**Stripe-Integration**: SEPA-Lastschrift bevorzugt, Kreditkarten als Fallback  
+**Automatisiert**: PDF-Zertifikate und E-Mail-Versand nach Spende  
+
+## 🚀 Aktueller Status (August 2025)
+
+- ✅ **Funktionsfähige Anwendung** - Produktionsbereit
+- ✅ **Vereinfachte Architektur** - Person-basierte Spenden ohne Benutzerkonten
+- ✅ **Vollständige UI** - 21 responsive Templates mit NGÜ-Branding
+- ✅ **Stripe-Integration** - SEPA-Lastschrift und Kreditkarten
+- ✅ **Intelligente Suche** - Hybrid-Suche mit KI-Positivitätsbewertung
+
+## 🏗️ Vereinfachte Architektur
+
+### **Kerndatenmodell**
+- **Person**: Zentrale Spenderverwaltung (ersetzt User-Model)
+- **Verse**: ~11.000 Altes Testament Verse mit Sponsoring-Status
+- **Donation**: Vereinfachte Spenden mit JSONB-Details
+- **VerseReservation**: Temporäre Versreservierungen während Checkout
+
+### **Kein Benutzerkonto-System**
+- Spender geben E-Mail und persönliche Daten pro Spende ein
+- `Person`-Records werden automatisch basierend auf E-Mail erstellt/aktualisiert
+- Keine Passwörter, Sessions oder Benutzer-Dashboards
+- Gast-Checkout ist der primäre Ablauf
+
+## 🛠️ Technologie-Stack
+
+- **Backend**: Flask 3.0 mit SQLAlchemy
+- **Database**: PostgreSQL mit pgvector für semantische Suche
+- **Payments**: Stripe 12.4 (SEPA-Lastschrift bevorzugt)
+- **Suche**: Hybrid Keyword + Vektor-Ähnlichkeitssuche
+- **Sicherheit**: Flask-WTF CSRF, Flask-Limiter Rate-Limiting
+- **PDF**: WeasyPrint + ReportLab für Zertifikatsgenerierung
+- **Frontend**: Bootstrap 5.3, Vanilla JavaScript
+
+## 📁 Projektstruktur
 
 ```
 ngue-bvs-app/
-├── demo/                    # 🎨 Demo-Version (läuft auf Homeserver)
-│   ├── app.py              # Demo Flask-App
-│   ├── templates/          # UI-Templates für Demo
-│   ├── static/             # CSS/JS/Images für Demo
-│   └── README.md           # Demo-Dokumentation
-│
-├── src/                     # 🚀 Echte App (in Entwicklung)
-│   ├── models.py           # SQLAlchemy Database-Models
-│   ├── requirements.txt    # Python Dependencies
-│   ├── templates/          # Production Templates
-│   ├── static/             # Production Assets
-│   └── README.md           # Development-Dokumentation
-│
-├── data/                    # 📚 Gemeinsame Daten
-│   ├── schlachter-1951/    # HTML-Dateien der Schlachter Bibel
-│   ├── verses/             # verses.json mit ~11.000 Versen + Scores
-│   └── vectors/            # Für semantic search (zukünftig)
-│
-├── docs/                    # 📖 Projektdokumentation
-│   ├── development-todos/   # Detaillierte Implementation-TODOs
-│   ├── database-refactoring-payment-transactions.md
-│   └── ...
-│
-├── design/                  # 🎨 Design-System und Assets
-│   ├── design-system-preliminary.md
-│   ├── Logo NGU *.png
-│   └── NGÜ Sponsoring[3720].pdf
-│
-└── archive/                 # 📦 Historische Dateien
+├── app.py                    # Haupt-Flask-Anwendung (1750+ Zeilen)
+├── models.py                 # Datenbankmodelle (Person, Verse, Donation, etc.)
+├── stripe_service.py         # Stripe-Zahlungsintegration
+├── requirements.txt          # Python-Abhängigkeiten
+├── templates/                # 21 HTML-Templates
+│   ├── layout.html          # Basis-Template mit NGÜ-Branding
+│   ├── index.html           # Homepage mit empfohlenen Versen
+│   ├── vers-auswaehlen*.html # Versauswahlseiten
+│   ├── checkout-*.html      # Zahlungsfluss-Templates
+│   └── ...                  # Weitere Templates
+├── static/                   # CSS, JavaScript, Bilder
+│   ├── styles.css           # Haupt-Stylesheet
+│   ├── js/                  # JavaScript-Module
+│   └── logo-*.png           # NGÜ-Logos
+├── data/
+│   └── verses/
+│       └── verses.json      # ~11.000 Verse mit Positivitätsbewertungen
+├── docs/                    # Entwicklungsdokumentation
+├── tests/                   # Umfassende Testsuite
+├── demo/                    # Demo-Version (separate Implementierung)
+└── archive/                 # Historische Dateien (für Entwicklung ignorieren)
 ```
 
-## Zwei Versionen
+## 🔧 Schnellstart
 
-### 🎨 Demo (`/demo/`)
-- **Zweck**: User-Feedback sammeln, UI/UX testen
-- **Status**: ✅ Läuft produktiv auf Homeserver
-- **Features**: Vollständige UI, statische Daten, kein echtes Payment
-- **Start**: `cd demo && python app.py`
-
-### 🚀 Production (`/src/`)
-- **Zweck**: Echte App mit Database, Payments, PDF-Generation
-- **Status**: 🔄 In aktiver Entwicklung
-- **Features**: PostgreSQL, Stripe, ~11.000 Verse, echte Spenden
-- **Start**: `cd src && python app.py`
-
-## Aktueller Entwicklungsstand
-
-### ✅ Abgeschlossen
-- Database-Models (User, Donation, PaymentTransaction, Certificate, DonationCartItem)
-- ~11.000 Bibelverse mit Positivity-Scores (0-100)
-- UI/UX-Design vollständig (17 Templates, Bootstrap 5.3)
-- NGÜ-Branding und Logo-Integration
-- Projektstruktur und TODO-System
-
-### 🔄 In Bearbeitung
-- Stripe Payment-Integration
-- PDF-Zertifikat-Generator
-- E-Mail-Automation
-- Semantic Verse Search
-
-### ⏳ Geplant
-- Admin-Dashboard
-- Performance-Optimierung
-- Testing-Suite
-- Production-Deployment
-
-## Technische Details
-
-### Tech Stack
-- **Backend**: Python 3.8+ mit Flask
-- **Database**: PostgreSQL mit SQLAlchemy ORM und pgvector
-- **Payments**: Stripe (€100 pro Vers)
-- **PDF**: WeasyPrint für Zertifikat-Generierung
-- **Email**: Flask-Mail für automatischen Versand
-- **Frontend**: Bootstrap 5.3, responsive design
-
-### Business Model
-- **Sponsoring**: €100 pro Altes Testament Vers
-- **Zielgruppe**: Einzelpersonen, Gruppen, Geschenkspenden
-- **Zertifikate**: Personalisierte PDF-Zertifikate + Spendenbescheinigungen
-- **Automatisierung**: Minimaler manueller Aufwand nach Spende
-
-## Entwicklung
-
-### Demo beibehalten
-```bash
-cd demo/
-python app.py  # Demo läuft weiter für User-Feedback
-```
-
-### Echte App entwickeln
-```bash
-cd src/
-pip install -r requirements.txt
-python -c "from models import init_db; init_db(app)"
-python -c "from models import import_all_verses; import_all_verses()"
-python app.py  # Neue App-Entwicklung
-```
-
-### TODOs verfolgen
-Alle Implementierungs-Pläne in `/docs/development-todos/`:
-- `pdf-generator-service-requirements.md`
-- `stripe-billing-integration.md`
-- `checkout-form-prefilling.md`
-- und weitere...
-
-## CS50 Context
-
-Dieses Projekt dient als Final Project für Harvard's CS50 Kurs und löst ein echtes Problem für die Peter-Schöffer-Stiftung zur Finanzierung der NGÜ-Bibelübersetzung.
-
----
-
-**Demo**: Läuft produktiv für User-Feedback  
-**Production**: In aktiver Entwicklung  
-**Ziel**: Vollautomatisierte Vers-Sponsoring-Plattform
-
-## Features
-
-- **Individual Verse Sponsoring**: Sponsor any available Old Testament verse for €100
-- **Intelligent Verse Search**: Find verses by keyword, reference, or thematic similarity
-- **Automated Certificate Generation**: Personalized PDF certificates automatically generated and emailed
-- **User Accounts**: Optional registration with donation history tracking
-- **Guest Donations**: Contribute without creating an account
-- **Semantic Search**: AI-powered verse recommendation using vector embeddings
-- **Multi-language Support**: Prepared for future expansion to Switzerland
-
-## Technology Stack
-
-- **Backend**: Flask (Python 3.8+)
-- **Database**: PostgreSQL with pgvector extension
-- **Payments**: Stripe integration
-- **Frontend**: HTML5, CSS3, Bootstrap 5.3
-- **AI/ML**: Sentence-BERT embeddings for semantic search
-- **PDF Generation**: Automated certificate creation
-
-## Quick Start
-
-### Prerequisites
-
+### Voraussetzungen
 - Python 3.8+
-- PostgreSQL 14+ with pgvector extension
-- Stripe account (for payments)
+- PostgreSQL mit pgvector-Erweiterung
+- Stripe-Konto (für Zahlungen)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/ngue-bvs-app.git
-   cd ngue-bvs-app
-   ```
-
-2. **Set up virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your database and Stripe credentials
-   ```
-
-5. **Run the application**
-   ```bash
-   python app.py
-   ```
-
-Visit `http://localhost:5000` to see the application.
-
-## Project Structure
-
-```
-ngue-bvs-app/
-├── app.py                  # Main Flask application
-├── templates/              # HTML templates (17 pages)
-├── static/                 # CSS, JavaScript, images
-├── content/                # Page content and forms
-├── data/                   # Bible text data (Schlachter 1951)
-├── design/                 # Design system and assets
-├── docs/                   # Project documentation
-├── tests/                  # Test suite
-└── requirements.txt        # Python dependencies
-```
-
-## Key Components
-
-### Semantic Verse Search
-- **Vector Embeddings**: Each verse converted to 768-dimensional vectors
-- **Hybrid Search**: Combines keyword and semantic similarity
-- **Positivity Ranking**: AI-curated positive verses prioritized in results
-
-### Database Schema
-- **BibelVerse**: ~11,000 Old Testament verses with sponsorship status
-- **User**: Optional user accounts for sponsors
-- **Purchase**: Donation transactions with Stripe integration
-- **VerseVector**: AI-generated embeddings for semantic search
-
-### Payment Flow
-1. User selects verse (search, browse, or direct reference)
-2. Checkout with personal details (required for donation receipt)
-3. Stripe payment processing
-4. Automated certificate and receipt generation
-5. Email delivery of documents
-
-## Development
-
-### Running Tests
 ```bash
+# 1. Repository klonen
+git clone [repository-url]
+cd ngue-bvs-app
+
+# 2. Virtuelle Umgebung erstellen
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 3. Abhängigkeiten installieren
+pip install -r requirements.txt
+
+# 4. Umgebungsvariablen konfigurieren
+cp .env.example .env
+# .env mit Ihren Datenbank- und Stripe-Credentials bearbeiten
+
+# 5. Datenbank einrichten
+python setup_db_v2.py  # Initialisiert Datenbank mit Versen
+
+# 6. Anwendung starten
+python app.py
+```
+
+Besuchen Sie `http://localhost:5000` um die Anwendung zu sehen.
+
+## 🌟 Hauptfunktionen
+
+### **Versauswahl**
+- **Empfohlene Verse**: KI-kuratierte positive Verse auf der Homepage
+- **Stichwort-Suche**: Volltext-PostgreSQL-Suche mit deutscher Sprachunterstützung
+- **Referenz-Suche**: Direkte biblische Referenz-Suche (z.B. "Jesaja 43,1")
+- **Semantische Suche**: Vektor-Ähnlichkeit mit OpenAI-Embeddings
+- **Hybrid-Suche**: Dynamische Gewichtung basierend auf Anfragekomplexität
+
+### **Intelligenter Spendenfluss**
+- **Einkaufswagen**: Mehrere Verse können vor Checkout hinzugefügt werden
+- **Reservierungssystem**: Temporäre Versreservierungen verhindern Konflikte
+- **Einheitlicher Checkout**: Ein Formular für alle Spendentypen
+- **Person-Management**: Automatische Person-Erstellung/-Updates basierend auf E-Mail
+
+### **Zahlung & Zertifikate**
+- **Stripe-Integration**: SEPA-first-Payment mit Karten-Fallback
+- **Automatische Zertifikate**: PDF-Generierung bei erfolgreicher Zahlung
+- **E-Mail-Versand**: Automatisierter Zertifikat- und Bescheinigungsversand
+- **Mehrere Spendentypen**: Einzel-, Gruppen- und Geschenkspenden
+
+## 📊 Feature-Status
+
+### **✅ Fertig & Funktionsfähig**
+- Versauswahl mit mehreren Suchmethoden
+- Einkaufswagen mit Reservierungssystem
+- Vereinfachter Checkout-Ablauf (keine Konten erforderlich)
+- Stripe-Zahlungsintegration mit SEPA-Präferenz
+- PDF-Zertifikatsgenerierung (Dummy-Templates bereit)
+- E-Mail-Automatisierungs-Framework
+- Umfassende Fehlerbehandlung und Validierung
+
+### **🔄 In Entwicklung**
+- Echte PDF-Zertifikatsgenerierung (Templates existieren)
+- E-Mail-Service-Integration (Flask-Mail konfiguriert)
+- Admin-Cleanup-Endpunkte
+- Performance-Optimierungen
+
+### **⏳ Geplant**
+- Produktions-Deployment-Konfiguration
+- Admin-Dashboard für Monitoring
+- Schweiz-Erweiterung Vorbereitung
+- Erweiterte Analytik und Berichterstattung
+
+## 🔒 Sicherheitsfeatures
+
+- **CSRF-Schutz**: Flask-WTF auf allen Formularen
+- **Rate-Limiting**: Flask-Limiter auf API-Endpunkten und Zahlungsrouten
+- **Eingabevalidierung**: Umfassende Formularvalidierung und Bereinigung
+- **Session-Sicherheit**: HTTPOnly, Secure (in Produktion), SameSite-Cookies
+- **Zahlungssicherheit**: Keine Kreditkartendaten gespeichert (von Stripe verwaltet)
+- **Datenschutz**: DSGVO-konforme Datenerhebung mit expliziter Einwilligung
+
+## 🌐 CS50 Kontext
+
+Diese Flask-Anwendung dient als CS50-Abschlussprojekt und demonstriert:
+- **Web-Entwicklung**: Flask, SQLAlchemy, responsive Design
+- **Datenbankdesign**: PostgreSQL mit erweiterten Features (pgvector)
+- **Zahlungsintegration**: Stripe API mit Webhook-Behandlung
+- **KI/ML**: Semantische Suche mit Vektor-Embeddings
+- **Echte Anwendung**: Lösung tatsächlicher Finanzierungsbedürfnisse für Bibelübersetzung
+
+## 📝 Entwicklungsnotizen
+
+### **Mit der Codebasis arbeiten**
+- **`/archive` ignorieren**: Enthält veraltete Dateien aus vorherigen Iterationen
+- **Fokus auf Root-Ebene**: Haupt-Anwendungsdateien sind im Projekt-Root
+- **Demo vs. Produktion**: `/demo` ist separat; Haupt-App ist im Root-Verzeichnis
+
+### **Umgebungskonfiguration**
+```bash
+SECRET_KEY=your-secret-key
+SQLALCHEMY_DATABASE_URI=postgresql://user:pass@localhost/ngue_db
+STRIPE_PUBLIC_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+## 🧪 Testing
+
+```bash
+# Tests ausführen
 pytest
-pytest --cov=app tests/  # With coverage
+
+# Mit Coverage
+pytest --cov
+
+# Spezifische Test-Kategorien
+pytest tests/test_verse_selection.py
+pytest tests/test_checkout_flow.py
 ```
 
-### Database Setup
-```bash
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
-```
+## 🤝 Mitwirkung
 
-## Contributing
+Dies ist ein CS50-Abschlussprojekt, das derzeit in aktiver Entwicklung ist. Während ich individuell daran arbeite für akademische Zwecke, sind Feedback und Vorschläge willkommen!
 
-This is a CS50 final project currently in active development. While I'm working on it individually for academic purposes, feedback and suggestions are welcome!
+**Bug gefunden oder Vorschlag?** Bitte [öffnen Sie ein Issue](../../issues) auf GitHub.
 
-**Found a bug or have a suggestion?** Please [open an issue](../../issues) on GitHub.
+## 🎯 Roadmap
 
-## Roadmap
+- **Phase 1**: Deutschland-Launch mit Peter-Schöffer-Stiftung (Aktuell)
+- **Phase 2**: Schweiz-Erweiterung mit Genfer Bibelgesellschaft (Geplant)
 
-- **Phase 1**: Germany launch with Peter-Schöffer-Stiftung (Current)
-- **Phase 2**: Switzerland expansion with Genfer Bibelgesellschaft (Planned)
+## 📧 Kontakt
 
-## License
+Ulrich Probst  
+Projekt-Link: [GitHub Repository URL]
 
-[To be determined]
+---
 
-## Acknowledgments
-
-- **Harvard CS50** for excellent computer science education
-- **Peter-Schöffer-Stiftung** for partnership and support
-- **NGÜ Translation Team** for trusting this project
-
-## Contact
-
-Ulrich Probst - [your-email@example.com]
-
-Project Link: [https://github.com/yourusername/ngue-bvs-app](https://github.com/yourusername/ngue-bvs-app)
+**Demo**: Läuft separat für User-Feedback  
+**Produktion**: Funktionsfähige Anwendung im Root-Verzeichnis  
+**Ziel**: Vollautomatisierte Vers-Sponsoring-Plattform für die NGÜ-Bibelübersetzung
