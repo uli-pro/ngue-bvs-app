@@ -721,7 +721,7 @@ def vers_spendenart(verse_id):
             flash("Bitte wählen Sie eine gültige Spendenart.", "error")
             return redirect(url_for("vers_auswaehlen"))
     
-    return render_template("vers-spendenart-enhanced.html", verse=verse)
+    return render_template("vers-spendenart.html", verse=verse)
 
 @app.route("/vers/<int:verse_id>/spendenart", methods=["GET", "POST"])
 def vers_spendenart_by_id(verse_id):
@@ -769,7 +769,7 @@ def vers_spendenart_by_id(verse_id):
             flash("Bitte wählen Sie eine gültige Spendenart.", "error")
             return redirect(url_for("vers_auswaehlen"))
     
-    return render_template("vers-spendenart-enhanced.html", verse=verse)
+    return render_template("vers-spendenart.html", verse=verse)
 
 # ==========================================
 # CHECKOUT ROUTES
@@ -889,23 +889,26 @@ def checkout_daten(donation_type):
         # Gift-specific fields
         if donation_type == 'geschenk':
             gift_recipient_name = request.form.get('gift_recipient_name', '').strip()[:200]  # Limit length
-            gift_direct_send = request.form.get('gift_direct_send') == 'on'
+            gift_recipient_email = request.form.get('gift_recipient_email', '').strip()
             # HTML-strip and limit gift message for security
             import html
             gift_message = html.escape(request.form.get('gift_message', '').strip())[:1000]
             
             if not gift_recipient_name:
                 errors.append("Bitte geben Sie den Namen des Empfängers ein.")
-                
+            
+            # Automatic direct sending if valid email is provided
+            gift_direct_send = bool(gift_recipient_email and '@' in gift_recipient_email)
+            
             form_data['gift_recipient_name'] = gift_recipient_name
             form_data['gift_direct_send'] = gift_direct_send
             form_data['gift_message'] = gift_message
             
-            if gift_direct_send:
-                gift_recipient_email = request.form.get('gift_recipient_email', '').strip()
-                if not gift_recipient_email or '@' not in gift_recipient_email:
+            if gift_recipient_email:
+                if '@' not in gift_recipient_email:
                     errors.append("Bitte geben Sie eine gültige E-Mail-Adresse des Empfängers ein.")
-                form_data['gift_recipient_email'] = gift_recipient_email
+                else:
+                    form_data['gift_recipient_email'] = gift_recipient_email
         
         # If validation failed, show errors and return form
         if errors:
@@ -1031,7 +1034,7 @@ def spendenkorb():
     if expired_count > 0:
         flash(f"Achtung: {expired_count} Vers(e) in Ihrem Korb sind zwischenzeitlich nicht mehr verfügbar und müssen entfernt werden.", "danger")
     
-    return render_template("spendenkorb-enhanced.html", 
+    return render_template("spendenkorb.html", 
                          cart_items=cart_items, 
                          total_amount=total_amount,
                          cart_count=len(cart_items))
@@ -1478,6 +1481,28 @@ def api_payment_status(payment_intent_id):
 # ==========================================
 # NEW CHECKOUT FLOW API ROUTES
 # ==========================================
+
+@app.route("/api/cart/count", methods=["GET"])
+@limiter.limit("120 per minute")
+def api_cart_count():
+    """Get cart item count for badge display"""
+    try:
+        # Handle corrupted session data gracefully
+        handle_corrupted_session()
+        
+        cart_count = len(session.get('cart', []))
+        
+        return jsonify({
+            'success': True,
+            'count': cart_count
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting cart count: {e}")
+        return jsonify({
+            'success': False,
+            'count': 0
+        })
 
 @app.route("/api/cart/add", methods=["POST"])
 @csrf.exempt

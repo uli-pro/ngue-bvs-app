@@ -44,6 +44,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/vers-auswaehlen">Vers auswählen</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="/spendenkorb" id="cart-link">
+                            <i class="fas fa-hand-holding-heart"></i> Spendenkorb
+                            <span class="badge bg-primary rounded-pill position-absolute top-0 start-100 translate-middle d-none" id="cart-badge">0</span>
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Das Projekt
@@ -156,6 +162,32 @@
                 navbar.classList.remove('navbar-scrolled');
             }
         });
+        
+        // Cart badge update function
+        function updateCartBadge() {
+            fetch('/api/cart/count')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('cart-badge');
+                    const cartLink = document.getElementById('cart-link');
+                    
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.classList.remove('d-none');
+                        cartLink.classList.add('fw-semibold');
+                    } else {
+                        badge.classList.add('d-none');
+                        cartLink.classList.remove('fw-semibold');
+                    }
+                })
+                .catch(error => console.error('Error updating cart badge:', error));
+        }
+        
+        // Update cart badge on page load
+        document.addEventListener('DOMContentLoaded', updateCartBadge);
+        
+        // Global function to update cart badge from other scripts
+        window.updateCartBadge = updateCartBadge;
     </script>
 
     {% block scripts %}{% endblock %}
