@@ -5,7 +5,6 @@
 #### allgemein
 
 - Farben müssen vereinheitlicht werden (css) -> Color Picker Complementing / Contrasting (Canva) https://www.canva.com/colors/color-wheel/
-- Passwort-Hashing: argon2id
 - Eine Art Liveticker, wer zuletzt wie viele Verse gesponsert hat.
 - Bilder von NGUE einpflegen 
 - Wie groß ist der Spendenbedarf -> abklären

@@ -337,15 +337,20 @@ def ueber_ngue():
     """About NGÜ page"""
     return render_template("ueber-ngue.html")
 
+@app.route("/ueber-partner")
+def ueber_partner():
+    """About our partners page - combined view of Stiftung and Verlage"""
+    return render_template("ueber-partner.html")
+
 @app.route("/ueber-stiftung")
 def ueber_stiftung():
-    """About Peter-Schöffer-Stiftung page"""
-    return render_template("ueber-stiftung.html")
+    """Redirect old Stiftung page to new partner page"""
+    return redirect(url_for('ueber_partner'), code=301)
 
 @app.route("/ueber-verlage")
 def ueber_verlage():
-    """About the publishing houses page"""
-    return render_template("ueber-verlage.html")
+    """Redirect old Verlage page to new partner page"""
+    return redirect(url_for('ueber_partner'), code=301)
 
 @app.route("/faq")
 def faq():
