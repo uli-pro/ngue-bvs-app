@@ -979,10 +979,9 @@ def spendenkorb():
     # Handle corrupted session data gracefully
     handle_corrupted_session()
     
-    # Check if cart exists and has items
-    if 'cart' not in session or not session['cart']:
-        flash("Ihr Spendenkorb ist leer. Bitte wählen Sie zuerst einen Vers aus.", "warning")
-        return redirect(url_for("vers_auswaehlen"))
+    # Initialize cart if it doesn't exist
+    if 'cart' not in session:
+        session['cart'] = []
     
     # Load verse data for all items in cart
     cart_items = []
@@ -1053,22 +1052,23 @@ def spendenkorb():
 
 @app.route("/spendenkorb/entfernen", methods=["POST"])
 def cart_remove_item():
-    """Remove item from cart via AJAX"""
+    """Remove item from cart via form submission"""
     try:
         # Handle corrupted session data gracefully
         handle_corrupted_session()
         
-        data = request.get_json()
-        item_index = data.get('item_index') if data else None
+        item_index = request.form.get('item_index')
         
         if 'cart' not in session or item_index is None:
-            return jsonify({'success': False, 'message': 'Invalid request'})
+            flash('Ungültige Anfrage.', 'error')
+            return redirect(url_for('spendenkorb'))
         
         # Security: Validate item_index is integer and in valid range
         try:
             item_index = int(item_index)
         except (ValueError, TypeError):
-            return jsonify({'success': False, 'message': 'Invalid item index'})
+            flash('Ungültiger Versindex.', 'error')
+            return redirect(url_for('spendenkorb'))
         
         cart = session['cart']
         if 0 <= item_index < len(cart):
@@ -1090,12 +1090,16 @@ def cart_remove_item():
             session['cart'] = cart
             session.modified = True
             
-            return jsonify({'success': True, 'message': 'Item removed successfully'})
+            # Set flash message for success feedback
+            flash('Der Vers wurde aus Ihrem Spendenkorb entfernt.', 'success')
         else:
-            return jsonify({'success': False, 'message': 'Item not found'})
+            flash('Vers nicht gefunden.', 'error')
+            
+        return redirect(url_for('spendenkorb'))
             
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        flash('Ein Fehler ist aufgetreten.', 'error')
+        return redirect(url_for('spendenkorb'))
 
 
 @app.route("/admin/cleanup-reservations", methods=["POST"])
