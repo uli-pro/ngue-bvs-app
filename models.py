@@ -6,23 +6,11 @@ Using new optimized structure with persons/donations
 from datetime import datetime, timedelta
 from decimal import Decimal
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
 from sqlalchemy import Index, UniqueConstraint, text, func
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from pgvector.sqlalchemy import Vector
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, HashingError
 
 db = SQLAlchemy()
-
-# Initialize Argon2 password hasher
-ph = PasswordHasher(
-    time_cost=3,
-    memory_cost=65536,
-    parallelism=1,
-    hash_len=32,
-    salt_len=16
-)
 
 class Person(db.Model):
     """Central person management (replaces User)"""
@@ -55,7 +43,6 @@ class Person(db.Model):
     
     # Relationships
     donations = db.relationship('Donation', backref='person', lazy='dynamic')
-    login = db.relationship('PersonLogin', uselist=False, backref='person')
     
     def __repr__(self):
         return f'<Person {self.email}>'
@@ -127,43 +114,6 @@ class Person(db.Model):
                 person.data_updated_at = datetime.utcnow()
         
         return person
-
-class PersonLogin(db.Model, UserMixin):
-    """Optional login credentials for persons"""
-    __tablename__ = 'person_logins'
-    
-    person_id = db.Column(db.Integer, db.ForeignKey('persons.id'), primary_key=True)
-    password_hash = db.Column(db.String(255), nullable=False)
-    is_verified = db.Column(db.Boolean, default=False)
-    last_login_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def get_id(self):
-        """Required by Flask-Login"""
-        return str(self.person_id)
-    
-    def set_password(self, password):
-        """Set password hash using Argon2id"""
-        try:
-            self.password_hash = ph.hash(password)
-        except HashingError as e:
-            raise ValueError(f"Password hashing failed: {e}")
-    
-    def check_password(self, password):
-        """Check password against Argon2id hash"""
-        try:
-            ph.verify(self.password_hash, password)
-            
-            # Check if password needs rehashing
-            if ph.check_needs_rehash(self.password_hash):
-                self.set_password(password)
-                db.session.commit()
-            
-            return True
-        except VerifyMismatchError:
-            return False
-        except Exception:
-            return False
 
 class Verse(db.Model):
     """Bible verses with sponsorship status and NGÜ support"""
@@ -522,19 +472,3 @@ class VerseReservation(db.Model):
         db.session.commit()
         return count
 
-class VerificationToken(db.Model):
-    """Email verification and password reset tokens"""
-    __tablename__ = 'verification_tokens'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, db.ForeignKey('persons.id'), nullable=False)
-    token = db.Column(db.String(255), unique=True, nullable=False)
-    token_type = db.Column(db.String(20), default='email_verification')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(hours=24))
-    used = db.Column(db.Boolean, default=False, nullable=False)
-    
-    @property
-    def is_expired(self):
-        """Check if token is expired"""
-        return datetime.utcnow() > self.expires_at

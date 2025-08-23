@@ -2,7 +2,6 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, login_required as flask_login_required, current_user
 from flask_wtf import FlaskForm, CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -10,8 +9,6 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import secrets
 from functools import wraps
-# Password hashing handled by models.py with Argon2
-import re
 
 # Load environment variables
 load_dotenv()
@@ -28,7 +25,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, PersonLogin, Verse, Donation, VerificationToken, VerseReservation
+from models import db, Person, Verse, Donation, VerseReservation
 db.init_app(app)
 
 # Configure session to use database (production-ready)
@@ -60,17 +57,6 @@ else:
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = 'Lax'
 
-# Login Manager
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.login_message = 'Bitte melden Sie sich an, um diese Seite zu sehen.'
-login_manager.login_message_category = 'warning'
-
-# TODO(human): Update user_loader for new PersonLogin model
-@login_manager.user_loader
-def load_user(person_id):
-    return PersonLogin.query.get(int(person_id))
 
 # Initialize Flask-Session
 sess = Session(app)
@@ -84,8 +70,6 @@ with app.app_context():
         # Table might already exist, that's fine
         print(f"Sessions table initialization: {e}")
 
-# Login attempts tracking (TODO: Move to database table later)
-login_attempts = {}
 
 # Custom filter for currency formatting
 @app.template_filter('currency')
@@ -99,17 +83,9 @@ def currency_filter(value):
 def inject_context():
     return {
         'current_year': datetime.now().year
-        # current_user is automatically available via Flask-Login
     }
 
 
-# ==========================================
-# HELPER FUNCTIONS FOR USER MANAGEMENT
-# ==========================================
-
-def generate_verification_token():
-    """Generate a secure verification token."""
-    return secrets.token_urlsafe(32)
 
 
 # ==========================================
@@ -186,92 +162,6 @@ def handle_corrupted_session():
         session.modified = True
         app.logger.error(f"Session corruption recovery failed: {e}")
 
-def validate_password(password):
-    """Validate password strength."""
-    if len(password) < 8:
-        return False, "Das Passwort muss mindestens 8 Zeichen lang sein."
-    if not re.search(r"[A-Z]", password):
-        return False, "Das Passwort muss mindestens einen Großbuchstaben enthalten."
-    if not re.search(r"[a-z]", password):
-        return False, "Das Passwort muss mindestens einen Kleinbuchstaben enthalten."
-    if not re.search(r"\d", password):
-        return False, "Das Passwort muss mindestens eine Zahl enthalten."
-    return True, ""
-
-def check_rate_limit(email):
-    """Check if user has exceeded login attempts."""
-    if email not in login_attempts:
-        login_attempts[email] = {"count": 0, "last_attempt": datetime.now()}
-        return True
-    
-    attempts = login_attempts[email]
-    time_diff = datetime.now() - attempts["last_attempt"]
-    
-    # Reset counter after 15 minutes
-    if time_diff > timedelta(minutes=15):
-        attempts["count"] = 0
-        attempts["last_attempt"] = datetime.now()
-        return True
-    
-    # Allow max 5 attempts
-    if attempts["count"] >= 5:
-        return False
-    
-    return True
-
-def create_user(email, password, first_name, last_name, newsletter=False):
-    """Create a real user account in database."""
-    verification_token = generate_verification_token()
-    
-    # Create new user with Argon2 password hashing
-    user = User(
-        email=email.lower(),
-        first_name=first_name,
-        last_name=last_name,
-        newsletter_opt_in=newsletter,
-        is_verified=False  # Needs email verification
-    )
-    
-    # Set password using Argon2 (from models.py)
-    user.set_password(password)
-    
-    # Save to database
-    db.session.add(user)
-    db.session.commit()
-    
-    # Create verification token in database
-    token_obj = VerificationToken(
-        user_id=user.id,
-        token=verification_token
-    )
-    db.session.add(token_obj)
-    db.session.commit()
-    
-    return user.id, verification_token
-
-def verify_user_email(token):
-    """Verify user email with token."""
-    token_obj = VerificationToken.query.filter_by(token=token, used=False).first()
-    
-    if not token_obj:
-        return False, None
-    
-    if token_obj.is_expired:
-        return False, None
-    
-    # Mark user as verified
-    user = token_obj.user
-    user.is_verified = True
-    
-    # Mark token as used
-    token_obj.used = True
-    
-    db.session.commit()
-    return True, user.id
-
-def find_user_by_email(email):
-    """Find user by email address from database."""
-    return User.query.filter_by(email=email.lower()).first()
 
 # ==========================================
 # INDEX PAGE ROUTES
@@ -1229,296 +1119,7 @@ def checkout_fehler():
     """Error page for failed payments"""
     return render_template("checkout-fehler.html")
 
-# ==========================================
-# USER ROUTES
-# ==========================================
 
-@app.route("/login", methods=["GET", "POST"])
-@limiter.limit("5 per 15 minutes")
-def login():
-    """Login page"""
-    if request.method == "POST":
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        remember = request.form.get("remember") == "on"
-        
-        # Validate input
-        if not email or not password:
-            flash("Bitte geben Sie E-Mail und Passwort ein.", "danger")
-            return render_template("login.html")
-        
-# TODO(human): Update login logic for new Person/PersonLogin structure
-        # Check if person and login exist
-        person = Person.query.filter_by(email=email.lower()).first()
-        
-        if not person or not person.login:
-            flash("Unbekannte E-Mail-Adresse oder falsches Passwort.", "danger")
-            return render_template("login.html")
-        
-        login_record = person.login
-        
-        # Check if user is verified
-        if not login_record.is_verified:
-            flash("Bitte bestätigen Sie erst Ihre E-Mail-Adresse.", "warning")
-            return render_template("login.html")
-        
-        # Verify password
-        if not login_record.check_password(password):
-            flash("Unbekannte E-Mail-Adresse oder falsches Passwort.", "danger")
-            return render_template("login.html")
-        
-        # Login user with Flask-Login
-        login_user(login_record, remember=remember)
-        
-        flash(f"Willkommen, {person.first_name}!", "success")
-        
-        # Redirect to next URL or dashboard
-        next_url = session.pop("next_url", None)
-        if next_url:
-            return redirect(next_url)
-        return redirect(url_for("dashboard"))
-    
-    return render_template("login.html")
-
-@app.route("/logout")
-def logout():
-    """Log user out"""
-    logout_user()
-    # Keep some session data that's not user-specific (like CSRF token)
-    # Only clear user-specific data
-    session.pop("next_url", None)
-    flash("Sie wurden erfolgreich abgemeldet.", "info")
-    return redirect(url_for("index"))
-
-@app.route("/register", methods=["GET", "POST"])
-@limiter.limit("3 per 10 minutes")
-def register():
-    """Registration page"""
-    if request.method == "POST":
-        # Get form data
-        first_name = request.form.get("vorname", "").strip()
-        last_name = request.form.get("nachname", "").strip()
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        password_confirm = request.form.get("password_confirm", "")
-        newsletter = request.form.get("newsletter") == "on"
-        datenschutz = request.form.get("datenschutz") == "on"
-        
-        # Validation
-        errors = []
-        
-        if not first_name or not last_name:
-            errors.append("Bitte geben Sie Ihren vollständigen Namen ein.")
-        
-        if not email or "@" not in email:
-            errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
-        
-        # Check if email already exists
-        if find_user_by_email(email):
-            errors.append("Diese E-Mail-Adresse ist bereits registriert.")
-        
-        # Validate password
-        is_valid, error_msg = validate_password(password)
-        if not is_valid:
-            errors.append(error_msg)
-        
-        if password != password_confirm:
-            errors.append("Die Passwörter stimmen nicht überein.")
-        
-        if not datenschutz:
-            errors.append("Bitte stimmen Sie der Datenschutzerklärung zu.")
-        
-        if errors:
-            for error in errors:
-                flash(error, "danger")
-            return render_template("register.html")
-        
-        # Create user account in database
-        user_id, verification_token = create_user(
-            email, password, first_name, last_name, newsletter
-        )
-        
-        # Store some data in session for the success page
-        session["registration_email"] = email
-        session["registration_token"] = verification_token
-        
-        # Redirect to success page
-        return redirect(url_for("registration_success"))
-    
-    return render_template("register.html")
-
-# ==========================================
-# NEW ACCOUNT ROUTES
-# ==========================================
-
-@app.route("/registration/success")
-def registration_success():
-    """Registration success page"""
-    email = session.get("registration_email")
-    token = session.get("registration_token")
-    
-    if not email:
-        return redirect(url_for("register"))
-    
-    # Clear session data
-    session.pop("registration_email", None)
-    session.pop("registration_token", None)
-    
-    return render_template("registration-success.html", email=email, token=token)
-
-@app.route("/verify/<token>")
-def verify_email(token):
-    """Verify email address with token"""
-    success, user_id = verify_user_email(token)
-    
-    if success:
-        flash("Ihre E-Mail-Adresse wurde erfolgreich bestätigt! Sie können sich nun anmelden.", "success")
-        return redirect(url_for("login"))
-    else:
-        flash("Der Bestätigungslink ist ungültig oder abgelaufen.", "danger")
-        return redirect(url_for("index"))
-
-@app.route("/password/reset", methods=["GET", "POST"])
-@limiter.limit("3 per 30 minutes")
-def password_reset_request():
-    """Request password reset"""
-    if request.method == "POST":
-        email = request.form.get("email", "").strip()
-        
-        if not email:
-            flash("Bitte geben Sie Ihre E-Mail-Adresse ein.", "danger")
-            return render_template("password-reset-request.html")
-        
-        user = find_user_by_email(email)
-        
-        if user:
-            # Generate reset token
-            reset_token = generate_verification_token()
-            
-            # Create reset token in database
-            token_obj = ResetToken(
-                user_id=user.id,
-                token=reset_token
-            )
-            db.session.add(token_obj)
-            db.session.commit()
-            
-            # In production, send email here
-            # For demo, show the token
-            flash(f"Demo: Passwort-Reset-Link: /password/reset/{reset_token}", "info")
-        
-        # Always show success message (security: don't reveal if email exists)
-        flash("Wenn die E-Mail-Adresse in unserem System existiert, haben wir Ihnen einen Link zum Zurücksetzen des Passworts gesendet.", "success")
-        return redirect(url_for("login"))
-    
-    return render_template("password-reset-request.html")
-
-@app.route("/password/reset/<token>", methods=["GET", "POST"])
-def password_reset(token):
-    """Reset password with token"""
-    # Check if token is valid
-    token_obj = ResetToken.query.filter_by(token=token, used=False).first()
-    
-    if not token_obj:
-        flash("Der Passwort-Reset-Link ist ungültig oder abgelaufen.", "danger")
-        return redirect(url_for("password_reset_request"))
-    
-    # Check if token is expired
-    if token_obj.is_expired:
-        flash("Der Passwort-Reset-Link ist abgelaufen.", "danger")
-        return redirect(url_for("password_reset_request"))
-    
-    if request.method == "POST":
-        password = request.form.get("password", "")
-        password_confirm = request.form.get("password_confirm", "")
-        
-        # Validate password
-        is_valid, error_msg = validate_password(password)
-        if not is_valid:
-            flash(error_msg, "danger")
-            return render_template("password-reset.html", token=token)
-        
-        if password != password_confirm:
-            flash("Die Passwörter stimmen nicht überein.", "danger")
-            return render_template("password-reset.html", token=token)
-        
-        # Update password
-        user = token_obj.user
-        user.set_password(password)
-        
-        # Mark token as used
-        token_obj.used = True
-        
-        db.session.commit()
-        flash("Ihr Passwort wurde erfolgreich zurückgesetzt. Sie können sich nun anmelden.", "success")
-        return redirect(url_for("login"))
-    
-    return render_template("password-reset.html", token=token)
-
-@app.route("/meine-verse")
-@flask_login_required
-def meine_verse():
-    """My verses page (requires login)"""
-    
-    # Demo verse data
-    verses = [
-        {
-            'id': 'jeremia-29-11',
-            'reference': 'Jeremia 29,11',
-            'text': 'Denn ich weiß die Gedanken, die ich über euch denke, spricht der HERR, Gedanken des Friedens und nicht des Unheils, euch eine Zukunft und Hoffnung zu geben.',
-            'type': 'einzelperson',
-            'date': '2025-08-08',
-            'book': 'jeremia'
-        },
-        {
-            'id': 'psalm-23-1',
-            'reference': 'Psalm 23,1',
-            'text': 'Der HERR ist mein Hirte; mir wird nichts mangeln.',
-            'type': 'geschenk',
-            'date': '2025-08-05',
-            'book': 'psalm',
-            'gift_recipient': 'Anna Mustermann'
-        },
-        {
-            'id': 'sprueche-3-5-6',
-            'reference': 'Sprüche 3,5-6',
-            'text': 'Vertraue auf den HERRN von ganzem Herzen und verlaß dich nicht auf deinen Verstand; erkenne ihn auf allen deinen Wegen, so wird er deine Pfade ebnen!',
-            'type': 'gruppe',
-            'date': '2025-08-01',
-            'book': 'sprueche',
-            'group_name': 'Die Familie Schmidt'
-        }
-    ]
-    
-    return render_template("meine-verse.html", verses=verses)
-
-@app.route("/profil")
-@flask_login_required
-def profil():
-    """Profile page (requires login)"""
-    return render_template("profil.html")
-
-@app.route("/dashboard")
-@flask_login_required
-def dashboard():
-    """User dashboard"""
-    # Get same statistics as homepage for consistency
-    total_verses = Verse.query.count()
-    sponsored_verses = Verse.query.filter_by(is_sponsored=True).count()
-    available_verses = total_verses - sponsored_verses
-    percentage = round((sponsored_verses / total_verses * 100), 1) if total_verses > 0 else 0
-    
-    stats = {
-        'total_verses': total_verses,
-        'sponsored_verses': sponsored_verses,
-        'available_verses': available_verses,
-        'percentage': percentage,
-        'total_amount': sponsored_verses * 100  # Calculate total amount raised
-    }
-    
-# TODO(human): Update dashboard to use current_user.person instead of current_user
-    # current_user is now PersonLogin, person data is at current_user.person
-    return render_template("dashboard.html", user=current_user.person, stats=stats)
 
 
 # ==========================================
