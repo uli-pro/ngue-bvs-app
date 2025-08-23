@@ -1,14 +1,13 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm, CSRFProtect
+from flask_wtf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import secrets
-from functools import wraps
 
 # Load environment variables
 load_dotenv()
@@ -84,8 +83,6 @@ def inject_context():
     return {
         'current_year': datetime.now().year
     }
-
-
 
 
 # ==========================================
@@ -231,16 +228,6 @@ def ueber_ngue():
 def ueber_partner():
     """About our partners page - combined view of Stiftung and Verlage"""
     return render_template("ueber-partner.html")
-
-@app.route("/ueber-stiftung")
-def ueber_stiftung():
-    """Redirect old Stiftung page to new partner page"""
-    return redirect(url_for('ueber_partner'), code=301)
-
-@app.route("/ueber-verlage")
-def ueber_verlage():
-    """Redirect old Verlage page to new partner page"""
-    return redirect(url_for('ueber_partner'), code=301)
 
 @app.route("/faq")
 def faq():
@@ -1118,12 +1105,6 @@ def cleanup_reservations():
             'message': f'Cleanup failed: {str(e)}'
         }), 500
 
-@app.route("/checkout/fehler")
-def checkout_fehler():
-    """Error page for failed payments"""
-    return render_template("checkout-fehler.html")
-
-
 
 
 # ==========================================
@@ -1485,8 +1466,6 @@ def api_payment_status(payment_intent_id):
         # Add status-specific information
         if payment_intent.status == 'succeeded':
             response_data['redirect_url'] = f"/checkout/erfolg?payment_intent={payment_intent.id}"
-        elif payment_intent.status in ['canceled', 'requires_payment_method']:
-            response_data['redirect_url'] = "/checkout/fehler"
         
         return jsonify(response_data)
         
@@ -1768,24 +1747,6 @@ def cookies():
     """Cookie policy page"""
     flash("Die Cookie-Richtlinie finden Sie in der Datenschutzerklärung.", "info")
     return redirect(url_for("datenschutz"))
-
-@app.route("/agb")
-def agb():
-    """Terms and conditions"""
-    flash("Die AGB sind noch in Entwicklung.", "info")
-    return redirect(url_for("datenschutz"))
-
-# ==========================================
-# DEBUG ROUTES (TEMPORARY)
-# ==========================================
-
-@app.route("/debug/session")
-def debug_session():
-    """Debug route to view session data"""
-    return {
-        'session_data': dict(session),
-        'session_keys': list(session.keys())
-    }
 
 if __name__ == "__main__":
     # Run in debug mode for development
