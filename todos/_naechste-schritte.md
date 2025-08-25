@@ -1,16 +1,14 @@
 # Nächste Schritte
 
-- Spendenart-Route ändern:  Zertifikat geht immer auch an Geschenkspender. D.h. der Text muss lauten: Soll das Zertifikat auch direkt an den Beschenkten gehen? Sonst geht es nur an Sie, damit Sie es selbst überreichen könne.
-
 - Spendenkorb: Bei Geschenkversen Möglichkeit die Message und E-Mail nochmal zu editieren.
 
 - Spendenbescheingung checken -> Daniel muss mir noch Daten für Impressum und Spendenbescheinigung geben: 
 
 - PDF-Generator implementieren
 
-- E-Mail-Engine implementieren
+- E-Mail-Engine implementieren -> Daniel muss mir die Daten von Mailgun geben
 
-  
+- Cookie-Einwilligung programmieren.
 
 
 

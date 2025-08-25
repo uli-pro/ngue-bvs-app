@@ -1,0 +1,263 @@
+# =============================================================================
+# Traefik Configuration for NGÜ Bibelvers-Sponsoring App
+# =============================================================================
+# 
+# This configuration provides advanced routing, SSL termination, and security
+# features for the NGÜ application deployment.
+#
+# Features:
+# - Automatic HTTPS with Let's Encrypt DNS challenge
+# - Security headers and middlewares
+# - Rate limiting and protection
+# - Monitoring and metrics
+# - Access logs and error handling
+# =============================================================================
+
+# Global Configuration
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# API and Dashboard
+api:
+  dashboard: true
+  insecure: false  # Dashboard requires authentication
+
+# Entrypoints (HTTP and HTTPS)
+entryPoints:
+  web:
+    address: ":80"
+    # Automatic redirect to HTTPS
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    # Enable HTTP/2 and HTTP/3
+    http:
+      tls:
+        options: default
+        certResolver: letsencrypt
+      # Security headers for all routes
+      middlewares:
+        - "default-headers@file"
+        - "secure-headers@file"
+
+# Certificate Resolvers
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "uli@familieprobst.org"
+      storage: "/letsencrypt/acme.json"
+      # Use DNS challenge for Cloudflare
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+        delayBeforeCheck: 60
+      # Optional: Use staging server for testing
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+# Providers
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: "ngue-network"
+    # Enable Swarm mode if using Docker Swarm
+    # swarmMode: true
+
+  file:
+    filename: "/etc/traefik/dynamic.yml"
+    watch: true
+
+# Logging
+log:
+  level: "INFO"
+  filePath: "/var/log/traefik/traefik.log"
+
+# Access Logs
+accessLog:
+  filePath: "/var/log/traefik/access.log"
+  format: json
+  filters:
+    statusCodes:
+      - "400-599"  # Only log errors
+    retryAttempts: true
+    minDuration: "10ms"
+
+# Metrics (optional - enable for monitoring)
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    manualRouting: true
+
+# Tracing (optional - for debugging)
+# tracing:
+#   jaeger:
+#     samplingServerURL: "http://jaeger:14268/api/sampling"
+#     localAgentHostPort: "jaeger:6831"
+
+# Pilot (optional - Traefik Cloud integration)
+# pilot:
+#   token: "your-pilot-token"
+
+# Ping endpoint for health checks
+ping:
+  entryPoint: "web"
+
+# =============================================================================
+# TLS Configuration
+# =============================================================================
+
+tls:
+  options:
+    default:
+      sslProtocols:
+        - "TLSv1.2"
+        - "TLSv1.3"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        - "TLS_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_RSA_WITH_AES_128_GCM_SHA256"
+      curvePreferences:
+        - "CurveP521"
+        - "CurveP384"
+      minVersion: "VersionTLS12"
+      maxVersion: "VersionTLS13"
+
+# =============================================================================
+# HTTP Configuration and Middlewares
+# =============================================================================
+
+http:
+  middlewares:
+    # Default security headers
+    default-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        
+    # Enhanced security headers
+    secure-headers:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex"
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Feature-Policy: "camera 'none'; microphone 'none'; geolocation 'none'"
+          Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com; frame-src https://js.stripe.com;"
+
+    # Rate limiting for general requests
+    rate-limit-general:
+      rateLimit:
+        burst: 50
+        average: 10
+        period: "1m"
+        
+    # Strict rate limiting for payment endpoints
+    rate-limit-payment:
+      rateLimit:
+        burst: 5
+        average: 2
+        period: "1m"
+        
+    # Rate limiting for API endpoints
+    rate-limit-api:
+      rateLimit:
+        burst: 20
+        average: 5
+        period: "1m"
+
+    # Authentication middleware (for admin areas)
+    basic-auth:
+      basicAuth:
+        users:
+          # Generated with: echo $(htpasswd -nb admin your-password) | sed -e s/\\$/\\$\\$/g
+          # Replace with your actual credentials
+          - "admin:$$2y$$10$$example-hash-here"
+
+    # IP whitelist for admin access (optional)
+    # admin-whitelist:
+    #   ipWhiteList:
+    #     sourceRange:
+    #       - "192.168.178.0/24"    # Local network
+    #       - "127.0.0.1/32"        # Localhost
+
+    # Request size limiting
+    request-limit:
+      buffering:
+        maxRequestBodyBytes: 2000000  # 2MB max request size
+        memRequestBodyBytes: 1000000  # 1MB in memory buffer
+
+    # Compression
+    compression:
+      compress: {}
+
+    # Error pages middleware
+    error-pages:
+      errors:
+        status:
+          - "400-599"
+        service: "error-pages@docker"
+        query: "/{status}.html"
+
+  # Router configurations
+  routers:
+    # Dashboard router (secured)
+    api:
+      rule: "Host(`traefik.ngue.familieprobst.org`)"
+      entryPoints:
+        - "websecure"
+      service: "api@internal"
+      middlewares:
+        - "basic-auth"
+        # - "admin-whitelist"  # Uncomment to enable IP whitelist
+      tls:
+        certResolver: "letsencrypt"
+
+    # Health check router (public)
+    ping:
+      rule: "PathPrefix(`/ping`)"
+      entryPoints:
+        - "web"
+        - "websecure"
+      service: "ping@internal"
+
+  # Service configurations
+  services:
+    # Error pages service (optional)
+    # error-pages:
+    #   loadBalancer:
+    #     servers:
+    #       - url: "http://error-pages:8080"
+
+# =============================================================================
+# Additional Configuration for Monitoring
+# =============================================================================
+
+# Uncomment to enable Prometheus metrics endpoint
+# serversTransport:
+#   insecureSkipVerify: true
+
+# File provider dynamic configuration
+# This allows for additional dynamic routing configuration
+# Dynamic configuration will be loaded from /etc/traefik/dynamic.yml

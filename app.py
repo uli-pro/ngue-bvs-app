@@ -25,6 +25,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
 from models import db, Person, Verse, Donation, VerseReservation
+from sqlalchemy import text
 db.init_app(app)
 
 # Configure session to use database (production-ready)
@@ -824,8 +825,6 @@ def checkout_daten(donation_type):
             errors.append("Bitte akzeptieren Sie die Datenschutzerklärung.")
         form_data['privacy_consent'] = privacy_consent
         
-        # Newsletter (optional)
-        form_data['newsletter'] = request.form.get('newsletter') == 'on'
         
         # Type-specific validation and data collection
         if donation_type == 'gruppe':
@@ -876,7 +875,6 @@ def checkout_daten(donation_type):
                     
                 form_data.update({
                     'salutation': salutation,
-                    'title': request.form.get('title', '').strip(),
                     'first_name': first_name,
                     'last_name': last_name,
                     'street': street,
@@ -1663,17 +1661,20 @@ def checkout_spendendaten():
                                  form_data=request.form)
         
         # Find or create person
+        # Handle salutation: "Ohne" becomes None/NULL in database
+        salutation_value = request.form.get('salutation')
+        if salutation_value == 'Ohne':
+            salutation_value = None
+        
         person = Person.find_or_create(
             email=email,
             first_name=request.form.get('firstName'),
             last_name=request.form.get('lastName'),
-            salutation=request.form.get('salutation'),
+            salutation=salutation_value,
             street=request.form.get('street'),
             house_number=request.form.get('houseNumber'),
             postal_code=request.form.get('postalCode'),
-            city=request.form.get('city'),
-            newsletter_opt_in=request.form.get('newsletter') == 'on',
-            save_data_consent=request.form.get('saveData') != 'off'
+            city=request.form.get('city')
         )
         
         db.session.commit()
@@ -1690,64 +1691,7 @@ def checkout_spendendaten():
                          has_only_groups=has_only_groups,
                          form_data={})
 
-@app.route("/api/person/check", methods=["GET"])
-@limiter.limit("30 per minute")
-def api_person_check():
-    """Check if person exists and has data"""
-    email = request.args.get('email', '').strip().lower()
-    
-    if not email or '@' not in email:
-        return jsonify({'exists': False, 'hasData': False})
-    
-    person = Person.query.filter_by(email=email).first()
-    
-    if not person:
-        return jsonify({'exists': False, 'hasData': False})
-    
-    # Check if person has complete address data
-    has_data = bool(person.first_name and person.last_name and person.postal_code)
-    
-    return jsonify({
-        'exists': True,
-        'hasData': has_data
-    })
 
-@app.route("/api/verify-plz", methods=["POST"])
-@limiter.limit("30 per minute")
-def api_verify_plz():
-    """Verify postal code and return person data"""
-    data = request.get_json()
-    
-    if not data:
-        return jsonify({'success': False, 'error': 'No data provided'}), 400
-    
-    email = data.get('email', '').strip().lower()
-    plz = data.get('plz', '').strip()
-    
-    if not email or not plz:
-        return jsonify({'success': False, 'error': 'Email and PLZ required'}), 400
-    
-    person = Person.query.filter_by(email=email).first()
-    
-    if not person or person.postal_code != plz:
-        return jsonify({'success': False, 'error': 'Verification failed'}), 400
-    
-    # Return person data for form filling
-    return jsonify({
-        'success': True,
-        'data': {
-            'email': person.email,
-            'firstName': person.first_name,
-            'lastName': person.last_name,
-            'salutation': person.salutation,
-            'street': person.street,
-            'houseNumber': person.house_number,
-            'postalCode': person.postal_code,
-            'city': person.city,
-            'newsletter': person.newsletter_opt_in,
-            'wantsReceipt': True if person.has_complete_address else False
-        }
-    })
 
 # ==========================================
 # ERROR HANDLERS
@@ -1772,6 +1716,35 @@ def cookies():
     """Cookie policy page"""
     flash("Die Cookie-Richtlinie finden Sie in der Datenschutzerklärung.", "info")
     return redirect(url_for("datenschutz"))
+
+# ==========================================
+# HEALTH CHECK ENDPOINTS
+# ==========================================
+
+@app.route("/health")
+def health_check():
+    """Health check endpoint for Docker and load balancers"""
+    try:
+        # Test database connection
+        db.session.execute(text('SELECT 1'))
+        
+        return {
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'database': 'connected',
+            'environment': app.config.get('ENV', 'development')
+        }, 200
+    except Exception as e:
+        return {
+            'status': 'unhealthy', 
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }, 503
+
+@app.route("/ping")
+def ping():
+    """Simple ping endpoint"""
+    return {'status': 'pong'}, 200
 
 if __name__ == "__main__":
     # Run in debug mode for development

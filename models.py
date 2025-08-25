@@ -22,8 +22,7 @@ class Person(db.Model):
     # Personal data
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
-    salutation = db.Column(db.String(20))  # Herr, Frau, Eheleute, Firma, keine
-    title = db.Column(db.String(50))       # Dr., Prof., etc.
+    salutation = db.Column(db.String(20))  # Herr, Frau, Eheleute, Familie, NULL for "Ohne"
     
     # Address data
     street = db.Column(db.String(200))
@@ -33,8 +32,7 @@ class Person(db.Model):
     country = db.Column(db.String(2), default='DE')
     
     # Preferences
-    newsletter_opt_in = db.Column(db.Boolean, default=False)
-    save_data_consent = db.Column(db.Boolean, default=True)
+    # (No preferences currently)
     
     # Metadata
     last_donation_at = db.Column(db.DateTime)
@@ -58,13 +56,12 @@ class Person(db.Model):
     def full_name_with_salutation(self):
         """Full name with salutation for formal display"""
         name_parts = []
-        if self.salutation and self.salutation != 'keine':
+        if self.salutation and self.salutation != 'Ohne':
             name_parts.append(self.salutation)
-        if self.title:
-            name_parts.append(self.title)
         if self.first_name and self.last_name:
             name_parts.extend([self.first_name, self.last_name])
         return " ".join(name_parts) if name_parts else self.email
+    
     
     @property
     def address(self):
@@ -90,7 +87,6 @@ class Person(db.Model):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'salutation': self.salutation,
-            'title': self.title,
             'street': self.street,
             'house_number': self.house_number,
             'postal_code': self.postal_code,
@@ -106,12 +102,11 @@ class Person(db.Model):
             person = cls(email=email.lower(), **kwargs)
             db.session.add(person)
         else:
-            # Update with new data if consent given
-            if person.save_data_consent:
-                for key, value in kwargs.items():
-                    if hasattr(person, key) and value:
-                        setattr(person, key, value)
-                person.data_updated_at = datetime.utcnow()
+            # Update with new data
+            for key, value in kwargs.items():
+                if hasattr(person, key) and value:
+                    setattr(person, key, value)
+            person.data_updated_at = datetime.utcnow()
         
         return person
 

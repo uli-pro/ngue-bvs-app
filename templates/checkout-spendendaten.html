@@ -31,11 +31,6 @@
                             </small>
                         </div>
                         
-                        <!-- Auto-fill notification -->
-                        <div id="autoFillNotice" class="alert alert-success" style="display:none;">
-                            <i class="fas fa-check-circle"></i>
-                            Wir haben Ihre Daten vom letzten Besuch. Bitte überprüfen Sie diese.
-                        </div>
                     </div>
                 </div>
                 
@@ -65,12 +60,13 @@
                             <div class="row mb-3">
                                 <div class="col-md-3">
                                     <label class="form-label">Anrede *</label>
-                                    <select class="form-select" name="salutation">
+                                    <select class="form-select" name="salutation" required>
                                         <option value="">Bitte wählen</option>
                                         <option value="Herr" {% if form_data.get('salutation') == 'Herr' %}selected{% endif %}>Herr</option>
                                         <option value="Frau" {% if form_data.get('salutation') == 'Frau' %}selected{% endif %}>Frau</option>
                                         <option value="Eheleute" {% if form_data.get('salutation') == 'Eheleute' %}selected{% endif %}>Eheleute</option>
-                                        <option value="Firma" {% if form_data.get('salutation') == 'Firma' %}selected{% endif %}>Firma</option>
+                                        <option value="Familie" {% if form_data.get('salutation') == 'Familie' %}selected{% endif %}>Familie</option>
+                                        <option value="Ohne" {% if form_data.get('salutation') == 'Ohne' %}selected{% endif %}>Ohne</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
@@ -124,18 +120,9 @@
                 </div>
                 {% endif %}
                 
-                <!-- Newsletter & Privacy -->
+                <!-- Privacy -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" 
-                                   id="newsletter" name="newsletter" 
-                                   {% if form_data.get('newsletter') %}checked{% endif %}>
-                            <label class="form-check-label" for="newsletter">
-                                Ich möchte über den Fortschritt der NGÜ-Übersetzung informiert werden
-                            </label>
-                        </div>
-                        
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" 
                                    id="privacy" name="privacy" required>
@@ -145,13 +132,6 @@
                             </label>
                         </div>
                         
-                        <div class="form-check mt-2">
-                            <input type="checkbox" class="form-check-input" 
-                                   id="saveData" name="saveData" checked>
-                            <label class="form-check-label" for="saveData">
-                                Meine Daten für zukünftige Spenden speichern (Vorausfüllung)
-                            </label>
-                        </div>
                     </div>
                 </div>
                 
@@ -197,31 +177,6 @@
     </div>
 </div>
 
-<!-- PLZ Verification Modal -->
-<div class="modal fade" id="plzModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Willkommen zurück!</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Wir haben Ihre Daten von einem früheren Besuch gefunden.</p>
-                <p>Bitte geben Sie Ihre Postleitzahl zur Bestätigung ein:</p>
-                <input type="text" class="form-control" id="plzVerify" 
-                       placeholder="Ihre PLZ" maxlength="5">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    Neu eingeben
-                </button>
-                <button type="button" class="btn btn-primary" id="verifyBtn">
-                    Daten laden
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <style>
 /* Sticky sidebar only on desktop */
@@ -270,7 +225,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('email');
     const receiptCheckbox = document.getElementById('wantsReceipt');
     const receiptForm = document.getElementById('receiptForm');
-    const autoFillNotice = document.getElementById('autoFillNotice');
     
     // Toggle receipt form
     if (receiptCheckbox) {
@@ -288,76 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
         receiptCheckbox.dispatchEvent(new Event('change'));
     }
     
-    // Email auto-fill check (simplified version)
-    if (emailInput) {
-        emailInput.addEventListener('blur', async function() {
-            const email = this.value.trim();
-            if (!email || !email.includes('@')) return;
-            
-            try {
-                const response = await fetch(`/api/person/check?email=${encodeURIComponent(email)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.exists && data.hasData) {
-                        showPlzVerification(email);
-                    }
-                }
-            } catch (error) {
-                console.log('Auto-fill check failed:', error);
-            }
-        });
-    }
-    
-    function showPlzVerification(email) {
-        const modal = new bootstrap.Modal(document.getElementById('plzModal'));
-        modal.show();
-        
-        // Handle verification
-        document.getElementById('verifyBtn').onclick = async function() {
-            const plz = document.getElementById('plzVerify').value;
-            
-            try {
-                const response = await fetch('/api/verify-plz', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({email: email, plz: plz})
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    fillForm(data.data);
-                    autoFillNotice.style.display = 'block';
-                    modal.hide();
-                } else {
-                    alert('Die Postleitzahl stimmt nicht überein.');
-                }
-            } catch (error) {
-                alert('Verifikation fehlgeschlagen.');
-            }
-        };
-    }
-    
-    function fillForm(data) {
-        // Fill all matching fields
-        for (const [key, value] of Object.entries(data)) {
-            const field = document.querySelector(`[name="${key}"]`);
-            if (field && value) {
-                if (field.type === 'checkbox') {
-                    field.checked = value;
-                } else {
-                    field.value = value;
-                }
-            }
-        }
-        
-        // Show receipt form if data available
-        if (data.firstName && receiptCheckbox) {
-            receiptCheckbox.checked = true;
-            receiptCheckbox.dispatchEvent(new Event('change'));
-        }
-    }
 });
 </script>
 {% endblock %}

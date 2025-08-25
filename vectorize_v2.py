@@ -22,11 +22,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import app
 from sqlalchemy import text
-from models import db
-import openai
+from models import db, Verse
 from openai import OpenAI
 from dotenv import load_dotenv
-import numpy as np
 
 # Load environment
 load_dotenv()
@@ -167,17 +165,21 @@ class VectorizeService:
                 for verse_id, embedding in zip(batch_ids, embeddings):
                     if embedding:
                         try:
-                            # Convert to PostgreSQL vector format
+                            # Convert to PostgreSQL vector format (safer parameterized query)
                             embedding_str = '[' + ','.join(map(str, embedding)) + ']'
                             
-                            update_query = text(f"""
+                            update_query = text("""
                                 UPDATE verses 
-                                SET text_embedding = '{embedding_str}'::vector
-                                WHERE id = {verse_id}
+                                SET text_embedding = :embedding_vector::vector
+                                WHERE id = :verse_id
                             """)
                             
-                            db.session.execute(update_query)
+                            db.session.execute(update_query, {
+                                'embedding_vector': embedding_str,
+                                'verse_id': verse_id
+                            })
                             
+                                            
                             success_count += 1
                             self.total_processed += 1
                             
@@ -245,23 +247,26 @@ class VectorizeService:
                     logger.error("Failed to create query embedding")
                     continue
                 
-                # Search for similar verses
+                # Search for similar verses (safer parameterized query)
                 embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
                 
-                search_query = text(f"""
+                search_query = text("""
                     SELECT 
                         id, book, chapter, verse, 
                         SUBSTRING(text, 1, 100) as text_preview,
                         positivity_score,
-                        1 - (text_embedding <=> '{embedding_str}'::vector) as similarity
+                        1 - (text_embedding <=> :embedding_vector::vector) as similarity
                     FROM verses
                     WHERE text_embedding IS NOT NULL
                     AND is_sponsored = false
-                    ORDER BY text_embedding <=> '{embedding_str}'::vector
+                    ORDER BY text_embedding <=> :embedding_vector::vector
                     LIMIT 3
                 """)
                 
-                results = db.session.execute(search_query).fetchall()
+                results = db.session.execute(search_query, {
+                    'embedding_vector': embedding_str
+                }).fetchall()
+                
                 
                 for idx, result in enumerate(results, 1):
                     logger.info(f"  {idx}. {result.book} {result.chapter},{result.verse} "

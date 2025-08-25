@@ -4,6 +4,31 @@
 
 {% block main %}
 
+<!-- Alpha Version Warning -->
+<div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="margin: 0; border-radius: 0; border-left: 4px solid #dc3545;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-1 text-center">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+            </div>
+            <div class="col-md-10">
+                <h5 class="alert-heading mb-2">
+                    <strong>⚠️ Alpha-Version - Testphase</strong>
+                </h5>
+                <p class="mb-1">
+                    Diese Anwendung befindet sich noch in der Entwicklung. <strong>Nicht alle Funktionen sind vollständig implementiert</strong> und es können Bugs auftreten.
+                </p>
+                <small class="text-muted">
+                    Zahlungen sind noch nicht aktiv • Zertifikate sind Platzhalter • Testversion für Feedback
+                </small>
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="container">
@@ -171,19 +196,19 @@
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
                                     <div class="me-2 bg-green" style="width: 12px; height: 12px; border-radius: 2px;"></div>
-                                    <span>Erstübersetzung (50€)</span>
+                                    <span>Erstübersetzung (45€)</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
                                     <div class="me-2 bg-red" style="width: 12px; height: 12px; border-radius: 2px;"></div>
-                                    <span>Revision (30€)</span>
+                                    <span>Revision (35€)</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
                                     <div class="me-2 bg-orange" style="width: 12px; height: 12px; border-radius: 2px;"></div>
-                                    <span>Supervision (10€)</span>
+                                    <span>Fachliche Begleitung (10€)</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
@@ -387,11 +412,11 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: [
                 'Erstübersetzung vom Grundtext',
                 'Revision mit zweitem Übersetzer',
-                'Überprüfung durch Supervisor',
-                'Qualitätssicherung & Finalisierung'
+                'Fachliche Begleitung',
+                'Qualitätssicherung'
             ],
             datasets: [{
-                data: [50, 30, 10, 10],
+                data: [45, 35, 10, 10],
                 backgroundColor: [
                     colorGreen,   // Green for Erstübersetzung
                     colorNguRed,  // NGÜ-Primary Red for Revision
