@@ -16,21 +16,42 @@
             <form id="checkoutForm" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
-                <!-- Email (always required) -->
+                <!-- Email and Personal Data (always required) -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0">E-Mail-Adresse</h5>
+                        <h5 class="mb-0">Angaben für den Versand der Zertifikate</h5>
                     </div>
                     <div class="card-body">
+                        
                         <div class="mb-3">
                             <label class="form-label">E-Mail *</label>
                             <input type="email" class="form-control" id="email" 
                                    name="email" required value="{{ form_data.get('email', '') }}">
-                            <small class="text-muted">
-                                Für den Versand der Zertifikate und Kommunikation
-                            </small>
                         </div>
                         
+                        <!-- Name Fields -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Anrede *</label>
+                                <select class="form-select" name="salutation" required>
+                                    <option value="">Bitte wählen</option>
+                                    <option value="Herr" {% if form_data.get('salutation') == 'Herr' %}selected{% endif %}>Herr</option>
+                                    <option value="Frau" {% if form_data.get('salutation') == 'Frau' %}selected{% endif %}>Frau</option>
+                                    <option value="Eheleute" {% if form_data.get('salutation') == 'Eheleute' %}selected{% endif %}>Eheleute</option>
+                                    <option value="Ohne" {% if form_data.get('salutation') == 'Ohne' %}selected{% endif %}>Ohne</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Vorname *</label>
+                                <input type="text" class="form-control" name="firstName" required
+                                       value="{{ form_data.get('firstName', '') }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Nachname *</label>
+                                <input type="text" class="form-control" name="lastName" required
+                                       value="{{ form_data.get('lastName', '') }}">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -39,47 +60,21 @@
                 {% if needs_receipt %}
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0">Spendenbescheinigung</h5>
+                        <h5 class="mb-0">Angaben für die Spendenbescheinigung</h5>
                     </div>
                     <div class="card-body">
                         <div class="form-check form-switch mb-3">
                             <input type="checkbox" class="form-check-input" 
                                    id="wantsReceipt" name="wantsReceipt" 
-                                   {% if form_data.get('wantsReceipt') %}checked{% endif %}>
+                                   {% if form_data.get('wantsReceipt', True) %}checked{% endif %}>
                             <label class="form-check-label" for="wantsReceipt">
                                 Ich möchte eine Spendenbescheinigung erhalten
                             </label>
                         </div>
                         
-                        <!-- Receipt Form (hidden by default) -->
-                        <div id="receiptForm" style="display:{% if form_data.get('wantsReceipt') %}block{% else %}none{% endif %};">
+                        <!-- Receipt Form (shown by default) -->
+                        <div id="receiptForm" style="display:{% if not form_data.get('wantsReceipt', True) %}none{% else %}block{% endif %};">
                             <hr>
-                            <h6 class="mb-3">Angaben für die Spendenbescheinigung</h6>
-                            
-                            <!-- Name Fields -->
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Anrede *</label>
-                                    <select class="form-select" name="salutation" required>
-                                        <option value="">Bitte wählen</option>
-                                        <option value="Herr" {% if form_data.get('salutation') == 'Herr' %}selected{% endif %}>Herr</option>
-                                        <option value="Frau" {% if form_data.get('salutation') == 'Frau' %}selected{% endif %}>Frau</option>
-                                        <option value="Eheleute" {% if form_data.get('salutation') == 'Eheleute' %}selected{% endif %}>Eheleute</option>
-                                        <option value="Familie" {% if form_data.get('salutation') == 'Familie' %}selected{% endif %}>Familie</option>
-                                        <option value="Ohne" {% if form_data.get('salutation') == 'Ohne' %}selected{% endif %}>Ohne</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Vorname *</label>
-                                    <input type="text" class="form-control" name="firstName" 
-                                           value="{{ form_data.get('firstName', '') }}">
-                                </div>
-                                <div class="col-md-5">
-                                    <label class="form-label">Nachname *</label>
-                                    <input type="text" class="form-control" name="lastName" 
-                                           value="{{ form_data.get('lastName', '') }}">
-                                </div>
-                            </div>
                             
                             <!-- Address Fields -->
                             <div class="row mb-3">
@@ -231,8 +226,8 @@ document.addEventListener('DOMContentLoaded', function() {
         receiptCheckbox.addEventListener('change', function() {
             receiptForm.style.display = this.checked ? 'block' : 'none';
             
-            // Make fields required when shown
-            const fields = receiptForm.querySelectorAll('input[name="firstName"], input[name="lastName"], input[name="street"], input[name="houseNumber"], input[name="postalCode"], input[name="city"], select[name="salutation"]');
+            // Make address fields required when shown
+            const fields = receiptForm.querySelectorAll('input[name="street"], input[name="houseNumber"], input[name="postalCode"], input[name="city"]');
             fields.forEach(field => {
                 field.required = this.checked;
             });
