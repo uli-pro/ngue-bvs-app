@@ -26,8 +26,6 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # Initialize extensions
 from models import db, Person, Verse, Donation, VerseReservation
 from sqlalchemy import text
-from stripe_service import StripeService, StripeError
-import stripe
 db.init_app(app)
 
 # Configure session to use database (production-ready)
@@ -1246,6 +1244,9 @@ def checkout_zahlung():
 def create_payment_intent():
     """Create Stripe PaymentIntent for cart"""
     try:
+        # Import stripe service
+        from stripe_service import StripeService, StripeError
+        
         # Validate cart
         handle_corrupted_session()
         
@@ -1315,6 +1316,9 @@ def stripe_webhook():
     event_id = None
     
     try:
+        # Import stripe service
+        from stripe_service import StripeService, StripeError
+        
         payload = request.get_data()
         signature = request.headers.get('Stripe-Signature')
         webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
@@ -1381,38 +1385,6 @@ def checkout_erfolg():
         # Store payment intent ID for success page display
         session['completed_payment_intent'] = payment_intent_id
         session.modified = True
-        
-        # Process donation completion immediately upon success page load
-        try:
-            # Retrieve PaymentIntent from Stripe to verify success
-            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-            app.logger.info(f"Retrieved PaymentIntent {payment_intent_id} with status: {payment_intent.status}")
-            
-            # Only process if payment actually succeeded
-            if payment_intent.status == 'succeeded':
-                # Get donation IDs from metadata
-                donation_ids_str = payment_intent.metadata.get('donation_ids', '')
-                donation_ids = [int(did) for did in donation_ids_str.split(',') if did.isdigit()]
-                
-                if donation_ids:
-                    # Find and complete donations
-                    donations = Donation.query.filter(Donation.id.in_(donation_ids)).all()
-                    completed_count = 0
-                    
-                    for donation in donations:
-                        donation.mark_completed()
-                        completed_count += 1
-                    
-                    app.logger.info(f"Successfully marked {completed_count} donations as completed from success page")
-                else:
-                    app.logger.warning(f"No valid donation IDs found in PaymentIntent {payment_intent_id} metadata")
-            else:
-                app.logger.warning(f"PaymentIntent {payment_intent_id} has status {payment_intent.status}, not succeeded")
-                
-        except stripe.error.StripeError as e:
-            app.logger.error(f"Stripe error retrieving PaymentIntent {payment_intent_id}: {e}")
-        except Exception as e:
-            app.logger.error(f"Error processing donation completion on success page: {e}")
     
     # Clear cart after successful payment (will be cleared by webhook anyway)
     session.pop('cart', None)
@@ -1448,6 +1420,10 @@ def checkout_verarbeitung():
 def api_payment_status(payment_intent_id):
     """API endpoint to check payment status"""
     try:
+        # Import stripe service
+        from stripe_service import StripeService, StripeError
+        import stripe
+        
         # Validate payment intent ID format
         if not payment_intent_id or not payment_intent_id.startswith('pi_'):
             return jsonify({'error': 'Invalid payment intent ID'}), 400

@@ -318,10 +318,6 @@ class Donation(db.Model):
     
     def mark_completed(self):
         """Mark donation as completed"""
-        # Check if already completed to avoid duplicate processing
-        if self.payment_status == 'completed':
-            return
-            
         self.payment_status = 'completed'
         self.completed_at = datetime.utcnow()
         # Mark verse as sponsored

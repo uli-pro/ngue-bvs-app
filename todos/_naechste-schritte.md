@@ -8,22 +8,13 @@
 
 - E-Mail-Engine implementieren -> Daniel muss mir die Daten von Mailgun geben
 
-- Cookie-Einwilligung programmieren.
+- Cookie-Einwilligung programmieren (Hubspot Integration rechtlich voraussehen)
+
+- Bilder von NGÜ einpflegen
+
+- Auf Inhaltsseiten Farben weniger bunt machen (V.A. bei "rechtliches")
 
 
-
----
-
-# Todo's nach Meeting am 21.08.2025
-
-- In Erfahrung bringen, wie Hubspot-Integration technisch und rechtlich aussehen kann
-- Hubspot-Integration programmieren
-- Cookie-Einwilligung programmieren
-- Spendenbescheinigung-Template im Hinblick auf Konformität überprüfen und anpassen
-- Mailgun-Integration
-- NGÜ-Text von fertig übersetzten Büchern in Datenbank einpflegen und automatische Nachricht an Spender mit neuem Zertifikat? Ergänzung zum Zertifikat? programmieren.
-- Bei Brunnen nach den NGÜ-Produktbildern fragen
-- mit Uwe über die App reden
 
 ---
 
@@ -72,6 +63,18 @@
 
 #### /transparenz
 
-- Den gesamten Text kritisch auf Sachaussagen hin prüfen.
 - Zweiten CTA-Button einfügen
+
+
+
+---
+
+## Features der Beta
+
+- Admin User
+  - Datenbankzugriff: Reparatur von Daten
+  - NGÜ-Text von fertig übersetzten Büchern in Datenbank einpflegen und automatische Nachricht an Spender mit neuem Zertifikat? Ergänzung zum Zertifikat? programmieren.
+  - Spenderdaten auslesen und an Schöffer weitergeben
+- Hubspot Integration
+  - 
 
