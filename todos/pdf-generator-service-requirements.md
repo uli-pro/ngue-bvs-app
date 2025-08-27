@@ -267,6 +267,146 @@ brew install weasyprint
 4. **Certificate-Model**: Vereinfachung implementieren
 5. **Testing**: Umfassende Test-Suite schreiben
 
+
+
+---
+
+ Nach der Analyse der **Spendenbescheinigung** sehe ich ein
+  offizielles Steuerformular mit vordefinierten Feldern und
+  Kästchen. Hier ist meine Empfehlung:
+
+  Spendenbescheinigung-Strategie
+
+  Empfehlung: Vollständig WeasyPrint-basiert (kein PDF-Template)
+
+  Warum nicht das vorhandene PDF als Template nutzen?
+
+  1. Präzisions-Problem: WeasyPrint kann nicht pixel-genau in
+    vorhandene PDF-Formularfelder schreiben
+  2. Rechtliche Sicherheit: Selbst erstellte Formulare geben
+    vollständige Kontrolle über Layout und Compliance
+  3. Wartbarkeit: Steuerformulare ändern sich - eigene Version ist
+    flexibler anpassbar
+  4. Qualität: Schriftbild wird einheitlicher und professioneller
+
+⏺ Vorgeschlagenes Vorgehen
+
+  1. HTML/CSS-Nachbau des Formulars
+    <!-- Spendenbescheinigung Template -->
+  <div class="tax-receipt">
+    <div class="header-section">
+      <div class="organization-box">
+        <!-- Stiftungsdaten (vorgedruckt) -->
+        <p><strong>Peter-Schöffer-Stiftung</strong></p>
+        <p>Adresse...</p>
+        <p>Steuernummer: ...</p>
+      </div>
+    </div>
+
+    <div class="donor-section">
+      <!-- Spender-Daten (dynamisch) -->
+      <input type="text" readonly value="{{ donor.name }}">
+      <input type="text" readonly value="{{ donor.address }}">
+    </div>
+    
+    <div class="donation-details">
+      <!-- Spenden-Details (dynamisch) -->
+      <span class="amount">{{ donation.amount_eur }}€</span>
+      <span class="date">{{ donation.date }}</span>
+    </div>
+  </div>
+
+  2. Exakte Formular-Nachbildung
+  - CSS-Grid: Für präzise Kästchen-Positionierung
+  - Print-CSS: Seitenränder und Druckoptimierung
+  - Schrift: Times New Roman oder ähnliche "Formular-Schrift"
+
+⏺ Feld-Kategorisierung für Spendenbescheinigung
+
+  Statische Felder (vorgedruckt in Template)
+
+  - Stiftungs-Stammdaten:
+    - Name: "Peter-Schöffer-Stiftung"
+    - Adresse des Empfängers
+    - Steuernummer / Freistellungsbescheid
+    - Datum der Freistellung
+  - Formular-Struktur:
+    - Alle Überschriften ("Spendenbescheinigung", "Empfänger",
+    etc.)
+    - Kästchen und Linien
+    - Gesetzesreferenzen und Hinweistexte
+    - Unterschrift-Bereich mit vorgedrucktem Namen
+
+  Dynamische Felder (aus Donation-Daten)
+
+  - Spender-Information:
+    - Name und Anschrift des Spenders
+    - ggf. Geburtsdatum (falls erforderlich)
+  - Spenden-Details:
+    - Geldbetrag (in Euro)
+    - Spendendatum
+    - Art der Zuwendung ("Geldspende für Bibelübersetzung")
+    - ggf. Verzicht auf Erstattung von Aufwendungen
+  - Formular-Spezifika:
+    - Ausstellungsdatum der Bescheinigung
+    - laufende Nummer / Referenz
+    - ggf. digitale Signatur
+
+⏺ Technische Umsetzung
+
+  CSS-Template Beispiel
+
+  .tax-receipt {
+    width: 210mm;
+    height: 297mm;
+    font-family: "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.2;
+  }
+
+  .form-box {
+    border: 1px solid black;
+    padding: 2mm;
+    margin: 1mm 0;
+    min-height: 8mm;
+  }
+
+  .donor-name {
+    position: absolute;
+    top: 45mm;
+    left: 25mm;
+    width: 80mm;
+  }
+
+  Alternative: ReportLab für Spendenbescheinigungen
+
+  Da Spendenbescheinigungen sehr formular-lastig sind, könnte hier
+  ReportLab tatsächlich besser geeignet sein:
+
+  ReportLab Vorteile für Formulare:
+  - Pixel-genaue Positionierung von Text in vordefinierten
+    Bereichen
+  - Formulare sind Standard-Anwendungsfall für ReportLab
+  - Performance: Sehr schnell bei standardisierten Formularen
+  - Konsistenz: Identisches Layout garantiert
+
+  ★ Insight ─────────────────────────────────────
+  • Steuerformulare erfordern absolute Präzision - ReportLab könnte
+   hier besser geeignet sein als WeasyPrint
+  • Vollständiger HTML/CSS-Nachbau gibt maximale Kontrolle und
+  Rechtssicherheit• Die Kombination "WeasyPrint für Zertifikate +
+  ReportLab für Spendenbescheinigungen" wäre optimal
+  ─────────────────────────────────────────────────
+
+  Meine Empfehlung: Warten Sie die Informationen vom
+  Stiftungsgründer ab, dann können wir entscheiden ob:
+  1. Vollständiger HTML/CSS-Nachbau (maximale Flexibilität)
+  2. ReportLab für pixel-genaue Formular-Befüllung (maximale
+    Präzision)
+
+  Beide Ansätze lassen sich problemlos in den geplanten
+  PDFGeneratorService integrieren.
+
 ---
 
 **Priorität für MVP:** Hoch - Benötigt für vollständigen Donation-Flow

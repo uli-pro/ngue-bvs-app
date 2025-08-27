@@ -20,8 +20,9 @@
                 <a href="#ueberblick" class="btn btn-outline-primary btn-sm">Überblick</a>
                 <a href="#datenerfassung" class="btn btn-outline-primary btn-sm">Datenerfassung</a>
                 <a href="#cookies" class="btn btn-outline-primary btn-sm">Cookies</a>
-                <a href="#ihre-rechte" class="btn btn-outline-primary btn-sm">Ihre Rechte</a>
                 <a href="#stripe-zahlung" class="btn btn-outline-primary btn-sm">Stripe-Zahlung</a>
+                <a href="#hubspot-crm" class="btn btn-outline-primary btn-sm">HubSpot-CRM</a>
+                <a href="#ihre-rechte" class="btn btn-outline-primary btn-sm">Ihre Rechte</a>
                 <a href="#kontakt" class="btn btn-outline-primary btn-sm">Kontakt</a>
             </div>
         </div>
@@ -63,11 +64,13 @@
                         <div class="col-md-6">
                             <div class="card h-100">
                                 <div class="card-header bg-green">
-                                    <h5 class="mb-0">Für Bibelvers-Sponsoring erforderlich</h5>
+                                    <h5 class="mb-0">Für Zertifikat-Erstellung und -Versand erforderlich</h5>
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-unstyled">
-                                        <li><i class="fas fa-check text-success me-2"></i>E-Mail-Adresse (für Zertifikat-Versand)</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>E-Mail-Adresse</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Anrede, Vor- und Nachname</li>
+
                                     </ul>
                                     <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)
                                 </div>
@@ -81,7 +84,6 @@
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-unstyled">
-                                        <li><i class="fas fa-check text-success me-2"></i>Anrede, Vor- und Nachname</li>
                                         <li><i class="fas fa-check text-success me-2"></i>Postanschrift (Straße, PLZ, Ort)</li>
                                     </ul>
                                     <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. c DSGVO (rechtliche Verpflichtung)
@@ -110,9 +112,9 @@
                                     </ul>
                                 </div>
                             </div>
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Wir geben Ihre Daten NICHT an Dritte weiter</strong>, außer an Stripe für die Zahlungsabwicklung oder soweit gesetzlich vorgeschrieben.
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Weitergabe an Serviceanbieter:</strong> Ihre Spendendaten werden an Stripe (Zahlungsabwicklung) und HubSpot (Spenderverwaltung) weitergegeben. Details siehe Abschnitte 4 und 7.
                             </div>
                         </div>
                     </div>
@@ -139,18 +141,15 @@
                         </div>
                         
                         <div class="col-md-6">
-                            <div class="card h-100 border-blue">
-                                <div class="card-header bg-blue">
-                                    <h5 class="mb-0">Analyse-Cookies (optional)</h5>
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">Analyse-Cookies</h5>
                                 </div>
                                 <div class="card-body">
-                                    <ul class="list-unstyled">
-                                        <li><i class="fas fa-chart-line me-2"></i>Google Analytics (nur mit Ihrer Einwilligung)</li>
-                                    </ul>
-                                    <small class="text-muted">Diese helfen uns, unser Angebot zu verbessern.</small>
-                                    <div class="alert alert-info mt-2 mb-0">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <small>Wir verwenden derzeit keine Analyse-Tools.</small>
+                                    <div class="alert alert-success mb-0">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <strong>Nicht verwendet:</strong><br>
+                                        <small>Diese Website setzt keine Analyse- oder Marketing-Cookies ein. Ihre Privatsphäre ist geschützt.</small>
                                     </div>
                                 </div>
                             </div>
@@ -193,9 +192,57 @@
                     </div>
                 </div>
 
+                <!-- HubSpot CRM -->
+                <div id="hubspot-crm" class="mb-5">
+                    <h2>5. HubSpot CRM (Spenderverwaltung)</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <p>Zur effizienten Spenderverwaltung nutzen wir <strong>HubSpot</strong> als CRM-System.</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>An HubSpot übermittelte Daten:</h5>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-user me-2"></i>Name und E-Mail-Adresse</li>
+                                        <li><i class="fas fa-euro-sign me-2"></i>Spendenbetrag und -datum</li>
+                                        <li><i class="fas fa-bible me-2"></i>Gesponserte Bibelverse</li>
+                                        <li><i class="fas fa-calendar me-2"></i>Datum der Spende</li>
+                                    </ul>
+                                    <p><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an effizienter Spenderverwaltung)</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-success">
+                                        <h6><i class="fas fa-shield-alt me-2"></i>Datenschutzfreundlich:</h6>
+                                        <p class="mb-2">HubSpot sammelt <strong>KEINE</strong> Daten direkt von Ihrem Browser.</p>
+                                        <p class="mb-2">Keine Tracking-Cookies oder Website-Überwachung.</p>
+                                        <p class="mb-0">Datenübertragung erfolgt nur server-seitig von uns an HubSpot.</p>
+                                    </div>
+                                    <p class="mb-0">
+                                        <a href="https://legal.hubspot.com/privacy-policy" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            HubSpot-Datenschutz <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6>Verwendungszweck:</h6>
+                                    <ul class="list-unstyled mb-0">
+                                        <li><i class="fas fa-check text-success me-2"></i>Erstellung und Versand von Spendenbescheinigungen</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Information über die Verwendung Ihrer Spende</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Erfüllung steuerrechtlicher Aufbewahrungspflichten</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Bei Bedarf: Newsletter über das NGÜ-Projekt (nur mit Einwilligung)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Ihre Rechte -->
                 <div id="ihre-rechte" class="mb-5">
-                    <h2>5. Ihre Rechte nach DSGVO</h2>
+                    <h2>6. Ihre Rechte nach DSGVO</h2>
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="card text-center h-100">
@@ -270,7 +317,7 @@
 
                 <!-- Kontakt -->
                 <div id="kontakt" class="mb-5">
-                    <h2>6. Kontakt</h2>
+                    <h2>7. Kontakt</h2>
                     <div class="card">
                         <div class="card-body">
                             <p>Bei Fragen zum Datenschutz können Sie sich jederzeit an uns wenden:</p>

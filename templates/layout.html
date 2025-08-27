@@ -191,5 +191,37 @@
     </script>
 
     {% block scripts %}{% endblock %}
+
+    <!-- Cookie-Hinweis für Session-Cookies -->
+    <div id="cookie-notice" class="cookie-notice" style="display: none;">
+        <div class="container-fluid bg-light border-top py-2 text-center shadow-sm">
+            <small class="text-muted">
+                <i class="fas fa-cookie-bite me-1"></i>
+                Diese Website verwendet nur technisch notwendige Cookies für den Spendenkorb. 
+                <a href="/datenschutz" class="text-decoration-none">Mehr erfahren</a>
+                <button onclick="acceptCookies()" class="btn btn-sm btn-primary ms-2 px-3">Verstanden</button>
+            </small>
+        </div>
+    </div>
+
+    <script>
+        // Cookie-Hinweis nur einmal anzeigen
+        function checkCookieNotice() {
+            if (!localStorage.getItem('ngu_cookies_accepted')) {
+                document.getElementById('cookie-notice').style.display = 'block';
+            }
+        }
+
+        function acceptCookies() {
+            localStorage.setItem('ngu_cookies_accepted', 'true');
+            document.getElementById('cookie-notice').style.display = 'none';
+        }
+
+        // Cookie-Hinweis beim Laden prüfen
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kurze Verzögerung für bessere UX
+            setTimeout(checkCookieNotice, 2000);
+        });
+    </script>
 </body>
 </html>
