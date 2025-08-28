@@ -113,3 +113,8 @@ ngue-bvs-app.code-workspace  # Specific workspace file
 # Additional certificates and keys  
 *.crt                     # Certificate files
 *.cert                    # Certificate files
+
+# Backup files
+*.backup                  # All backup files (.backup extension)
+*.bak                     # Alternative backup extension
+*.old                     # Old file backups
