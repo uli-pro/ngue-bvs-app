@@ -7,14 +7,18 @@ Umgeht WeasyPrint Import-Probleme durch direkte Verwendung nach dem Import
 import os
 import sys
 import time
+import platform
 from datetime import datetime
 from decimal import Decimal
 
 def setup_weasyprint_env():
     """Setup environment for WeasyPrint"""
-    os.environ['PKG_CONFIG_PATH'] = "/opt/homebrew/lib/pkgconfig"
-    os.environ['DYLD_LIBRARY_PATH'] = "/opt/homebrew/lib"
-    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = "/opt/homebrew/lib"
+    # Only set environment variables on macOS
+    # On Linux (Docker), libraries are in system path
+    if platform.system() == "Darwin":  # macOS
+        os.environ['PKG_CONFIG_PATH'] = "/opt/homebrew/lib/pkgconfig"
+        os.environ['DYLD_LIBRARY_PATH'] = "/opt/homebrew/lib"
+        os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = "/opt/homebrew/lib"
 
 def check_weasyprint():
     """Check if WeasyPrint can be imported"""

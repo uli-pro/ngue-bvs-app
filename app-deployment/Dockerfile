@@ -55,6 +55,7 @@ RUN apt-get update && apt-get install -y \
     libcairo2 \
     libpango-1.0-0 \
     libgdk-pixbuf-2.0-0 \
+    libgobject-2.0-0 \
     libgtk-3-0 \
     curl \
     ca-certificates \

@@ -4,9 +4,18 @@ Generiert Zertifikate und Spendenbescheinigungen mit WeasyPrint
 """
 
 import os
+import platform
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Dict, Tuple, Any
+
+# Setup environment for WeasyPrint on macOS
+# On Linux (Docker), libraries are in system path
+if platform.system() == "Darwin":
+    os.environ['PKG_CONFIG_PATH'] = "/opt/homebrew/lib/pkgconfig"
+    os.environ['DYLD_LIBRARY_PATH'] = "/opt/homebrew/lib"
+    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = "/opt/homebrew/lib"
+
 import weasyprint
 from flask import Flask, render_template, current_app
 from models import db, Donation, Certificate, Person, Verse
