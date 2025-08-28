@@ -1,40 +1,43 @@
 {% extends "certificates/base_certificate.html" %}
 
 {% block certificate_content %}
-<div class="certificate-content">
-    <!-- Datum - rechts oben -->
-    <div class="date-field">
-        Ausgestellt am {{ donation.completed_at.strftime('%d.%m.%Y') }}
+    <!-- Datum - zentriert -->
+    <div class="date-text" style="top: 122mm;">
+        Ausgestellt am: {{ donation.completed_at.strftime('%d. %B %Y') }}
     </div>
     
-    <!-- Haupttext -->
-    <div class="main-text">
-        <p>Hiermit bestätigen wir:</p>
-        
-        <p>Durch eine Spende von <span class="donation-amount">{{ "%.2f"|format(donation.amount) }} €</span><br>
-           im Namen von</p>
-        
-        <p class="donor-name">
-            {{ donation.donation_details.recipient_first_name }} {{ donation.donation_details.recipient_last_name }}
-        </p>
-        
+    <!-- Bestätigungstext -->
+    <div class="confirmation-text" style="top: 130mm;">
+        HIERMIT BESTÄTIGEN WIR:
+    </div>
+    
+    <!-- Spendentext für Geschenk -->
+    <div class="donation-text" style="top: 138mm;">
+        Durch eine Spende von {{ "%.0f"|format(donation.amount) }}€ im Namen von
+    </div>
+    
+    <!-- Geschenk-Empfängername -->
+    <div class="donor-name" style="top: 136mm;">
+        {{ donation.donation_details.recipient_name }}
+    </div>
+    
+    <!-- Übersetzungstext -->
+    <div class="translation-text" style="top: 168mm;">
         {% if verses|length == 1 %}
-            <p>wurde die Übersetzung des folgenden Bibelverses ermöglicht:</p>
-            <div class="verse-text">
-                <div class="verse-reference">{{ verses[0].reference }}</div>
-                {{ verses[0].text }}
-            </div>
+            wurde die Übersetzung des folgenden Bibelverses ermöglicht:
         {% else %}
-            <p>wurde die Übersetzung der folgenden Bibelverse ermöglicht:</p>
-            <div class="verse-list">
-                {% for verse in verses %}
-                    <div class="verse-item">
-                        <div class="verse-reference">{{ verse.reference }}</div>
-                        <div class="verse-text">{{ verse.text }}</div>
-                    </div>
-                {% endfor %}
-            </div>
+            wurde die Übersetzung der folgenden Bibelverse ermöglicht:
         {% endif %}
     </div>
-</div>
+    
+    <!-- Bibelvers-Referenz(en) - NUR die Referenz, NICHT der Text -->
+    <div class="verse-reference" style="top: 185m;">
+        {% if verses|length == 1 %}
+            {{ verses[0].reference.upper() }}
+        {% else %}
+            {% for verse in verses %}
+                {{ verse.reference.upper() }}{% if not loop.last %}<br>{% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
 {% endblock %}

@@ -212,13 +212,17 @@ class PDFGeneratorService:
         # Vers laden
         verse = donation.verse
         
+        # Absoluter Pfad für Hintergrundbild (WeasyPrint benötigt absolute Pfade)
+        static_dir = os.path.join(os.path.dirname(__file__), 'static')
+        background_image_path = os.path.join(static_dir, 'certificates', 'certificate-background.png')
+        
         # Basis-Context (basierend auf Phase 1 Template-Struktur)
         context = {
             'donation': donation,
             'person_snapshot': person_data,
             'verse': verse,
             'verses': [verse],  # Als Liste für Template-Kompatibilität
-            'background_image_path': '/static/certificates/certificate-background.png',
+            'background_image_path': f'file://{background_image_path}',
             'formatted_amount': f"{donation.amount:.2f}",
             'formatted_date': donation.completed_at.strftime('%d.%m.%Y') if donation.completed_at else 'Unbekannt'
         }
@@ -231,8 +235,7 @@ class PDFGeneratorService:
             
         elif certificate_type == 'gift_certificate':
             details = donation.donation_details or {}
-            context['recipient_first_name'] = details.get('recipient_first_name', '')
-            context['recipient_last_name'] = details.get('recipient_last_name', '')
+            context['recipient_name'] = details.get('recipient_name', '')
         
         return context
 
@@ -248,6 +251,10 @@ class PDFGeneratorService:
             'city': donation.person.city
         }
         
+        # Absoluter Pfad für Hintergrundbild (WeasyPrint benötigt absolute Pfade)
+        static_dir = os.path.join(os.path.dirname(__file__), 'static')
+        background_image_path = os.path.join(static_dir, 'certificates', 'spendenbescheinigung-schoeffer.png')
+        
         context = {
             'donation': donation,
             'person_snapshot': person_data,
@@ -255,15 +262,16 @@ class PDFGeneratorService:
             'amount_in_words': self._amount_to_words(donation.amount),
             'formatted_date': donation.completed_at.strftime('%d. %B %Y') if donation.completed_at else '',
             'issue_date': datetime.now().strftime('%d. %B %Y'),
+            'background_image_path': f'file://{background_image_path}',
             
-            # Stiftungsdaten (konstant - basierend auf Phase 1 tax_receipt.html)
+            # Stiftungsdaten (konstant - basierend auf offiziellem Text)
             'foundation': {
                 'name': 'Peter-Schöffer-Stiftung',
                 'street': 'Wormser Weg 17',
                 'postal_code': '67574',
                 'city': 'Osthofen',
-                'tax_number': '07/456/78901',
-                'tax_office': 'Finanzamt Worms'
+                'tax_number': '44/673/08355',
+                'tax_office': 'Finanzamt Worms-Kirchheimbolanden'
             }
         }
         

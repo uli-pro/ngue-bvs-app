@@ -6,199 +6,112 @@
     <style>
         @page {
             size: A4;
-            margin: 20mm;
+            margin: 0;
         }
         
         body {
-            font-family: 'Times New Roman', serif;
-            font-size: 11pt;
-            line-height: 1.3;
             margin: 0;
             padding: 0;
+            font-family: Arial, sans-serif;
+            background-image: url('{{ background_image_path }}');
+            background-size: 210mm 297mm;
+            background-repeat: no-repeat;
+            background-position: 0 0;
+            width: 210mm;
+            height: 297mm;
+            position: relative;
+        }
+        
+        .tax-receipt-container {
+            width: 210mm;
+            height: 297mm;
+            position: relative;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Donor name and address fields */
+        .donor-name {
+            position: absolute;
+            top: 46mm;
+            left: 20mm;
+            font-size: 11pt;
+            font-weight: normal;
+            font-family: Arial, sans-serif;
+            color: #000;
+            line-height: 1.2;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        
+        /* Amount in digits */
+        .amount-digits {
+            position: absolute;
+            top: 82mm;
+            left: 22mm;
+            width: 50mm;
+            font-size: 11pt;
             color: #000;
         }
         
-        .form-box {
-            border: 2px solid black;
-            padding: 3mm;
-            margin: 2mm 0;
-            min-height: 8mm;
+        /* Amount in words */
+        .amount-words {
+            position: absolute;
+            top: 82mm;
+            left: 85mm;
+            width: 50mm;
+            font-size: 11pt;
+            color: #000;
         }
         
-        .checkbox {
-            display: inline-block;
-            width: 4mm;
-            height: 4mm;
-            border: 1px solid black;
-            margin-right: 2mm;
-            text-align: center;
-            line-height: 4mm;
-            font-size: 8pt;
+        /* Donation date */
+        .donation-date {
+            position: absolute;
+            top: 82mm;
+            left: 149mm;
+            width: 40mm;
+            font-size: 11pt;
+            color: #000;
         }
         
-        .checked {
-            background-color: black;
-            color: white;
-            font-weight: bold;
-        }
-        
-        h1 {
-            font-size: 16pt;
-            text-align: center;
-            margin: 20mm 0 5mm 0;
-            font-weight: bold;
-        }
-        
-        .subtitle {
-            font-size: 9pt;
-            text-align: center;
-            font-style: italic;
-            margin-bottom: 20mm;
-            color: #666;
-        }
-        
-        .stiftung-header {
-            font-weight: bold;
-            margin-bottom: 10mm;
-        }
-        
-        .confirmation-text {
-            margin: 15mm 0;
-            font-size: 10pt;
-            text-align: justify;
-        }
-        
-        .amount-section {
-            margin: 15mm 0;
-        }
-        
-        .amount-line {
-            margin: 3mm 0;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .label {
-            font-weight: bold;
-            flex: 1;
-        }
-        
-        .value {
-            flex: 1;
-            text-align: right;
-            border-bottom: 1px solid #000;
-            padding-bottom: 1mm;
-        }
-        
-        .legal-section {
-            margin-top: 20mm;
-            font-size: 9pt;
-            line-height: 1.2;
-        }
-        
-        .signature-section {
-            margin-top: 30mm;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .signature-field {
-            width: 45%;
-            text-align: center;
-        }
-        
-        .signature-line {
-            border-bottom: 1px solid #000;
-            height: 15mm;
-            margin-bottom: 3mm;
-        }
-        
-        .signature-label {
-            font-size: 9pt;
-            color: #666;
-        }
-        
-        @media print {
-            @page {
-                margin: 15mm;
-            }
+        /* Signature date */
+        .signature-date {
+            position: absolute;
+            top: 231mm;
+            left: 22mm;
+            font-size: 11pt;
+            color: #000;
         }
     </style>
 </head>
 <body>
-    <div class="tax-receipt">
-        <h1>Bestätigung über Geldzuwendungen</h1>
-        <p class="subtitle">im Sinne des § 10b des Einkommensteuergesetzes an inländische Stiftungen des privaten Rechts</p>
+    <div class="tax-receipt-container">
         
-        <!-- Stiftungsdaten -->
-        <div class="form-box stiftung-header">
-            <strong>Peter-Schöffer-Stiftung</strong><br>
-            Wormser Weg 17<br>
-            67574 Osthofen<br>
-            StNr. 07/456/78901
+        <!-- Donor name and address -->
+        <div class="donor-name">
+            {{ person_snapshot.first_name }} {{ person_snapshot.last_name }}, {{ person_snapshot.street }} {{ person_snapshot.house_number }}, {{ person_snapshot.postal_code }} {{ person_snapshot.city }}
         </div>
         
-        <!-- Spenderdaten -->
-        <div class="form-box">
-            <strong>Name und Anschrift des Zuwendenden:</strong><br>
-            {{ person_snapshot.first_name }} {{ person_snapshot.last_name }}<br>
-            {{ person_snapshot.street }} {{ person_snapshot.house_number }}<br>
-            {{ person_snapshot.postal_code }} {{ person_snapshot.city }}
+        <!-- Amount in digits -->
+        <div class="amount-digits">
+            {{ formatted_amount }} €
         </div>
         
-        <!-- Bestätigungstext -->
-        <div class="confirmation-text">
-            <strong>Wir bestätigen, dass die Zuwendung nur zur Förderung der Religion verwendet wird.</strong>
+        <!-- Amount in words -->
+        <div class="amount-words">
+            --- {{ amount_in_words }} ---
         </div>
         
-        <!-- Spendenbetrag -->
-        <div class="form-box amount-section">
-            <div class="amount-line">
-                <span class="label">Betrag der Zuwendung - in Ziffern -:</span>
-                <span class="value">{{ "%.2f"|format(donation.amount) }} €</span>
-            </div>
-            <div class="amount-line">
-                <span class="label">- in Buchstaben -:</span>
-                <span class="value">{{ amount_in_words }} Euro</span>
-            </div>
-            <div class="amount-line">
-                <span class="label">Tag der Zuwendung:</span>
-                <span class="value">{{ donation.completed_at.strftime('%d. %B %Y') }}</span>
-            </div>
-            <div class="amount-line">
-                <span class="label">Zweck der Zuwendung:</span>
-                <span class="value">Finanzierung NGÜ-Bibelübersetzung</span>
-            </div>
+        <!-- Donation date -->
+        <div class="donation-date">
+            {{ formatted_date }}
         </div>
         
-        <!-- Verzichtserklärung -->
-        <p style="margin: 15mm 0; font-size: 10pt;">
-            Es handelt sich um den Verzicht auf Erstattung von Aufwendungen 
-            <span class="checkbox">☐</span> Ja  
-            <span class="checkbox checked">☑</span> Nein
-        </p>
-        
-        <!-- Rechtliche Angaben -->
-        <div class="legal-section">
-            <p><strong>Angaben zur Steuerbegünstigung:</strong></p>
-            <p>Die Peter-Schöffer-Stiftung ist wegen Förderung der Religion nach dem letzten uns zugegangenen Freistellungsbescheid des Finanzamts Worms vom 15. März 2024, Steuernummer 07/456/78901, nach § 5 Abs. 1 Nr. 9 des Körperschaftsteuergesetzes von der Körperschaftsteuer und nach § 3 Nr. 6 des Gewerbesteuergesetzes von der Gewerbesteuer befreit.</p>
-            
-            <p>Die Einhaltung der satzungsmäßigen Voraussetzungen nach den §§ 51, 59, 60 und 61 AO wurde vom Finanzamt Worms mit Bescheid vom 15. März 2024 nach § 60a AO gesondert festgestellt. Wir fördern nach unserer Satzung die Religion.</p>
+        <!-- Signature date -->
+        <div class="signature-date">
+            Osthofen, den {{ issue_date }}
         </div>
         
-        <!-- Unterschriftensektion -->
-        <div class="signature-section">
-            <div class="signature-field">
-                <div style="text-align: left; margin-bottom: 5mm;">
-                    Osthofen, {{ donation.completed_at.strftime('%d. %B %Y') }}
-                </div>
-                <div class="signature-label">Ort, Datum</div>
-            </div>
-            <div class="signature-field">
-                <div class="signature-line"></div>
-                <div class="signature-label">Unterschrift des Zuwendungsempfängers</div>
-            </div>
-        </div>
     </div>
 </body>
 </html>
