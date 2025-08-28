@@ -42,3 +42,15 @@ SELECT verse_id, payment_status, created_at
   4)
          OR (book = '1KI' AND chapter = 17 AND verse =          22)
   );
+
+
+
+## PG-Dump
+
+pg_dump postgresql://localhost/ngue_bvs_db | gzip > /Users/ulrichprobst/Nextcloud/a-projekte/4-probst-dienstleistungen/software-entwicklung/harvard-cs50/ngue-bvs-app/db-backups/ngue_backup_$(date +%Y%m%d_%H%M%S).sql.gz
+
+## PG-Restore
+
+dropdb --if-exists ngue_bvs_db && createdb ngue_bvs_db && psql -d ngue_bvs_db -c "CREATE EXTENSION IF NOT EXISTS vector;" && gunzip -c /Users/ulrichprobst/Nextcloud/a-projekte/4-probst-dienstleistungen/software-entwicklung/harvard-cs50/ngue-bvs-app/db-backups/ngue_backup_YYYYMMDD_HHMMSS.sql.gz | psql -d ngue_bvs_db
+
+(Einfach den echten Dateinamen im Restore-Befehl einsetzen.)

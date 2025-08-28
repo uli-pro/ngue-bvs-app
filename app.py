@@ -20,6 +20,10 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Certificate storage configuration
+app.config['CERTIFICATE_STORAGE_PATH'] = os.path.join(os.getcwd(), 'certificates')
+app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'
+
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
@@ -27,8 +31,13 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 from models import db, Person, Verse, Donation, VerseReservation
 from sqlalchemy import text
 from stripe_service import StripeService, StripeError
+from pdf_service import PDFGeneratorService
 import stripe
 db.init_app(app)
+
+# Initialize PDF Generator Service
+pdf_service = PDFGeneratorService()
+pdf_service.init_app(app)
 
 # Configure session to use database (production-ready)
 app.config["SESSION_PERMANENT"] = True  # Make sessions permanent so they get expiry dates

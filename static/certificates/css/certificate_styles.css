@@ -1,0 +1,111 @@
+/* A4-Format mit korrekten Dimensionen */
+.certificate-container {
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Datum rechts oben */
+.date-field {
+    position: absolute;
+    top: 25mm;
+    right: 25mm;
+    font-size: 12pt;
+    font-weight: 400;
+    color: #333;
+}
+
+/* Haupttext-Bereich */
+.main-text {
+    position: absolute;
+    top: 120mm;
+    left: 25mm;
+    width: 160mm;
+    text-align: center;
+    line-height: 1.6;
+    font-size: 14pt;
+}
+
+/* Bestätigungstext */
+.main-text p {
+    margin: 8mm 0;
+    font-weight: 400;
+}
+
+/* Spendername */
+.donor-name {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #2c5f8f;
+    margin: 15mm 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Spendenbetrag hervorheben */
+.donation-amount {
+    font-weight: 600;
+    color: #2c5f8f;
+}
+
+/* Bibelverse */
+.verse-text {
+    margin: 10mm 0;
+    padding: 5mm;
+    font-style: italic;
+    font-size: 14pt;
+    font-weight: 400;
+    border-left: 3px solid #f4a261;
+    background-color: rgba(244, 162, 97, 0.1);
+    text-align: left;
+}
+
+/* Vers-Referenz */
+.verse-reference {
+    font-weight: 600;
+    font-style: normal;
+    color: #2c5f8f;
+    margin-bottom: 5mm;
+}
+
+/* Multiple Verse Styling */
+.verse-list {
+    text-align: left;
+    margin: 10mm 0;
+}
+
+.verse-item {
+    margin-bottom: 8mm;
+    padding: 4mm;
+    border-left: 2px solid #f4a261;
+    background-color: rgba(244, 162, 97, 0.05);
+}
+
+/* Print-Optimierung */
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    @page {
+        margin: 0;
+        size: A4;
+    }
+    
+    .certificate-container {
+        break-inside: avoid;
+    }
+}
+
+/* Responsive Adjustments für Preview */
+@media screen {
+    .certificate-container {
+        max-width: 210mm;
+        margin: 0 auto;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+}

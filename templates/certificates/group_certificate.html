@@ -1,0 +1,39 @@
+{% extends "certificates/base_certificate.html" %}
+
+{% block certificate_content %}
+<div class="certificate-content">
+    <!-- Datum - rechts oben -->
+    <div class="date-field">
+        Ausgestellt am {{ donation.completed_at.strftime('%d.%m.%Y') }}
+    </div>
+    
+    <!-- Haupttext -->
+    <div class="main-text">
+        <p>Hiermit bestätigen wir:</p>
+        
+        <p class="donor-name">
+            {{ donation.donation_details.group_article }} {{ donation.donation_details.group_name }}
+        </p>
+        
+        <p>hat durch eine Spende von <span class="donation-amount">{{ "%.2f"|format(donation.amount) }} €</span></p>
+        
+        {% if verses|length == 1 %}
+            <p>die Übersetzung des folgenden Bibelverses ermöglicht:</p>
+            <div class="verse-text">
+                <div class="verse-reference">{{ verses[0].reference }}</div>
+                {{ verses[0].text }}
+            </div>
+        {% else %}
+            <p>die Übersetzung der folgenden Bibelverse ermöglicht:</p>
+            <div class="verse-list">
+                {% for verse in verses %}
+                    <div class="verse-item">
+                        <div class="verse-reference">{{ verse.reference }}</div>
+                        <div class="verse-text">{{ verse.text }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

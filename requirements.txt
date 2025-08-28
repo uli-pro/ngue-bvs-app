@@ -24,7 +24,7 @@ Werkzeug==3.0.1
 stripe==12.4.0
 
 # PDF generation
-WeasyPrint==60.2
+WeasyPrint==62.3
 reportlab==4.0.7
 
 # pgvector for semantic search

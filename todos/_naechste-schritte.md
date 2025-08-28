@@ -2,7 +2,6 @@
 
 - PDF-Generator implementieren -> Daniel  muss mir die Stiftungsdaten geben
 - E-Mail-Engine implementieren -> Daniel muss mir die Daten von Mailgun geben
-- Cookie-Einwilligung programmieren (Hubspot Integration rechtlich voraussehen)
 - Bilder von NGÜ einpflegen
 - Auf Inhaltsseiten Farben weniger bunt machen (V.A. bei "rechtliches")
 - Spendenkorb: Bei Geschenkversen Möglichkeit die Message und E-Mail nochmal zu editieren.

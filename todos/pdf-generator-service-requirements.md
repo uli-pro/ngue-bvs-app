@@ -23,7 +23,6 @@ Der PDF-Generator-Service ist verantwortlich für die vollständige Erstellung, 
   - `gift_certificate` - Geschenk-Zertifikat
   - `tax_receipt` - Spendenbescheinigung
 - **Template-Engine** (Jinja2, ReportLab, WeasyPrint?)
-- **NGÜ-Branding** konsistent anwenden
 
 ### 3. Datenbank-Integration
 - **Certificate-Records erstellen** nach erfolgreicher PDF-Generierung
@@ -91,9 +90,13 @@ Beispiele:
 - donation_001_tax_receipt_20250115_143022.pdf
 ```
 
+
+
+
 ## Implementierungs-Details
 
 ### 1. Pfad-Generator
+
 ```python
 def generate_certificate_paths(donation, certificate_type, session_id=None):
     """
@@ -266,6 +269,10 @@ brew install weasyprint
 3. **Service-Implementation**: PDFGeneratorService programmieren
 4. **Certificate-Model**: Vereinfachung implementieren
 5. **Testing**: Umfassende Test-Suite schreiben
+
+
+
+
 
 
 
