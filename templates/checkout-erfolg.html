@@ -30,43 +30,116 @@
                         <h3 class="mb-0">Ihre Dokumente</h3>
                     </div>
                     <div class="card-body p-4">
-                        <p class="text-center lead mb-4">Ihre Dokumente stehen zum Download bereit:</p>
-                        
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
-                                        <h5>Personalisiertes Zertifikat</h5>
-                                        <p class="text-muted">Ihr Sponsoring-Zertifikat</p>
-                                        <a href="/downloads/zertifikat-demo.pdf" class="btn btn-primary" target="_blank">
-                                            <i class="fas fa-download me-2"></i>
-                                            Zertifikat herunterladen
-                                        </a>
+                        {% if pdfs_available %}
+                            <p class="text-center lead mb-4">Ihre Dokumente stehen zum Download bereit:</p>
+                            
+                            <div class="row g-3">
+                                <!-- Zertifikate -->
+                                {% if certificate_links %}
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
+                                                <h5>
+                                                    {% if certificate_links|length == 1 %}
+                                                        Persönliches Zertifikat
+                                                    {% else %}
+                                                        Zertifikate ({{ certificate_links|length }})
+                                                    {% endif %}
+                                                </h5>
+                                                <p class="text-muted">Ihre Sponsoring-Zertifikat{{ 'e' if certificate_links|length > 1 else '' }}</p>
+                                                
+                                                {% for cert_link in certificate_links %}
+                                                    <div class="mb-2">
+                                                        <a href="{{ cert_link.download_url }}" 
+                                                           class="btn btn-primary btn-sm" 
+                                                           target="_blank"
+                                                           onclick="trackDownload('certificate', {{ cert_link.donation_id }})">
+                                                            <i class="fas fa-download me-2"></i>
+                                                            {% if certificate_links|length == 1 %}
+                                                                Zertifikat herunterladen
+                                                            {% else %}
+                                                                Zertifikat {{ loop.index }}
+                                                            {% endif %}
+                                                        </a>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                {% endif %}
+                                
+                                <!-- Spendenbescheinigungen -->
+                                {% if tax_receipt_links %}
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-file-invoice fa-3x text-secondary mb-3"></i>
+                                                <h5>
+                                                    {% if tax_receipt_links|length == 1 %}
+                                                        Spendenbescheinigung
+                                                    {% else %}
+                                                        Spendenbescheinigungen ({{ tax_receipt_links|length }})
+                                                    {% endif %}
+                                                </h5>
+                                                <p class="text-muted">Für Ihre Steuererklärung</p>
+                                                
+                                                {% for receipt_link in tax_receipt_links %}
+                                                    <div class="mb-2">
+                                                        <a href="{{ receipt_link.download_url }}" 
+                                                           class="btn btn-secondary btn-sm" 
+                                                           target="_blank"
+                                                           onclick="trackDownload('tax_receipt', {{ receipt_link.donation_id }})">
+                                                            <i class="fas fa-download me-2"></i>
+                                                            {% if tax_receipt_links|length == 1 %}
+                                                                Bescheinigung herunterladen
+                                                            {% else %}
+                                                                Bescheinigung {{ loop.index }}
+                                                            {% endif %}
+                                                        </a>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Fallback wenn keine PDFs verfügbar -->
+                                {% if not certificate_links and not tax_receipt_links %}
+                                    <div class="col-12">
+                                        <div class="alert alert-warning text-center">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            PDF-Dokumente werden gerade erstellt. Sie erhalten sie per E-Mail.
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
                             
-                            <div class="col-md-6">
-                                <div class="card h-100">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-file-invoice fa-3x text-secondary mb-3"></i>
-                                        <h5>Spendenbescheinigung</h5>
-                                        <p class="text-muted">Für Ihre Steuererklärung</p>
-                                        <a href="/downloads/spendenbescheinigung-demo.pdf" class="btn btn-secondary" target="_blank">
-                                            <i class="fas fa-download me-2"></i>
-                                            Bescheinigung herunterladen
-                                        </a>
-                                    </div>
-                                </div>
+                            <div class="alert alert-info mt-4 text-center">
+                                <i class="fas fa-envelope me-2"></i>
+                                Alle Dokumente wurden auch an Ihre E-Mail-Adresse 
+                                <strong>{{ user_email }}</strong> versendet.
                             </div>
-                        </div>
-                        
-                        <div class="alert alert-info mt-4 text-center">
-                            <i class="fas fa-envelope me-2"></i>
-                            Beide Dokumente wurden auch an Ihre E-Mail-Adresse 
-                            <strong>{{ user_email or 'max.mustermann@example.com' }}</strong> versendet.
-                        </div>
+                            
+                        {% else %}
+                            <!-- Fallback bei PDF-Generierung-Fehlern -->
+                            <div class="alert alert-warning text-center">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                <h5>Dokumente werden vorbereitet</h5>
+                                <p>Ihre Zertifikate und Spendenbescheinigungen werden gerade erstellt 
+                                   und an <strong>{{ user_email }}</strong> versendet.</p>
+                                <p class="mb-0"><small>Falls Sie die Dokumente nicht innerhalb von 
+                                   30 Minuten erhalten, wenden Sie sich bitte an unseren Support.</small></p>
+                            </div>
+                            
+                            {% if pdf_error %}
+                                <div class="alert alert-danger text-center mt-3">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    <small>Technischer Hinweis: Bei der Dokumentenerstellung ist ein Problem aufgetreten. 
+                                    Der Support wurde automatisch benachrichtigt.</small>
+                                </div>
+                            {% endif %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -193,5 +266,32 @@
         </div>
     </div>
 </section>
+
+<!-- JavaScript für Download-Tracking -->
+<script>
+function trackDownload(documentType, donationId) {
+    // Optional: Analytics-Tracking für Downloads
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'download', {
+            'event_category': 'PDF',
+            'event_label': documentType,
+            'value': donationId
+        });
+    }
+    
+    // Optional: Server-seitiges Tracking
+    fetch('/api/track-download', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            document_type: documentType,
+            donation_id: donationId
+        })
+    }).catch(err => console.log('Tracking failed:', err));
+}
+</script>
 
 {% endblock %}

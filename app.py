@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, abort
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
@@ -28,10 +28,10 @@ app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, Verse, Donation, VerseReservation
+from models import db, Person, Verse, Donation, VerseReservation, Certificate
 from sqlalchemy import text
 from stripe_service import StripeService, StripeError
-from pdf_service import PDFGeneratorService
+from pdf_service import PDFGeneratorService, PDFGenerationError
 import stripe
 db.init_app(app)
 
@@ -1173,18 +1173,134 @@ def transparenz():
     return render_template("transparenz.html", stats=stats)
 
 # ==========================================
-# DOWNLOAD ROUTES
+# SECURE PDF DOWNLOAD ROUTES
 # ==========================================
 
-@app.route("/downloads/zertifikat-demo.pdf")
-def download_zertifikat():
-    """Download demo certificate"""
-    return render_template("dummy-zertifikat.html")
+@app.route('/download/certificate/<int:certificate_id>')
+@limiter.limit("10 per minute")
+def download_certificate(certificate_id):
+    """Sicherer PDF-Download für Zertifikate"""
+    
+    # Certificate laden
+    certificate = Certificate.query.get_or_404(certificate_id)
+    
+    # Sicherheitsprüfungen
+    if not can_access_certificate(certificate):
+        abort(403)
+    
+    # Datei existiert?
+    if not certificate.exists_on_disk:
+        app.logger.error(f"Certificate file missing: {certificate.file_path}")
+        abort(404)
+    
+    try:
+        # PDF-Datei senden
+        return send_file(
+            certificate.file_path,
+            as_attachment=True,
+            download_name=certificate.filename,
+            mimetype='application/pdf'
+        )
+    except Exception as e:
+        app.logger.error(f"File serving failed: {str(e)}")
+        abort(500)
 
-@app.route("/downloads/spendenbescheinigung-demo.pdf")
-def download_spendenbescheinigung():
-    """View demo donation receipt"""
-    return render_template("dummy-spendenbescheinigung.html")
+@app.route('/download/tax-receipt/<int:certificate_id>')
+@limiter.limit("10 per minute")
+def download_tax_receipt(certificate_id):
+    """Download für Spendenbescheinigungen"""
+    
+    certificate = Certificate.query.get_or_404(certificate_id)
+    
+    # Nur Tax-Receipts erlauben
+    if certificate.certificate_type != 'tax_receipt':
+        abort(404)
+    
+    # Gleiche Sicherheitsprüfungen
+    if not can_access_certificate(certificate):
+        abort(403)
+    
+    if not certificate.exists_on_disk:
+        abort(404)
+    
+    try:
+        return send_file(
+            certificate.file_path,
+            as_attachment=True,
+            download_name=certificate.filename,
+            mimetype='application/pdf'
+        )
+    except Exception as e:
+        app.logger.error(f"Tax receipt serving failed: {str(e)}")
+        abort(500)
+
+def can_access_certificate(certificate):
+    """Prüft ob aktueller User auf Certificate zugreifen darf"""
+    
+    # Session-basierte Zugriffskontrolle
+    session_donations = session.get('completed_donations', [])
+    
+    # User darf auf Certificate zugreifen wenn:
+    # 1. Certificate gehört zu einer Donation aus aktueller Session
+    if certificate.donation_id in session_donations:
+        return True
+    
+    # 2. PDFs wurden in aktueller Session generiert
+    if session.get('pdfs_generated') and certificate.donation_id in session_donations:
+        return True
+    
+    # 3. Time-based access (PDFs sind 24h nach Generierung verfügbar)
+    if certificate.generated_at:
+        hours_since_generation = (datetime.utcnow() - certificate.generated_at).total_seconds() / 3600
+        if hours_since_generation <= 24:
+            return True
+    
+    return False
+
+def is_pdf_access_valid():
+    """Prüft ob PDF-Zugriff noch gültig ist"""
+    if 'pdf_access_expires_at' not in session:
+        return False
+    
+    try:
+        expires_at = datetime.fromisoformat(session['pdf_access_expires_at'])
+        return datetime.utcnow() < expires_at
+    except (ValueError, TypeError):
+        return False
+
+@app.before_request
+def check_pdf_session_expiry():
+    """Bereinigt abgelaufene PDF-Sessions automatisch"""
+    if 'pdf_access_expires_at' in session and not is_pdf_access_valid():
+        cleanup_pdf_session()
+
+def cleanup_pdf_session():
+    """Bereinigt PDF-spezifische Session-Daten"""
+    keys_to_remove = [
+        'completed_donations',
+        'pdfs_generated', 
+        'pdf_access_granted_at',
+        'pdf_access_expires_at'
+    ]
+    
+    for key in keys_to_remove:
+        session.pop(key, None)
+
+@app.route('/api/track-download', methods=['POST'])
+@csrf.exempt
+@limiter.limit("30 per minute")
+def api_track_download():
+    """Optional tracking endpoint for PDF downloads"""
+    try:
+        data = request.get_json()
+        document_type = data.get('document_type')
+        donation_id = data.get('donation_id')
+        
+        app.logger.info(f"Download tracked: {document_type} for donation {donation_id}")
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        app.logger.warning(f"Download tracking failed: {e}")
+        return jsonify({'status': 'ignored'}), 200
 
 # ==========================================
 # STRIPE PAYMENT ROUTES
@@ -1429,7 +1545,107 @@ def checkout_erfolg():
     session.pop('payment_intent_id', None)
     session.modified = True
     
-    return render_template("checkout-erfolg.html")
+    # Prepare template context with PDF generation
+    payment_intent_id = session.get('completed_payment_intent')
+    if payment_intent_id:
+        try:
+            # Get donations from the completed payment intent
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+            if payment_intent.status == 'succeeded':
+                donation_ids_str = payment_intent.metadata.get('donation_ids', '')
+                donation_ids = [int(did) for did in donation_ids_str.split(',') if did.isdigit()]
+                
+                if donation_ids:
+                    # Generate PDFs for all donations in this payment
+                    template_context = prepare_success_page_with_pdfs(donation_ids, payment_intent_id)
+                    return render_template("checkout-erfolg.html", **template_context)
+        except Exception as e:
+            app.logger.error(f"Error preparing success page with PDFs: {e}")
+    
+    # Fallback: render template without PDF links
+    return render_template("checkout-erfolg.html", 
+                         user_email="support@peter-schoeffer-stiftung.de",
+                         verse_reference="Jeremia 29,11",
+                         pdfs_available=False)
+
+def prepare_success_page_with_pdfs(donation_ids, session_id):
+    """Bereitet Template-Context mit PDF-Generierung vor"""
+    from sqlalchemy import func
+    
+    try:
+        # Generate PDFs for all donations
+        pdf_service = PDFGeneratorService(app)
+        generated_documents = pdf_service.generate_donation_documents_batch(
+            donation_ids, 
+            session_id or 'no_session'
+        )
+        
+        # Prepare download links
+        certificate_links = []
+        tax_receipt_links = []
+        
+        for cert in generated_documents.get('certificates', []):
+            certificate_links.append({
+                'donation_id': cert.donation_id,
+                'download_url': cert.get_download_url(),
+                'filename': cert.filename,
+                'type': cert.certificate_type
+            })
+        
+        for receipt in generated_documents.get('tax_receipts', []):
+            tax_receipt_links.append({
+                'donation_id': receipt.donation_id,
+                'download_url': receipt.get_download_url(),
+                'filename': receipt.filename
+            })
+        
+        # Get donation details for display
+        latest_donation = Donation.query.get(donation_ids[-1]) if donation_ids else None
+        user_email = latest_donation.person.email if latest_donation else 'support@peter-schoeffer-stiftung.de'
+        verse_reference = latest_donation.verse.reference if latest_donation else 'Jeremia 29,11'
+        
+        # Setup PDF session for access control
+        setup_pdf_session(donation_ids, session_id)
+        
+        return {
+            'user_email': user_email,
+            'verse_reference': verse_reference,
+            'certificate_links': certificate_links,
+            'tax_receipt_links': tax_receipt_links,
+            'total_donations': len(donation_ids),
+            'pdfs_available': True,
+            'total_sponsored': Verse.query.filter_by(is_sponsored=True).count(),
+            'total_amount': db.session.query(func.sum(Donation.amount)).filter_by(payment_status='completed').scalar() or 0,
+            'remaining_verses': Verse.query.filter_by(is_sponsored=False).count()
+        }
+        
+    except PDFGenerationError as e:
+        app.logger.error(f"PDF generation failed: {str(e)}")
+        
+        # Fallback: prepare context without PDFs
+        latest_donation = Donation.query.get(donation_ids[-1]) if donation_ids else None
+        
+        return {
+            'user_email': latest_donation.person.email if latest_donation else 'support@peter-schoeffer-stiftung.de',
+            'verse_reference': latest_donation.verse.reference if latest_donation else 'Jeremia 29,11',
+            'certificate_links': [],
+            'tax_receipt_links': [],
+            'total_donations': len(donation_ids),
+            'pdfs_available': False,
+            'pdf_error': True,
+            'total_sponsored': Verse.query.filter_by(is_sponsored=True).count(),
+            'total_amount': db.session.query(func.sum(Donation.amount)).filter_by(payment_status='completed').scalar() or 0,
+            'remaining_verses': Verse.query.filter_by(is_sponsored=False).count()
+        }
+
+def setup_pdf_session(donation_ids, session_id):
+    """Bereitet Session für PDF-Downloads vor"""
+    session['completed_donations'] = donation_ids
+    session['session_id'] = session_id
+    session['pdf_access_granted_at'] = datetime.utcnow().isoformat()
+    session['pdf_access_expires_at'] = (datetime.utcnow() + timedelta(hours=24)).isoformat()
+    session['pdfs_generated'] = True
+    session.permanent = True
 
 @app.route("/checkout/verarbeitung")
 def checkout_verarbeitung():
