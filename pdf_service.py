@@ -5,9 +5,13 @@ Generiert Zertifikate und Spendenbescheinigungen mit WeasyPrint
 
 import os
 import platform
+import logging
+import time
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Dict, Tuple, Any
+from contextlib import contextmanager
+from functools import wraps
 
 # Setup environment for WeasyPrint on macOS
 # On Linux (Docker), libraries are in system path
@@ -18,6 +22,7 @@ if platform.system() == "Darwin":
 
 import weasyprint
 from flask import Flask, render_template, current_app
+from sqlalchemy.exc import SQLAlchemyError
 from models import db, Donation, Certificate, Person, Verse
 
 # Custom Exceptions
@@ -42,6 +47,13 @@ class PDFGeneratorService:
     
     def __init__(self, app: Optional[Flask] = None):
         self.app = app
+        self.logger = logging.getLogger(__name__)
+        self.stats = {
+            'total_generated': 0,
+            'total_errors': 0,
+            'avg_generation_time': 0,
+            'operations_by_type': {}
+        }
         if app:
             self.init_app(app)
     
@@ -49,6 +61,98 @@ class PDFGeneratorService:
         """Flask-App initialisieren"""
         app.config.setdefault('CERTIFICATE_STORAGE_PATH', os.path.join(os.getcwd(), 'certificates'))
         app.config.setdefault('PDF_TEMPLATE_PATH', 'templates/certificates')
+    
+    def _track_performance(self, operation_name: str):
+        """Decorator für Performance-Tracking"""
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                start_time = time.time()
+                operation_type = kwargs.get('certificate_type', 'unknown')
+                
+                try:
+                    result = func(*args, **kwargs)
+                    
+                    # Success-Metrics
+                    duration = time.time() - start_time
+                    self.stats['total_generated'] += 1
+                    
+                    # Moving average für Generation-Zeit
+                    if self.stats['avg_generation_time'] == 0:
+                        self.stats['avg_generation_time'] = duration
+                    else:
+                        self.stats['avg_generation_time'] = (
+                            self.stats['avg_generation_time'] * 0.9 + duration * 0.1
+                        )
+                    
+                    # Per-Type-Statistiken
+                    if operation_type not in self.stats['operations_by_type']:
+                        self.stats['operations_by_type'][operation_type] = {
+                            'count': 0, 'avg_time': 0, 'errors': 0
+                        }
+                    
+                    type_stats = self.stats['operations_by_type'][operation_type]
+                    type_stats['count'] += 1
+                    if type_stats['avg_time'] == 0:
+                        type_stats['avg_time'] = duration
+                    else:
+                        type_stats['avg_time'] = type_stats['avg_time'] * 0.9 + duration * 0.1
+                    
+                    self.logger.info(
+                        f"{operation_name} completed in {duration:.2f}s for type {operation_type}"
+                    )
+                    return result
+                    
+                except Exception as e:
+                    # Error-Metrics
+                    duration = time.time() - start_time
+                    self.stats['total_errors'] += 1
+                    
+                    if operation_type not in self.stats['operations_by_type']:
+                        self.stats['operations_by_type'][operation_type] = {
+                            'count': 0, 'avg_time': 0, 'errors': 0
+                        }
+                    self.stats['operations_by_type'][operation_type]['errors'] += 1
+                    
+                    self.logger.error(
+                        f"{operation_name} failed after {duration:.2f}s for type {operation_type}: {str(e)}"
+                    )
+                    raise
+                    
+            return wrapper
+        return decorator
+    
+    @contextmanager
+    def _atomic_operation(self):
+        """Context Manager für atomische PDF-Generierung"""
+        created_files = []
+        savepoint = None
+        
+        try:
+            # Savepoint für Rollback
+            savepoint = db.session.begin_nested()
+            
+            yield created_files
+            
+            # Alles erfolgreich - committen
+            savepoint.commit()
+            db.session.commit()
+            
+        except Exception as e:
+            # Rollback Datenbank
+            if savepoint:
+                savepoint.rollback()
+            db.session.rollback()
+            
+            # Cleanup: Erstellte Dateien löschen
+            for file_path in created_files:
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except OSError:
+                        pass  # File cleanup failure - nicht kritisch
+            
+            raise PDFGenerationError(f"Atomic operation failed: {str(e)}")
         
     def generate_certificate(self, donation_id: int, certificate_type: str, 
                             session_id: Optional[str] = None) -> Certificate:
@@ -159,6 +263,198 @@ class PDFGeneratorService:
             if 'file_path' in locals() and os.path.exists(file_path):
                 os.remove(file_path)
             raise PDFGenerationError(f"Tax receipt generation failed: {str(e)}")
+
+    @_track_performance("Certificate Generation")
+    def generate_certificate_atomic(self, donation_id: int, certificate_type: str, 
+                                   session_id: Optional[str] = None) -> Certificate:
+        """Atomische Certificate-Generierung"""
+        
+        with self._atomic_operation() as created_files:
+            # 1. Parameter validieren
+            donation = self._validate_donation(donation_id)
+            
+            # 2. Prüfen ob Certificate bereits existiert
+            existing = Certificate.find_by_donation_and_type(donation_id, certificate_type)
+            if existing and existing.exists_on_disk:
+                return existing
+            
+            # 3. Pfade generieren
+            filename, file_path = self._generate_certificate_paths(
+                donation, certificate_type, session_id
+            )
+            created_files.append(file_path)  # Für Cleanup registrieren
+            
+            # 4. PDF generieren
+            context = self._prepare_certificate_context(donation, certificate_type)
+            template_name = f"certificates/{certificate_type}.html"
+            html_content = render_template(template_name, **context)
+            self._generate_pdf_from_html(html_content, file_path)
+            
+            # 5. Certificate-Record erstellen
+            certificate = Certificate(
+                donation_id=donation.id,
+                certificate_type=certificate_type,
+                filename=filename,
+                file_path=file_path
+            )
+            
+            # Validierung vor DB-Insert
+            if not certificate.validate_file_path():
+                raise ValidationError(f"Invalid file path: {file_path}")
+            
+            db.session.add(certificate)
+            db.session.flush()  # ID generieren aber noch nicht committen
+            
+            return certificate
+    
+    @_track_performance("Tax Receipt Generation")
+    def generate_tax_receipt_atomic(self, donation_id: int, 
+                                   session_id: Optional[str] = None) -> Certificate:
+        """Atomische Spendenbescheinigung-Generierung"""
+        
+        with self._atomic_operation() as created_files:
+            # Parameter validieren
+            donation = self._validate_donation(donation_id)
+            
+            # Prüfen ob Receipt bereits existiert
+            existing = Certificate.find_by_donation_and_type(donation_id, 'tax_receipt')
+            if existing and existing.exists_on_disk:
+                return existing
+            
+            # Pfade generieren
+            filename, file_path = self._generate_certificate_paths(
+                donation, 'tax_receipt', session_id
+            )
+            created_files.append(file_path)
+            
+            # PDF generieren
+            context = self._prepare_tax_receipt_context(donation)
+            html_content = render_template('certificates/tax_receipt.html', **context)
+            self._generate_pdf_from_html(html_content, file_path)
+            
+            # Certificate-Record erstellen
+            certificate = Certificate(
+                donation_id=donation.id,
+                certificate_type='tax_receipt',
+                filename=filename,
+                file_path=file_path
+            )
+            
+            if not certificate.validate_file_path():
+                raise ValidationError(f"Invalid file path: {file_path}")
+            
+            db.session.add(certificate)
+            db.session.flush()
+            
+            return certificate
+    
+    def _validate_donation(self, donation_id: int) -> Donation:
+        """Validiert Donation für PDF-Generierung"""
+        donation = Donation.query.get(donation_id)
+        if not donation:
+            raise ValidationError(f"Donation {donation_id} not found")
+        
+        if donation.payment_status != 'completed':
+            raise ValidationError(f"Donation {donation_id} not completed")
+        
+        # Prüfen ob Donation alle required fields hat
+        if not donation.person_snapshot and not donation.person:
+            raise ValidationError(f"No person data for donation {donation_id}")
+        
+        if not donation.verse:
+            raise ValidationError(f"No verse data for donation {donation_id}")
+        
+        return donation
+
+    def generate_donation_documents_batch(self, donation_ids: List[int], 
+                                         session_id: str,
+                                         chunk_size: int = 10) -> Dict[str, List[Certificate]]:
+        """
+        Generiert alle Dokumente für eine Liste von Donations
+        Verarbeitet in Chunks für besseres Memory-Management
+        """
+        results = {
+            'certificates': [],
+            'tax_receipts': [],
+            'errors': []
+        }
+        
+        # In Chunks verarbeiten
+        for i in range(0, len(donation_ids), chunk_size):
+            chunk = donation_ids[i:i + chunk_size]
+            
+            try:
+                chunk_results = self._process_donation_chunk(chunk, session_id)
+                
+                # Ergebnisse sammeln
+                results['certificates'].extend(chunk_results['certificates'])
+                results['tax_receipts'].extend(chunk_results['tax_receipts'])
+                
+            except Exception as e:
+                # Chunk-Fehler protokollieren aber weitermachen
+                error_info = {
+                    'chunk': chunk,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow()
+                }
+                results['errors'].append(error_info)
+        
+        return results
+
+    def _process_donation_chunk(self, donation_ids: List[int], 
+                               session_id: str) -> Dict[str, List[Certificate]]:
+        """Verarbeitet einen Chunk von Donations atomisch"""
+        
+        with self._atomic_operation() as created_files:
+            certificates = []
+            tax_receipts = []
+            
+            for donation_id in donation_ids:
+                try:
+                    donation = self._validate_donation(donation_id)
+                    
+                    # Certificate-Type bestimmen
+                    cert_type = self._determine_certificate_type(donation)
+                    
+                    # Zertifikat generieren
+                    certificate = self.generate_certificate_atomic(
+                        donation_id, cert_type, session_id
+                    )
+                    certificates.append(certificate)
+                    
+                    # Spendenbescheinigung wenn gewünscht
+                    if donation.donation_details and donation.donation_details.get('wants_receipt', False):
+                        tax_receipt = self.generate_tax_receipt_atomic(
+                            donation_id, session_id
+                        )
+                        tax_receipts.append(tax_receipt)
+                        
+                    # Status in Donation aktualisieren
+                    donation.certificate_generated = True
+                    if tax_receipts and donation_id == tax_receipts[-1].donation_id:
+                        donation.receipt_generated = True
+                        
+                except Exception as e:
+                    # Einzelnen Donation-Fehler protokollieren aber Chunk fortsetzen
+                    current_app.logger.warning(
+                        f"Failed to process donation {donation_id}: {str(e)}"
+                    )
+                    # Bei chunk-internen Fehlern den ganzen Chunk abbrechen
+                    raise e
+            
+            return {
+                'certificates': certificates,
+                'tax_receipts': tax_receipts
+            }
+
+    def _determine_certificate_type(self, donation: Donation) -> str:
+        """Bestimmt Certificate-Type basierend auf Donation-Type"""
+        type_mapping = {
+            'person': 'personal_certificate',
+            'gruppe': 'group_certificate', 
+            'geschenk': 'gift_certificate'
+        }
+        return type_mapping.get(donation.donation_type, 'personal_certificate')
 
     def _generate_certificate_paths(self, donation: Donation, certificate_type: str, 
                                    session_id: Optional[str] = None) -> Tuple[str, str]:
@@ -380,3 +676,59 @@ class PDFGeneratorService:
                 if cert.file_path and os.path.exists(cert.file_path):
                     os.remove(cert.file_path)
             raise PDFGenerationError(f"Batch generation failed: {str(e)}")
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Gibt Performance-Statistiken zurück"""
+        return {
+            **self.stats,
+            'disk_usage': self._get_disk_usage(),
+            'certificate_count': Certificate.query.count(),
+            'consistency_status': self._quick_consistency_check()
+        }
+    
+    def _get_disk_usage(self) -> Dict[str, int]:
+        """Berechnet Speicherverbrauch der PDFs"""
+        base_path = current_app.config.get('CERTIFICATE_STORAGE_PATH', '/tmp/certificates')
+        total_size = 0
+        file_count = 0
+        
+        if os.path.exists(base_path):
+            for root, dirs, files in os.walk(base_path):
+                for file in files:
+                    if file.endswith('.pdf'):
+                        file_path = os.path.join(root, file)
+                        try:
+                            total_size += os.path.getsize(file_path)
+                            file_count += 1
+                        except OSError:
+                            pass
+        
+        return {
+            'total_bytes': total_size,
+            'total_mb': round(total_size / (1024 * 1024), 2),
+            'file_count': file_count
+        }
+    
+    def _quick_consistency_check(self) -> Dict[str, Any]:
+        """Schneller Konsistenz-Check für Monitoring"""
+        try:
+            total_certs = Certificate.query.count()
+            missing_files = 0
+            
+            # Stichproben-Check (nur die letzten 50 Certificates)
+            recent_certs = Certificate.query.order_by(Certificate.generated_at.desc()).limit(50).all()
+            for cert in recent_certs:
+                if not cert.exists_on_disk:
+                    missing_files += 1
+            
+            return {
+                'status': 'ok' if missing_files == 0 else 'degraded' if missing_files < 5 else 'error',
+                'total_certificates': total_certs,
+                'sample_size': len(recent_certs),
+                'missing_files_in_sample': missing_files
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'error': str(e)
+            }

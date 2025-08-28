@@ -362,6 +362,91 @@ class Certificate(db.Model):
     file_path = db.Column(db.String(500), nullable=False)
     generated_at = db.Column(db.DateTime, default=datetime.utcnow)
     sent_at = db.Column(db.DateTime)
+    
+    @property
+    def exists_on_disk(self):
+        """Prüft ob PDF-Datei tatsächlich existiert"""
+        import os
+        return os.path.exists(self.file_path) if self.file_path else False
+    
+    @property
+    def file_size(self):
+        """Dateigröße in Bytes"""
+        import os
+        if self.exists_on_disk:
+            return os.path.getsize(self.file_path)
+        return 0
+    
+    def delete_file(self):
+        """Löscht PDF-Datei vom Dateisystem"""
+        import os
+        if self.exists_on_disk:
+            try:
+                os.remove(self.file_path)
+                return True
+            except OSError:
+                return False
+        return True
+    
+    def get_download_url(self):
+        """Generiert sichere Download-URL"""
+        return f"/download/certificate/{self.id}"
+    
+    def validate_file_path(self):
+        """Validiert file_path auf Sicherheit"""
+        import os
+        if not self.file_path:
+            return False
+        
+        # Nur erlaubte Zeichen
+        allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_./\\')
+        if not all(c in allowed_chars for c in self.file_path):
+            return False
+            
+        # Kein Path Traversal
+        normalized = os.path.normpath(self.file_path)
+        if '..' in normalized:
+            return False
+            
+        return True
+    
+    @classmethod
+    def find_by_donation_and_type(cls, donation_id: int, certificate_type: str):
+        """Findet Certificate nach Donation und Type"""
+        return cls.query.filter_by(
+            donation_id=donation_id,
+            certificate_type=certificate_type
+        ).first()
+    
+    @classmethod
+    def cleanup_orphaned_files(cls):
+        """Löscht PDF-Dateien ohne entsprechenden DB-Record"""
+        import os
+        from flask import current_app
+        
+        base_path = current_app.config.get('CERTIFICATE_STORAGE_PATH', '/tmp/certificates')
+        if not os.path.exists(base_path):
+            return 0
+            
+        deleted_count = 0
+        for root, dirs, files in os.walk(base_path):
+            for file in files:
+                if file.endswith('.pdf'):
+                    file_path = os.path.join(root, file)
+                    
+                    # Prüfen ob Certificate-Record existiert
+                    certificate = cls.query.filter_by(file_path=file_path).first()
+                    if not certificate:
+                        try:
+                            os.remove(file_path)
+                            deleted_count += 1
+                        except OSError:
+                            pass
+        
+        return deleted_count
+    
+    def __repr__(self):
+        return f'<Certificate {self.id}: {self.certificate_type} for Donation {self.donation_id}>'
 
 class TranslationNotification(db.Model):
     """Notifications for translated verses"""
