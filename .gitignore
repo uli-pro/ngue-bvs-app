@@ -89,7 +89,9 @@ temp/
 # =============================================================================
 
 # Complete directory exclusions - non-production files
-/do_not_deploy/           # All non-production files (docs, tests, archive, etc.)
+do_not_deploy/            # All non-production files (docs, tests, archive, etc.)
+/do_not_deploy/           # Alternative syntax (leading slash)
+do_not_deploy             # Without trailing slash
 /db-backups/             # Database backup files  
 /backups/                # General backup files
 
@@ -118,3 +120,8 @@ ngue-bvs-app.code-workspace  # Specific workspace file
 *.backup                  # All backup files (.backup extension)
 *.bak                     # Alternative backup extension
 *.old                     # Old file backups
+
+# Directory exclusions (must be at end to work properly)
+do_not_deploy/
+/do_not_deploy/
+do_not_deploy
