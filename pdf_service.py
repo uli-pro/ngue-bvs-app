@@ -264,7 +264,6 @@ class PDFGeneratorService:
                 os.remove(file_path)
             raise PDFGenerationError(f"Tax receipt generation failed: {str(e)}")
 
-    @_track_performance("Certificate Generation")
     def generate_certificate_atomic(self, donation_id: int, certificate_type: str, 
                                    session_id: Optional[str] = None) -> Certificate:
         """Atomische Certificate-Generierung"""
@@ -307,7 +306,6 @@ class PDFGeneratorService:
             
             return certificate
     
-    @_track_performance("Tax Receipt Generation")
     def generate_tax_receipt_atomic(self, donation_id: int, 
                                    session_id: Optional[str] = None) -> Certificate:
         """Atomische Spendenbescheinigung-Generierung"""

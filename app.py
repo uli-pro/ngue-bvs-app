@@ -1574,11 +1574,47 @@ def prepare_success_page_with_pdfs(donation_ids, session_id):
     
     try:
         # Generate PDFs for all donations
-        pdf_service = PDFGeneratorService(app)
-        generated_documents = pdf_service.generate_donation_documents_batch(
-            donation_ids, 
-            session_id or 'no_session'
-        )
+        # Ensure fresh database session for PDF generation
+        db.session.commit()  # Commit any pending changes
+        db.session.close()   # Close current session
+        
+        # Generate PDFs individually to avoid transaction conflicts
+        generated_documents = {
+            'certificates': [],
+            'tax_receipts': [],
+            'errors': []
+        }
+        
+        for donation_id in donation_ids:
+            try:
+                # Create fresh PDF service instance with new DB session
+                pdf_service_fresh = PDFGeneratorService(app)
+                
+                # Generate personal certificate
+                cert = pdf_service_fresh.generate_certificate_atomic(
+                    donation_id, 
+                    'personal_certificate', 
+                    session_id
+                )
+                if cert:
+                    generated_documents['certificates'].append(cert)
+                
+                # Generate tax receipt if wanted
+                donation = Donation.query.get(donation_id)
+                if donation and donation.wants_receipt:
+                    tax_receipt = pdf_service_fresh.generate_tax_receipt_atomic(
+                        donation_id,
+                        session_id
+                    )
+                    if tax_receipt:
+                        generated_documents['tax_receipts'].append(tax_receipt)
+                        
+            except Exception as e:
+                app.logger.error(f"Error generating PDFs for donation {donation_id}: {e}")
+                generated_documents['errors'].append({
+                    'donation_id': donation_id,
+                    'error': str(e)
+                })
         
         # Prepare download links
         certificate_links = []
