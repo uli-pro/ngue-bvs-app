@@ -83,3 +83,33 @@ temp/
 # Keep directory structure
 !/data/
 !/data/vectors/.gitkeep
+
+# =============================================================================
+# NGÜ App Deployment Exclusions
+# =============================================================================
+
+# Complete directory exclusions - non-production files
+/do_not_deploy/           # All non-production files (docs, tests, archive, etc.)
+/db-backups/             # Database backup files  
+/backups/                # General backup files
+
+# App-deployment specific files that should not be in Git
+/app-deployment/.env              # Environment variables
+/app-deployment/.env.*            # All environment variations (.env.local, .env.prod, etc.)
+/app-deployment/secrets/          # Secret files and keys
+/app-deployment/backups/          # Deployment-specific backups
+/app-deployment/logs/             # Application logs
+/app-deployment/traefik/letsencrypt/  # SSL certificates from Let's Encrypt
+
+# Additional SQL and database exclusions
+*.sql.gz                  # Compressed SQL files
+*.dump                    # Database dump files
+*backup*.sql              # Any backup SQL files
+
+# Workspace and IDE files
+*.code-workspace          # VS Code workspace files
+ngue-bvs-app.code-workspace  # Specific workspace file
+
+# Additional certificates and keys  
+*.crt                     # Certificate files
+*.cert                    # Certificate files
