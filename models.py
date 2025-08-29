@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Index, UniqueConstraint, text, func
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from pgvector.sqlalchemy import Vector
 
@@ -130,8 +131,9 @@ class Verse(db.Model):
     sponsored_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
-    donations = db.relationship('Donation', backref='verse', lazy='dynamic')
+    # Relationships - NEW: Many-to-Many with donations
+    donation_associations = db.relationship('DonationVerse', backref='verse_obj')
+    donations = association_proxy('donation_associations', 'donation')
     
     # Unique constraint for bible references
     __table_args__ = (
@@ -263,20 +265,47 @@ class Verse(db.Model):
         ).limit(limit).all()
         
         return results
+    
+    @property
+    def current_donation(self):
+        """Current donation (if sponsored)"""
+        if self.donation_associations:
+            return self.donation_associations[0].donation
+        return None
+
+
+class DonationVerse(db.Model):
+    """Junction table for Many-to-Many relationship between donations and verses"""
+    __tablename__ = 'donation_verses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    donation_id = db.Column(db.Integer, db.ForeignKey('donations.id', ondelete='CASCADE'), nullable=False)
+    verse_id = db.Column(db.Integer, db.ForeignKey('verses.id'), nullable=False)
+    amount = db.Column(db.Numeric(6, 2), default=100.00)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    verse = db.relationship('Verse', overlaps="donation_associations,verse_obj")
+    
+    __table_args__ = (
+        db.UniqueConstraint('donation_id', 'verse_id'),
+    )
+
 
 class Donation(db.Model):
-    """Simplified donations - only individual donations"""
+    """Many-to-Many donations supporting multiple verses"""
     __tablename__ = 'donations'
     
     id = db.Column(db.Integer, primary_key=True)
     person_id = db.Column(db.Integer, db.ForeignKey('persons.id'), nullable=False)
-    verse_id = db.Column(db.Integer, db.ForeignKey('verses.id'), nullable=False)
     
     # Person snapshot for historical record
     person_snapshot = db.Column(JSONB, nullable=False)
     
-    # Financial
-    amount = db.Column(db.Numeric(6, 2), nullable=False, default=100.00)
+    # Financial - NEW: support for multiple verses
+    amount = db.Column(db.Numeric(6, 2), nullable=False, default=100.00)  # For backward compatibility
+    verse_count = db.Column(db.Integer, default=1, nullable=False)
+    total_amount = db.Column(db.Numeric(8, 2), nullable=False)
     currency = db.Column(db.String(3), default='EUR', nullable=False)
     
     # Preferences
@@ -292,12 +321,15 @@ class Donation(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
     
-    # Relationships
+    # Relationships - NEW: Many-to-Many with verses
+    verse_associations = db.relationship('DonationVerse', backref='donation', cascade='all, delete-orphan')
+    verses = association_proxy('verse_associations', 'verse')
     certificates = db.relationship('Certificate', backref='donation', lazy='dynamic')
     payment = db.relationship('PaymentTransaction', uselist=False, backref='donation')
     
     def __repr__(self):
-        return f'<Donation {self.id}: {self.verse.reference}>'
+        verse_count = self.verse_count or 0
+        return f'<Donation {self.id}: {verse_count} verse{"s" if verse_count != 1 else ""}>'
     
     @property
     def display_name(self):
@@ -320,14 +352,35 @@ class Donation(db.Model):
             
         self.payment_status = 'completed'
         self.completed_at = datetime.utcnow()
-        # Mark verse as sponsored
-        self.verse.is_sponsored = True
-        self.verse.sponsored_at = datetime.utcnow()
+        # Mark all verses as sponsored
+        for verse_assoc in self.verse_associations:
+            verse_assoc.verse.is_sponsored = True
+            verse_assoc.verse.sponsored_at = datetime.utcnow()
         # Update person's last donation date
         self.person.last_donation_at = datetime.utcnow()
         if self.payment:
             self.payment.mark_confirmed()
         db.session.commit()
+    
+    # Helper Methods for Many-to-Many verses
+    def add_verse(self, verse, amount=100.00):
+        """Add a verse to this donation"""
+        from decimal import Decimal
+        dv = DonationVerse(donation=self, verse=verse, amount=Decimal(str(amount)))
+        self.verse_associations.append(dv)
+        self.verse_count = len(self.verse_associations)
+        self.total_amount = sum(Decimal(str(va.amount)) for va in self.verse_associations)
+        return dv
+        
+    def get_verses_sorted(self):
+        """Get verses sorted by biblical order (book, chapter, verse)"""
+        return sorted(self.verses, key=lambda v: (v.book, v.chapter, v.verse))
+    
+    @property
+    def has_multiple_verses(self):
+        """Check if this donation has multiple verses"""
+        return self.verse_count > 1
+
 
 class PaymentTransaction(db.Model):
     """Payment transaction details"""
@@ -446,16 +499,34 @@ class Certificate(db.Model):
         return f'<Certificate {self.id}: {self.certificate_type} for Donation {self.donation_id}>'
 
 class TranslationNotification(db.Model):
-    """Notifications for translated verses"""
+    """Notifications for translated verses - granular per verse"""
     __tablename__ = 'translation_notifications'
     
     id = db.Column(db.Integer, primary_key=True)
-    donation_id = db.Column(db.Integer, db.ForeignKey('donations.id'), nullable=False)
-    verse_id = db.Column(db.Integer, db.ForeignKey('verses.id'), nullable=False)
+    donation_verse_id = db.Column(db.Integer, db.ForeignKey('donation_verses.id'), nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('persons.id'), nullable=False)
     notification_type = db.Column(db.String(30), nullable=False)
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    donation_verse = db.relationship('DonationVerse', backref='notifications')
+    
+    # Helper properties for easy access
+    @property
+    def donation(self):
+        """Get the donation this notification belongs to"""
+        return self.donation_verse.donation
+    
+    @property
+    def verse(self):
+        """Get the specific verse this notification is for"""
+        return self.donation_verse.verse
+    
+    @property
+    def amount(self):
+        """Get the amount donated for this specific verse"""
+        return self.donation_verse.amount
 
 class VerseReservation(db.Model):
     """Temporary verse reservations during checkout"""
