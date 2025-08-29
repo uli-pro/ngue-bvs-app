@@ -133,11 +133,6 @@ class Verse(db.Model):
     # Relationships
     donations = db.relationship('Donation', backref='verse', lazy='dynamic')
     
-    # Unique constraint for bible references
-    __table_args__ = (
-        UniqueConstraint('book', 'chapter', 'verse', name='uq_verse_reference'),
-    )
-    
     def __repr__(self):
         return f'<Verse {self.book} {self.chapter},{self.verse}>'
     

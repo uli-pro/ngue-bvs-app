@@ -1,6 +1,6 @@
 """
-Database models for NGÜ Bible Verse Sponsoring App - Simplified Version
-Single donation type only (Einzelspenden)
+Database models for NGÜ Bible Verse Sponsoring App V2
+Using new optimized structure with persons/donations
 """
 
 from datetime import datetime, timedelta
@@ -13,7 +13,7 @@ from pgvector.sqlalchemy import Vector
 db = SQLAlchemy()
 
 class Person(db.Model):
-    """Central person management for donors"""
+    """Central person management (replaces User)"""
     __tablename__ = 'persons'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -62,6 +62,7 @@ class Person(db.Model):
             name_parts.extend([self.first_name, self.last_name])
         return " ".join(name_parts) if name_parts else self.email
     
+    
     @property
     def address(self):
         """Complete address for display"""
@@ -105,6 +106,7 @@ class Person(db.Model):
             # Update with new data
             for key, value in kwargs.items():
                 if hasattr(person, key) and (value is not None):
+                    # Special handling for boolean fields like newsletter_consent
                     setattr(person, key, value)
             person.data_updated_at = datetime.utcnow()
         
@@ -132,11 +134,6 @@ class Verse(db.Model):
     
     # Relationships
     donations = db.relationship('Donation', backref='verse', lazy='dynamic')
-    
-    # Unique constraint for bible references
-    __table_args__ = (
-        UniqueConstraint('book', 'chapter', 'verse', name='uq_verse_reference'),
-    )
     
     def __repr__(self):
         return f'<Verse {self.book} {self.chapter},{self.verse}>'
@@ -265,18 +262,20 @@ class Verse(db.Model):
         return results
 
 class Donation(db.Model):
-    """Simplified donations - only individual donations"""
+    """Simplified donations with JSONB details"""
     __tablename__ = 'donations'
     
     id = db.Column(db.Integer, primary_key=True)
     person_id = db.Column(db.Integer, db.ForeignKey('persons.id'), nullable=False)
     verse_id = db.Column(db.Integer, db.ForeignKey('verses.id'), nullable=False)
     
-    # Person snapshot for historical record
-    person_snapshot = db.Column(JSONB, nullable=False)
+    # Donation type and details
+    donation_type = db.Column(db.String(20), nullable=False)
+    donation_details = db.Column(JSONB)  # Type-specific data
+    person_snapshot = db.Column(JSONB, nullable=False)  # Historical person data
     
     # Financial
-    amount = db.Column(db.Numeric(6, 2), nullable=False, default=100.00)
+    amount = db.Column(db.Numeric(6, 2), nullable=False)
     currency = db.Column(db.String(3), default='EUR', nullable=False)
     
     # Preferences
@@ -297,15 +296,22 @@ class Donation(db.Model):
     payment = db.relationship('PaymentTransaction', uselist=False, backref='donation')
     
     def __repr__(self):
-        return f'<Donation {self.id}: {self.verse.reference}>'
+        return f'<Donation {self.id}: {self.donation_type} - {self.verse.reference}>'
     
     @property
     def display_name(self):
-        """Name for certificate display (simplified - always individual)"""
-        snapshot = self.person_snapshot or {}
-        first_name = snapshot.get('first_name', '')
-        last_name = snapshot.get('last_name', '')
-        return f"{first_name} {last_name}".strip() or snapshot.get('email', '')
+        """Name for certificate display"""
+        if self.donation_type == 'gruppe':
+            details = self.donation_details or {}
+            article = details.get('group_article', '')
+            name = details.get('group_name', '')
+            return f"{article} {name}".strip()
+        elif self.donation_type == 'geschenk':
+            details = self.donation_details or {}
+            return details.get('recipient_name', '')
+        else:
+            snapshot = self.person_snapshot or {}
+            return f"{snapshot.get('first_name', '')} {snapshot.get('last_name', '')}".strip()
     
     @property
     def is_completed(self):
@@ -323,12 +329,11 @@ class Donation(db.Model):
         # Mark verse as sponsored
         self.verse.is_sponsored = True
         self.verse.sponsored_at = datetime.utcnow()
-        # Update person's last donation date
-        self.person.last_donation_at = datetime.utcnow()
         if self.payment:
             self.payment.mark_confirmed()
         db.session.commit()
 
+# Additional models...
 class PaymentTransaction(db.Model):
     """Payment transaction details"""
     __tablename__ = 'payment_transactions'
@@ -352,7 +357,7 @@ class Certificate(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     donation_id = db.Column(db.Integer, db.ForeignKey('donations.id'), nullable=False)
-    certificate_type = db.Column(db.String(30), nullable=False)  # 'sponsorship' or 'receipt'
+    certificate_type = db.Column(db.String(30), nullable=False)
     version = db.Column(db.Integer, default=1)
     includes_ngue_text = db.Column(db.Boolean, default=False)
     filename = db.Column(db.String(255), nullable=False)
@@ -362,20 +367,20 @@ class Certificate(db.Model):
     
     @property
     def exists_on_disk(self):
-        """Check if PDF file actually exists"""
+        """Prüft ob PDF-Datei tatsächlich existiert"""
         import os
         return os.path.exists(self.file_path) if self.file_path else False
     
     @property
     def file_size(self):
-        """File size in bytes"""
+        """Dateigröße in Bytes"""
         import os
         if self.exists_on_disk:
             return os.path.getsize(self.file_path)
         return 0
     
     def delete_file(self):
-        """Delete PDF file from filesystem"""
+        """Löscht PDF-Datei vom Dateisystem"""
         import os
         if self.exists_on_disk:
             try:
@@ -386,21 +391,21 @@ class Certificate(db.Model):
         return True
     
     def get_download_url(self):
-        """Generate secure download URL"""
+        """Generiert sichere Download-URL"""
         return f"/download/certificate/{self.id}"
     
     def validate_file_path(self):
-        """Validate file_path for security"""
+        """Validiert file_path auf Sicherheit"""
         import os
         if not self.file_path:
             return False
         
-        # Only allowed characters
+        # Nur erlaubte Zeichen
         allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_./\\')
         if not all(c in allowed_chars for c in self.file_path):
             return False
             
-        # No path traversal
+        # Kein Path Traversal
         normalized = os.path.normpath(self.file_path)
         if '..' in normalized:
             return False
@@ -409,7 +414,7 @@ class Certificate(db.Model):
     
     @classmethod
     def find_by_donation_and_type(cls, donation_id: int, certificate_type: str):
-        """Find Certificate by Donation and Type"""
+        """Findet Certificate nach Donation und Type"""
         return cls.query.filter_by(
             donation_id=donation_id,
             certificate_type=certificate_type
@@ -417,7 +422,7 @@ class Certificate(db.Model):
     
     @classmethod
     def cleanup_orphaned_files(cls):
-        """Delete PDF files without corresponding DB record"""
+        """Löscht PDF-Dateien ohne entsprechenden DB-Record"""
         import os
         from flask import current_app
         
@@ -431,7 +436,7 @@ class Certificate(db.Model):
                 if file.endswith('.pdf'):
                     file_path = os.path.join(root, file)
                     
-                    # Check if Certificate record exists
+                    # Prüfen ob Certificate-Record existiert
                     certificate = cls.query.filter_by(file_path=file_path).first()
                     if not certificate:
                         try:
@@ -547,8 +552,9 @@ class VerseReservation(db.Model):
     
     @classmethod
     def clear_for_session(cls, session_id):
-        """Clear all reservations for a session"""
+        """Clear all reservations for a session (e.g., on logout)"""
         count = cls.query.filter_by(session_id=session_id).count()
         cls.query.filter_by(session_id=session_id).delete()
         db.session.commit()
         return count
+

@@ -161,7 +161,7 @@ class PDFGeneratorService:
         
         Args:
             donation_id: ID der Spende
-            certificate_type: personal_certificate, group_certificate, gift_certificate
+            certificate_type: personal_certificate (nur Einzelspenden unterstützt)
             session_id: Shopping Cart Session ID für Pfad-Gruppierung
             
         Returns:
@@ -173,9 +173,7 @@ class PDFGeneratorService:
             ValidationError: Bei ungültigen Parametern
         """
         # 1. Parameter validieren
-        if not donation_id or certificate_type not in [
-            'personal_certificate', 'group_certificate', 'gift_certificate'
-        ]:
+        if not donation_id or certificate_type != 'personal_certificate':
             raise ValidationError(f"Invalid parameters: {donation_id}, {certificate_type}")
         
         # 2. Donation laden
@@ -421,7 +419,7 @@ class PDFGeneratorService:
                     certificates.append(certificate)
                     
                     # Spendenbescheinigung wenn gewünscht
-                    if donation.donation_details and donation.donation_details.get('wants_receipt', False):
+                    if donation.wants_receipt:
                         tax_receipt = self.generate_tax_receipt_atomic(
                             donation_id, session_id
                         )
@@ -446,13 +444,8 @@ class PDFGeneratorService:
             }
 
     def _determine_certificate_type(self, donation: Donation) -> str:
-        """Bestimmt Certificate-Type basierend auf Donation-Type"""
-        type_mapping = {
-            'person': 'personal_certificate',
-            'gruppe': 'group_certificate', 
-            'geschenk': 'gift_certificate'
-        }
-        return type_mapping.get(donation.donation_type, 'personal_certificate')
+        """Alle Spenden sind Einzelspenden"""
+        return 'personal_certificate'
 
     def _generate_certificate_paths(self, donation: Donation, certificate_type: str, 
                                    session_id: Optional[str] = None) -> Tuple[str, str]:
@@ -520,16 +513,6 @@ class PDFGeneratorService:
             'formatted_amount': f"{donation.amount:.2f}",
             'formatted_date': donation.completed_at.strftime('%d.%m.%Y') if donation.completed_at else 'Unbekannt'
         }
-        
-        # Typ-spezifische Anpassungen
-        if certificate_type == 'group_certificate':
-            details = donation.donation_details or {}
-            context['group_article'] = details.get('group_article', '')
-            context['group_name'] = details.get('group_name', '')
-            
-        elif certificate_type == 'gift_certificate':
-            details = donation.donation_details or {}
-            context['recipient_name'] = details.get('recipient_name', '')
         
         return context
 
@@ -647,15 +630,8 @@ class PDFGeneratorService:
                 if not donation:
                     continue
                     
-                # Certificate-Type bestimmen
-                if donation.donation_type == 'einzelperson':
-                    cert_type = 'personal_certificate'
-                elif donation.donation_type == 'gruppe':
-                    cert_type = 'group_certificate'
-                elif donation.donation_type == 'geschenk':
-                    cert_type = 'gift_certificate'
-                else:
-                    cert_type = 'personal_certificate'  # Default
+                # Alle Spenden sind Einzelspenden
+                cert_type = 'personal_certificate'
                 
                 # Zertifikat generieren
                 cert = self.generate_certificate(donation_id, cert_type, session_id)

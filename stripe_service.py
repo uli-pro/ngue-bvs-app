@@ -61,12 +61,9 @@ class StripeService:
             # Minimal metadata - only what we actually need
             donation_ids = [str(d.id) for d in donations]
             metadata = {
-                'donation_ids': ','.join(donation_ids)
+                'donation_ids': ','.join(donation_ids),
+                'donation_count': str(len(donations))
             }
-            
-            # Add donation type info
-            if donations:
-                metadata['donation_type'] = donations[0].donation_type
             
             # Create PaymentIntent
             payment_intent = stripe.PaymentIntent.create(
@@ -155,38 +152,20 @@ class StripeService:
                 if not verse or verse.is_sponsored:
                     continue
                 
-                donation_type = item['donation_type']
+                # All donations are individual donations - simplified structure
                 item_data = item.get('donor_data', {})  # Get item-specific data
                 
-                # Prepare donation_details based on type
-                donation_details = {}
-                if donation_type == 'gruppe':
-                    donation_details = {
-                        'group_name': item_data.get('group_name'),
-                        'group_article': item_data.get('group_article')
-                    }
-                elif donation_type == 'geschenk':
-                    donation_details = {
-                        'recipient_name': item_data.get('recipient_name'),
-                        'recipient_email': item_data.get('recipient_email'),
-                        'gift_message': item_data.get('gift_message'),
-                        'direct_send': item_data.get('direct_send', False)
-                    }
+                # Get wants_receipt directly from cart item data
+                wants_receipt = item_data.get('wants_receipt', True)
                 
-                # Get wants_receipt from session
-                from flask import session
-                wants_receipt = session.get('wants_receipt', True)
-                
-                # Create donation record with new structure
+                # Create donation record with simplified structure
                 donation = Donation(
                     person_id=person.id,
                     verse_id=verse.id,
-                    donation_type=donation_type,
-                    donation_details=donation_details,
-                    person_snapshot=person.to_snapshot(),
+                    person_snapshot=person.to_snapshot(),  # Contains all person data
                     amount=Decimal(str(item['amount'])),
                     currency=item.get('currency', 'EUR'),
-                    wants_receipt=wants_receipt,
+                    wants_receipt=wants_receipt,  # From item_data instead of session
                     privacy_consent=True,  # Always true for new flow, required for legacy
                     payment_status='pending'
                 )
