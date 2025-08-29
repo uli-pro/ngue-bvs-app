@@ -13,8 +13,13 @@
             </div>
             <h1 class="display-4 mb-4">Vielen Dank für Ihre Spende!</h1>
             <p class="lead">
-                Sie haben erfolgreich den Vers <strong class="text-primary">{{ verse_reference or 'Jeremia 29,11' }}</strong> gesponsert<br>
-                und tragen zur Finanzierung der NGÜ bei.
+                {% if verse_references and verse_references|length > 1 %}
+                    Sie haben erfolgreich <strong class="text-primary">{{ verse_references|length }} Verse</strong> gesponsert<br>
+                    und tragen zur Finanzierung der NGÜ bei.
+                {% else %}
+                    Sie haben erfolgreich den Vers <strong class="text-primary">{{ verse_reference or 'Jeremia 29,11' }}</strong> gesponsert<br>
+                    und tragen zur Finanzierung der NGÜ bei.
+                {% endif %}
             </p>
         </div>
     </div>

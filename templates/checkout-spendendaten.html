@@ -55,9 +55,7 @@
                     </div>
                 </div>
                 
-                <!-- Receipt Section (conditional) -->
-                {% set needs_receipt = not has_only_groups %}
-                {% if needs_receipt %}
+                <!-- Receipt Section (always shown for individual donations) -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Angaben für die Spendenbescheinigung</h5>
@@ -105,15 +103,6 @@
                         </div>
                     </div>
                 </div>
-                {% else %}
-                <!-- Info for group-only donations -->
-                <div class="alert alert-warning">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Hinweis:</strong> Für reine Gruppenspenden ist keine automatische 
-                    Spendenbescheinigung möglich. Bei Bedarf kontaktieren Sie uns unter 
-                    info@schoeffer.org.
-                </div>
-                {% endif %}
                 
                 <!-- Newsletter Opt-In -->
                 <div class="card mb-4">
@@ -167,15 +156,7 @@
                     {% for item in cart_items %}
                     <div class="mb-2">
                         <strong>{{ item.verse.reference }}</strong><br>
-                        <small class="text-muted">
-                            {% if item.donation_type == 'gruppe' %}
-                                Gruppe: {{ item.donor_data.group_name }}
-                            {% elif item.donation_type == 'geschenk' %}
-                                Geschenk für: {{ item.donor_data.recipient_name }}
-                            {% else %}
-                                Einzelspende
-                            {% endif %}
-                        </small>
+                        <small class="text-muted">{{ item.verse.text[:60] }}{% if item.verse.text|length > 60 %}...{% endif %}</small>
                     </div>
                     {% if not loop.last %}<hr class="my-2">{% endif %}
                     {% endfor %}

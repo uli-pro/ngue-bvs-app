@@ -106,7 +106,7 @@ def validate_cart_item(item):
     if not isinstance(item, dict):
         return False
     
-    required_fields = ['verse_id', 'donation_type', 'donor_data', 'amount']
+    required_fields = ['verse_id', 'donor_data', 'amount']
     
     # Check required fields exist
     for field in required_fields:
@@ -121,8 +121,6 @@ def validate_cart_item(item):
     except (ValueError, TypeError):
         return False
     
-    if item['donation_type'] not in ['einzelperson', 'gruppe', 'geschenk']:
-        return False
     
     if not isinstance(item['donor_data'], dict):
         return False
@@ -671,7 +669,7 @@ def api_keyword_search():
 
 @app.route("/vers/<verse_id>/spendenart", methods=["GET", "POST"])
 def vers_spendenart(verse_id):
-    """Donation type selection page with reservation system"""
+    """Direct redirect to donation data collection - no type selection needed"""
     # Parse verse_id (z.B. "jesaja-43-1" → book="JESAJA", chapter=43, verse=1)
     parts = verse_id.rsplit('-', 2)
     if len(parts) != 3:
@@ -697,47 +695,29 @@ def vers_spendenart(verse_id):
         flash("Dieser Vers wurde nicht gefunden.", "error")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Check ob bereits gesponsert
+    # Check if already sponsored
     if verse.is_sponsored:
         flash(f"Dieser Vers wurde inzwischen gesponsert. Bitte wählen Sie einen anderen.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Check ob bereits reserviert (von anderem User)
-    existing_reservation = VerseReservation.get_active_for_verse(
-        verse.id, 
-        exclude_session_id=session.sid
-    )
-    
-    if existing_reservation:
-        flash(f"Der Vers {verse.reference} wird gerade von einem anderen Nutzer reserviert. Bitte wählen Sie einen anderen.", "info")
+    # Create or extend reservation
+    try:
+        reservation = VerseReservation.create_or_update(
+            verse.id, session.sid, minutes=15
+        )
+        session['selected_verse_id'] = verse.id
+        session['reservation_id'] = reservation.id
+        session.modified = True
+    except Exception as e:
+        flash("Dieser Vers ist bereits reserviert.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Erstelle/Update eigene Reservierung
-    reservation = VerseReservation.create_or_update(
-        verse_id=verse.id,
-        session_id=session.sid,
-        minutes=15
-    )
-    
-    # Speichere in Session
-    session['selected_verse_id'] = verse.id
-    session['reservation_id'] = reservation.id
-    
-    # Handle POST request (donation type selection)
-    if request.method == "POST":
-        donation_type = request.form.get('donation_type')
-        if donation_type in ['einzelperson', 'gruppe', 'geschenk']:
-            session['donation_type'] = donation_type
-            return redirect(url_for("checkout_daten", donation_type=donation_type))
-        else:
-            flash("Bitte wählen Sie eine gültige Spendenart.", "error")
-            return redirect(url_for("vers_auswaehlen"))
-    
-    return render_template("vers-spendenart.html", verse=verse)
+    # Direct redirect to checkout_spendendaten
+    return redirect(url_for("checkout_spendendaten"))
 
 @app.route("/vers/<int:verse_id>/spendenart", methods=["GET", "POST"])
 def vers_spendenart_by_id(verse_id):
-    """Donation type selection page with reservation system (by numeric ID)"""
+    """Direct redirect to donation data collection (by numeric ID)"""
     # Find verse by numeric ID
     verse = Verse.query.get(verse_id)
     
@@ -750,227 +730,24 @@ def vers_spendenart_by_id(verse_id):
         flash(f"Dieser Vers wurde inzwischen gesponsert. Bitte wählen Sie einen anderen.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Check if already reserved (by another user)
-    existing_reservation = VerseReservation.get_active_for_verse(
-        verse.id, 
-        exclude_session_id=session.sid
-    )
-    
-    if existing_reservation:
-        flash(f"Der Vers {verse.reference} wird gerade von einem anderen Nutzer reserviert. Bitte wählen Sie einen anderen.", "info")
+    # Create or extend reservation
+    try:
+        reservation = VerseReservation.create_or_update(
+            verse.id, session.sid, minutes=15
+        )
+        session['selected_verse_id'] = verse.id
+        session['reservation_id'] = reservation.id
+        session.modified = True
+    except Exception as e:
+        flash("Dieser Vers ist bereits reserviert.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Create/Update own reservation
-    reservation = VerseReservation.create_or_update(
-        verse_id=verse.id,
-        session_id=session.sid,
-        minutes=15
-    )
-    
-    # Store in session
-    session['selected_verse_id'] = verse.id
-    session['reservation_id'] = reservation.id
-    
-    # Handle POST request (donation type selection)
-    if request.method == "POST":
-        donation_type = request.form.get('donation_type')
-        if donation_type in ['einzelperson', 'gruppe', 'geschenk']:
-            session['donation_type'] = donation_type
-            return redirect(url_for("checkout_daten", donation_type=donation_type))
-        else:
-            flash("Bitte wählen Sie eine gültige Spendenart.", "error")
-            return redirect(url_for("vers_auswaehlen"))
-    
-    return render_template("vers-spendenart.html", verse=verse)
+    # Direct redirect to checkout_spendendaten
+    return redirect(url_for("checkout_spendendaten"))
 
 # ==========================================
 # CHECKOUT ROUTES
 # ==========================================
-
-@app.route("/checkout/<donation_type>/daten", methods=["GET", "POST"])
-def checkout_daten(donation_type):
-    """Data collection for different donation types with reservation validation"""
-    if donation_type not in ['einzelperson', 'gruppe', 'geschenk']:
-        flash("Ungültiger Spendentyp.", "error")
-        return redirect(url_for("vers_auswaehlen"))
-    
-    # Check ob Vers ausgewählt
-    if 'selected_verse_id' not in session:
-        flash("Bitte wählen Sie zuerst einen Vers aus.", "warning")
-        return redirect(url_for("vers_auswaehlen"))
-    
-    # Check ob Reservierung noch gültig
-    if 'reservation_id' in session:
-        reservation = VerseReservation.query.get(session['reservation_id'])
-        if not reservation or reservation.is_expired:
-            flash("Ihre Reservierung ist abgelaufen. Bitte wählen Sie erneut.", "warning")
-            session.pop('selected_verse_id', None)
-            session.pop('reservation_id', None)
-            return redirect(url_for("vers_auswaehlen"))
-        
-        # Verlängere Reservierung bei Aktivität
-        reservation.extend_reservation(15)
-    
-    # Store donation type in session
-    session['donation_type'] = donation_type
-    
-    # Load verse for display
-    verse = Verse.query.get(session['selected_verse_id'])
-    
-    if request.method == "POST":
-        # Collect and validate form data
-        form_data = {}
-        errors = []
-        
-        # Basic email (required for all types)
-        email = request.form.get('email', '').strip()
-        if not email or '@' not in email:
-            errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
-        if len(email) > 255:
-            errors.append("E-Mail-Adresse ist zu lang (max. 255 Zeichen).")
-        form_data['email'] = email
-        
-        # Privacy consent (required)
-        privacy_consent = request.form.get('privacy') == 'on'
-        if not privacy_consent:
-            errors.append("Bitte akzeptieren Sie die Datenschutzerklärung.")
-        form_data['privacy_consent'] = privacy_consent
-        
-        
-        # Type-specific validation and data collection
-        if donation_type == 'gruppe':
-            # Group-specific fields with length validation
-            group_article = request.form.get('group_article', '').strip()[:20]
-            group_name = request.form.get('group_name', '').strip()[:200]
-            
-            if not group_article:
-                errors.append("Bitte wählen Sie einen Artikel für den Gruppennamen.")
-            if not group_name:
-                errors.append("Bitte geben Sie den Namen der Gruppe ein.")
-                
-            form_data['group_article'] = group_article
-            form_data['group_name'] = group_name
-            form_data['wants_receipt'] = False  # Groups can't get automatic receipts
-            
-        else:
-            # Individual and gift donations need receipt data
-            wants_receipt = request.form.get('wantReceipt') == 'on'
-            form_data['wants_receipt'] = wants_receipt
-            
-            if wants_receipt:
-                # Collect receipt data with length validation
-                salutation = request.form.get('salutation', '').strip()
-                first_name = request.form.get('firstName', '').strip()[:100]  # Limit length
-                last_name = request.form.get('lastName', '').strip()[:100]
-                street = request.form.get('street', '').strip()[:200]
-                house_number = request.form.get('houseNumber', '').strip()[:10]
-                postal_code = request.form.get('postalCode', '').strip()[:10]
-                city = request.form.get('city', '').strip()[:100]
-                country = request.form.get('country', 'DE').strip()[:2]
-                
-                # Validate required receipt fields
-                if not salutation:
-                    errors.append("Bitte wählen Sie eine Anrede.")
-                if not first_name:
-                    errors.append("Bitte geben Sie Ihren Vornamen ein.")
-                if not last_name:
-                    errors.append("Bitte geben Sie Ihren Nachnamen ein.")
-                if not street:
-                    errors.append("Bitte geben Sie Ihre Straße ein.")
-                if not house_number:
-                    errors.append("Bitte geben Sie Ihre Hausnummer ein.")
-                if not postal_code:
-                    errors.append("Bitte geben Sie Ihre Postleitzahl ein.")
-                if not city:
-                    errors.append("Bitte geben Sie Ihren Ort ein.")
-                    
-                form_data.update({
-                    'salutation': salutation,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'street': street,
-                    'house_number': house_number,
-                    'postal_code': postal_code,
-                    'city': city,
-                    'country': country
-                })
-        
-        # Gift-specific fields
-        if donation_type == 'geschenk':
-            gift_recipient_name = request.form.get('gift_recipient_name', '').strip()[:200]  # Limit length
-            gift_recipient_email = request.form.get('gift_recipient_email', '').strip()
-            # HTML-strip and limit gift message for security
-            import html
-            gift_message = html.escape(request.form.get('gift_message', '').strip())[:1000]
-            
-            if not gift_recipient_name:
-                errors.append("Bitte geben Sie den Namen des Empfängers ein.")
-            
-            # Automatic direct sending if valid email is provided
-            gift_direct_send = bool(gift_recipient_email and '@' in gift_recipient_email)
-            
-            form_data['gift_recipient_name'] = gift_recipient_name
-            form_data['gift_direct_send'] = gift_direct_send
-            form_data['gift_message'] = gift_message
-            
-            if gift_recipient_email:
-                if '@' not in gift_recipient_email:
-                    errors.append("Bitte geben Sie eine gültige E-Mail-Adresse des Empfängers ein.")
-                else:
-                    form_data['gift_recipient_email'] = gift_recipient_email
-        
-        # If validation failed, show errors and return form
-        if errors:
-            for error in errors:
-                flash(error, "danger")
-            return render_template("checkout-daten.html", donation_type=donation_type, verse=verse, form_data=form_data)
-        
-        # Initialize cart if not exists and handle corruption
-        handle_corrupted_session()
-        
-        # Check cart size limit (security: prevent session overflow)
-        if len(session['cart']) >= 20:
-            flash("Sie können maximal 20 Verse gleichzeitig sponsern. Bitte vervollständigen Sie zuerst Ihre aktuelle Spende.", "warning")
-            return redirect(url_for("spendenkorb"))
-        
-        # Check for duplicate verses in cart (fallback security check)
-        selected_verse_id = session['selected_verse_id']
-        if any(item['verse_id'] == selected_verse_id for item in session['cart']):
-            flash("Dieser Vers befindet sich bereits in Ihrem Spendenkorb.", "warning")
-            return redirect(url_for("vers_auswaehlen"))
-        
-        # Add verse to cart with all data
-        cart_item = {
-            'verse_id': session['selected_verse_id'],
-            'donation_type': donation_type,
-            'donor_data': form_data,
-            'reservation_id': session.get('reservation_id'),
-            'amount': 100.00,
-            'currency': 'EUR'
-        }
-        
-        # Add to cart
-        session['cart'].append(cart_item)
-        session.modified = True
-        
-        # Clear current verse selection (will be handled by cart now)
-        session.pop('selected_verse_id', None)
-        session.pop('reservation_id', None)
-        session.pop('checkout_data', None)
-        
-        # Store/Update shared donor data for future verse additions
-        session['shared_donor_data'] = form_data
-        
-        # Redirect to cart page
-        return redirect(url_for("spendenkorb"))
-    
-    # Pre-fill form with shared donor data if available
-    form_data = session.get('shared_donor_data', {})
-    
-    return render_template("checkout-daten.html", 
-                         donation_type=donation_type, 
-                         verse=verse, 
-                         form_data=form_data)
 
 @app.route("/spendenkorb")
 def spendenkorb():
@@ -1029,11 +806,9 @@ def spendenkorb():
         cart_item_display = {
             'index': i,
             'verse': verse,
-            'donation_type': item['donation_type'],
-            'donation_details': item.get('donation_details', {}),  # New structure
-            'donor_data': item.get('donor_data', {}),  # Legacy fallback
+            'donor_data': item.get('donor_data', {}),
             'amount': item['amount'],
-            'currency': item.get('currency', 'EUR'),  # Safe fallback for missing currency
+            'currency': item.get('currency', 'EUR'),
             'reservation_valid': reservation_valid
         }
         cart_items.append(cart_item_display)
@@ -1354,8 +1129,6 @@ def checkout_zahlung():
         if verse:
             cart_display.append({
                 'verse': verse,
-                'donation_type': item['donation_type'],
-                'donor_data': item['donor_data'],
                 'amount': item['amount']
             })
     
@@ -1386,23 +1159,18 @@ def create_payment_intent():
                 return jsonify({'error': f'Verse {item["verse_id"]} is no longer available'}), 400
         
         # Get person data and create PaymentIntent
-        if 'checkout_person_id' in session:
-            # New checkout flow: get person from session
-            person = Person.query.get(session['checkout_person_id'])
-            if not person:
-                return jsonify({'error': 'Invalid person data'}), 400
-            
-            # Create PaymentIntent with person object directly
-            payment_data = StripeService.create_payment_intent(
-                cart_items,
-                person=person
-            )
-        else:
-            # Legacy flow: get from cart items
-            donor_data = cart_items[0]['donor_data'] if cart_items else {}
-            
-            # Create PaymentIntent via service (legacy)
-            payment_data = StripeService.create_payment_intent(cart_items, donor_data)
+        if 'checkout_person_id' not in session:
+            return jsonify({'error': 'Invalid person data'}), 400
+        
+        person = Person.query.get(session['checkout_person_id'])
+        if not person:
+            return jsonify({'error': 'Invalid person data'}), 400
+        
+        # Create PaymentIntent with person object directly
+        payment_data = StripeService.create_payment_intent(
+            cart_items,
+            person=person
+        )
         
         # Store PaymentIntent ID in session for later verification
         session['payment_intent_id'] = payment_data['payment_intent_id']
@@ -1566,6 +1334,7 @@ def checkout_erfolg():
     return render_template("checkout-erfolg.html", 
                          user_email="support@peter-schoeffer-stiftung.de",
                          verse_reference="Jeremia 29,11",
+                         verse_references=["Jeremia 29,11"],  # Default for multi-verse compatibility
                          pdfs_available=False)
 
 def prepare_success_page_with_pdfs(donation_ids, session_id):
@@ -1635,17 +1404,22 @@ def prepare_success_page_with_pdfs(donation_ids, session_id):
                 'filename': receipt.filename
             })
         
-        # Get donation details for display
-        latest_donation = Donation.query.get(donation_ids[-1]) if donation_ids else None
+        # Get donation details for display - support multi-verse donations
+        donations = Donation.query.filter(Donation.id.in_(donation_ids)).all() if donation_ids else []
+        latest_donation = donations[-1] if donations else None
         user_email = latest_donation.person.email if latest_donation else 'support@peter-schoeffer-stiftung.de'
-        verse_reference = latest_donation.verse.reference if latest_donation else 'Jeremia 29,11'
+        
+        # Collect all verse references for multi-verse display
+        verse_references = [d.verse.reference for d in donations if d.verse]
+        verse_reference = verse_references[0] if len(verse_references) == 1 else None  # Single verse fallback
         
         # Setup PDF session for access control
         setup_pdf_session(donation_ids, session_id)
         
         return {
             'user_email': user_email,
-            'verse_reference': verse_reference,
+            'verse_reference': verse_reference,  # For single verse backward compatibility
+            'verse_references': verse_references,  # For multi-verse display
             'certificate_links': certificate_links,
             'tax_receipt_links': tax_receipt_links,
             'total_donations': len(donation_ids),
@@ -1659,11 +1433,14 @@ def prepare_success_page_with_pdfs(donation_ids, session_id):
         app.logger.error(f"PDF generation failed: {str(e)}")
         
         # Fallback: prepare context without PDFs
-        latest_donation = Donation.query.get(donation_ids[-1]) if donation_ids else None
+        donations = Donation.query.filter(Donation.id.in_(donation_ids)).all() if donation_ids else []
+        latest_donation = donations[-1] if donations else None
+        verse_references = [d.verse.reference for d in donations if d.verse]
         
         return {
             'user_email': latest_donation.person.email if latest_donation else 'support@peter-schoeffer-stiftung.de',
-            'verse_reference': latest_donation.verse.reference if latest_donation else 'Jeremia 29,11',
+            'verse_reference': verse_references[0] if len(verse_references) == 1 else 'Jeremia 29,11',
+            'verse_references': verse_references,
             'certificate_links': [],
             'tax_receipt_links': [],
             'total_donations': len(donation_ids),
@@ -1799,14 +1576,10 @@ def api_cart_add():
         
         # Validate input
         verse_id = data.get('verse_id')
-        donation_type = data.get('donation_type')
         donation_details = data.get('donation_details', {})
         
-        if not verse_id or not donation_type:
+        if not verse_id:
             return jsonify({'success': False, 'error': 'Ungültige Anfrage'}), 400
-        
-        if donation_type not in ['einzelperson', 'gruppe', 'geschenk']:
-            return jsonify({'success': False, 'error': 'Ungültiger Spendentyp'}), 400
         
         # Check verse availability
         verse = Verse.query.get(verse_id)
@@ -1850,10 +1623,9 @@ def api_cart_add():
             app.logger.error(f"Failed to create reservation: {e}")
             return jsonify({'success': False, 'error': 'Reservierung fehlgeschlagen'}), 500
         
-        # Add to cart with new structure
+        # Add to cart with simplified structure for individual donations
         cart_item = {
             'verse_id': verse_id,
-            'donation_type': donation_type,
             'donor_data': donation_details,  # Use donor_data for compatibility with validate_cart_item
             'reservation_id': reservation.id,
             'amount': 100.00,
@@ -1869,7 +1641,6 @@ def api_cart_add():
             'cart_count': len(session['cart']),
             'item': {
                 'verse_reference': verse.reference,
-                'donation_type': donation_type,
                 'amount': 100.00
             }
         })
@@ -1889,20 +1660,15 @@ def checkout_spendendaten():
         return redirect(url_for("vers_auswaehlen"))
     
     cart_items = []
-    has_only_groups = True
     
-    # Load cart data with new structure
+    # Load cart data - simplified structure
     for item in session['cart']:
         verse = Verse.query.get(item['verse_id'])
         if verse:
             cart_items.append({
                 'verse': verse,
-                'donation_type': item['donation_type'],
-                'donor_data': item.get('donor_data', {})  # Use donor_data for consistency
+                'donor_data': item.get('donor_data', {})
             })
-            
-            if item['donation_type'] != 'gruppe':
-                has_only_groups = False
     
     total_amount = len(cart_items) * 100
     
@@ -1914,70 +1680,72 @@ def checkout_spendendaten():
             return render_template("checkout-spendendaten.html",
                                  cart_items=cart_items,
                                  total_amount=total_amount,
-                                 has_only_groups=has_only_groups,
                                  form_data=request.form)
         
         wants_receipt = request.form.get('wantsReceipt') == 'on'
+        newsletter_consent = request.form.get('newsletter') == 'on'
         
         # Validate receipt data if requested
-        if wants_receipt and not has_only_groups:
+        person_data = {'email': email, 'newsletter_consent': newsletter_consent}
+        if wants_receipt:
             required_fields = ['salutation', 'firstName', 'lastName', 'street', 'houseNumber', 'postalCode', 'city']
             missing_fields = []
             
             for field in required_fields:
-                if not request.form.get(field, '').strip():
+                value = request.form.get(field, '').strip()
+                if not value:
                     missing_fields.append(field)
+                else:
+                    # Map form fields to person model fields
+                    field_mapping = {
+                        'firstName': 'first_name',
+                        'lastName': 'last_name',
+                        'houseNumber': 'house_number',
+                        'postalCode': 'postal_code'
+                    }
+                    person_field = field_mapping.get(field, field)
+                    person_data[person_field] = value
             
             if missing_fields:
                 flash("Bitte füllen Sie alle Pflichtfelder für die Spendenbescheinigung aus.", "danger")
                 return render_template("checkout-spendendaten.html",
                                      cart_items=cart_items,
                                      total_amount=total_amount,
-                                     has_only_groups=has_only_groups,
                                      form_data=request.form)
         
-        # Check privacy consent
-        if not request.form.get('privacy'):
+        # Privacy consent validation
+        privacy_consent = request.form.get('privacy') == 'on'
+        if not privacy_consent:
             flash("Bitte akzeptieren Sie die Datenschutzerklärung.", "danger")
             return render_template("checkout-spendendaten.html",
                                  cart_items=cart_items,
                                  total_amount=total_amount,
-                                 has_only_groups=has_only_groups,
                                  form_data=request.form)
         
-        # Get newsletter consent (explicit opt-in)
-        newsletter_consent = request.form.get('newsletter') == 'on'
+        person_data['privacy_consent'] = privacy_consent
+        person_data['wants_receipt'] = wants_receipt
         
-        # Find or create person
         # Handle salutation: "Ohne" becomes None/NULL in database
         salutation_value = request.form.get('salutation')
         if salutation_value == 'Ohne':
             salutation_value = None
+        person_data['salutation'] = salutation_value
         
-        person = Person.find_or_create(
-            email=email,
-            first_name=request.form.get('firstName'),
-            last_name=request.form.get('lastName'),
-            salutation=salutation_value,
-            street=request.form.get('street'),
-            house_number=request.form.get('houseNumber'),
-            postal_code=request.form.get('postalCode'),
-            city=request.form.get('city'),
-            newsletter_consent=newsletter_consent
-        )
+        # Create or find person
+        person = Person.find_or_create(**person_data)
         
         db.session.commit()
         
-        # Store person_id for payment processing
+        # Store person in session for payment
         session['checkout_person_id'] = person.id
         session['wants_receipt'] = wants_receipt
+        session.modified = True
         
         return redirect(url_for('checkout_zahlung'))
     
     return render_template("checkout-spendendaten.html",
                          cart_items=cart_items,
                          total_amount=total_amount,
-                         has_only_groups=has_only_groups,
                          form_data={})
 
 

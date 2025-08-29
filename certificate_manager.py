@@ -203,10 +203,6 @@ class CertificateConsistencyManager:
                         # Typ aus Filename extrahieren
                         if '_personal_certificate_' in file:
                             file_types['personal_certificate'] = file_types.get('personal_certificate', 0) + 1
-                        elif '_group_certificate_' in file:
-                            file_types['group_certificate'] = file_types.get('group_certificate', 0) + 1
-                        elif '_gift_certificate_' in file:
-                            file_types['gift_certificate'] = file_types.get('gift_certificate', 0) + 1
                         elif '_tax_receipt_' in file:
                             file_types['tax_receipt'] = file_types.get('tax_receipt', 0) + 1
                         else:

@@ -362,6 +362,25 @@ class Donation(db.Model):
             self.payment.mark_confirmed()
         db.session.commit()
     
+    def mark_failed(self, error_message=None):
+        """Mark donation as failed and release verses"""
+        # Check if already failed to avoid duplicate processing
+        if self.payment_status == 'failed':
+            return
+            
+        self.payment_status = 'failed'
+        # Mark all verses as available again
+        for verse_assoc in self.verse_associations:
+            verse_assoc.verse.is_sponsored = False
+            verse_assoc.verse.sponsored_at = None
+        
+        # Store error message in person_snapshot if provided
+        if error_message and self.person_snapshot:
+            if isinstance(self.person_snapshot, dict):
+                self.person_snapshot['last_error'] = error_message
+        
+        db.session.commit()
+    
     # Helper Methods for Many-to-Many verses
     def add_verse(self, verse, amount=100.00):
         """Add a verse to this donation"""
@@ -398,6 +417,16 @@ class PaymentTransaction(db.Model):
         """Mark payment as confirmed"""
         self.stripe_status = 'succeeded'
         db.session.commit()
+    
+    def update_stripe_data(self, payment_intent):
+        """Update transaction with Stripe PaymentIntent data"""
+        self.stripe_payment_intent_id = payment_intent.id
+        self.stripe_status = payment_intent.status
+        self.provider_transaction_id = payment_intent.id
+    
+    def mark_failed(self, error_message=None):
+        """Mark payment transaction as failed"""
+        self.stripe_status = 'failed'
 
 class Certificate(db.Model):
     """Generated certificates and receipts"""

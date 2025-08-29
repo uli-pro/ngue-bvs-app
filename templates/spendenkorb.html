@@ -22,24 +22,11 @@
                             <h5 class="mb-1">{{ item.verse.reference }}</h5>
                             <p class="text-muted mb-2 small">{{ item.verse.text[:100] }}...</p>
                             
-                            <!-- Donation Type Badge -->
-                            {% if item.donation_type == 'gruppe' %}
-                            <span class="badge bg-warning text-dark">
-                                <i class="fas fa-users"></i> 
-                                Gruppenspende: {{ item.donor_data.group_article }} 
-                                {{ item.donor_data.group_name }}
-                            </span>
-                            {% elif item.donation_type == 'geschenk' %}
-                            <span class="badge bg-info">
-                                <i class="fas fa-gift"></i> 
-                                Geschenk für: {{ item.donor_data.recipient_name }}
-                            </span>
-                            {% else %}
+                            <!-- Individual Donation Badge -->
                             <span class="badge bg-success">
-                                <i class="fas fa-user"></i> 
+                                <i class="fas fa-heart"></i> 
                                 Einzelspende
                             </span>
-                            {% endif %}
                         </div>
                         <div class="col-auto">
                             <div class="text-end">
@@ -52,14 +39,6 @@
                         </div>
                     </div>
                     
-                    <!-- Additional details for gifts -->
-                    {% if item.donation_type == 'geschenk' and item.donor_data.gift_message %}
-                    <div class="mt-2">
-                        <small class="text-muted">
-                            <strong>Nachricht:</strong> {{ item.donor_data.gift_message }}
-                        </small>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -97,13 +76,7 @@
                     <!-- Receipt Info -->
                     <div class="alert alert-info small">
                         <i class="fas fa-info-circle"></i>
-                        {% set has_group = cart_items|selectattr('donation_type', 'equalto', 'gruppe')|list|length > 0 %}
-                        {% if has_group %}
-                        <strong>Hinweis:</strong> Gruppenspenden erhalten keine automatische 
-                        Spendenbescheinigung.
-                        {% else %}
                         Sie können im nächsten Schritt eine Spendenbescheinigung anfordern.
-                        {% endif %}
                     </div>
                     
                     <a href="/checkout/spendendaten" class="btn btn-success btn-lg w-100">

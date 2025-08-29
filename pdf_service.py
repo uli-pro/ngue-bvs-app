@@ -161,7 +161,7 @@ class PDFGeneratorService:
         
         Args:
             donation_id: ID der Spende
-            certificate_type: personal_certificate (nur Einzelspenden unterstützt)
+            certificate_type: personal_certificate (unterstützt Donations mit einem oder mehreren Versen)
             session_id: Shopping Cart Session ID für Pfad-Gruppierung
             
         Returns:
@@ -357,8 +357,8 @@ class PDFGeneratorService:
         if not donation.person_snapshot and not donation.person:
             raise ValidationError(f"No person data for donation {donation_id}")
         
-        if not donation.verse:
-            raise ValidationError(f"No verse data for donation {donation_id}")
+        if not donation.verse_associations:
+            raise ValidationError(f"No verses associated with donation {donation_id}")
         
         return donation
 
@@ -444,7 +444,7 @@ class PDFGeneratorService:
             }
 
     def _determine_certificate_type(self, donation: Donation) -> str:
-        """Alle Spenden sind Einzelspenden"""
+        """Alle Donations verwenden personal_certificate Template"""
         return 'personal_certificate'
 
     def _generate_certificate_paths(self, donation: Donation, certificate_type: str, 
@@ -496,22 +496,24 @@ class PDFGeneratorService:
                 'email': donation.person.email
             }
         
-        # Vers laden
-        verse = donation.verse
+        # ALLE Verse der Donation laden und sortieren
+        verses = donation.get_verses_sorted()
         
         # Absoluter Pfad für Hintergrundbild (WeasyPrint benötigt absolute Pfade)
         static_dir = os.path.join(os.path.dirname(__file__), 'static')
         background_image_path = os.path.join(static_dir, 'certificates', 'certificate-background.png')
         
-        # Basis-Context (basierend auf Phase 1 Template-Struktur)
+        # Context für Sammelzertifikat mit mehreren Versen
         context = {
             'donation': donation,
             'person_snapshot': person_data,
-            'verse': verse,
-            'verses': [verse],  # Als Liste für Template-Kompatibilität
+            'verses': verses,  # Liste mit ALLEN Versen
+            'verse_count': len(verses),
+            'is_multiple': len(verses) > 1,
             'background_image_path': f'file://{background_image_path}',
-            'formatted_amount': f"{donation.amount:.2f}",
-            'formatted_date': donation.completed_at.strftime('%d.%m.%Y') if donation.completed_at else 'Unbekannt'
+            'formatted_amount': f"{donation.total_amount:.2f}",
+            'formatted_date': donation.completed_at.strftime('%d.%m.%Y') if donation.completed_at else 'Unbekannt',
+            'certificate_title': f"Sponsoring-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}"
         }
         
         return context
@@ -532,11 +534,16 @@ class PDFGeneratorService:
         static_dir = os.path.join(os.path.dirname(__file__), 'static')
         background_image_path = os.path.join(static_dir, 'certificates', 'spendenbescheinigung-schoeffer.png')
         
+        # Verse für Konsistenz hinzufügen
+        verses = donation.get_verses_sorted()
+        
         context = {
             'donation': donation,
             'person_snapshot': person_data,
-            'formatted_amount': f"{donation.amount:.2f}",
-            'amount_in_words': self._amount_to_words(donation.amount),
+            'verses': verses,  # Für Konsistenz mit Certificate-Context
+            'verse_count': len(verses),
+            'formatted_amount': f"{donation.total_amount:.2f}",
+            'amount_in_words': self._amount_to_words(donation.total_amount),
             'formatted_date': donation.completed_at.strftime('%d. %B %Y') if donation.completed_at else '',
             'issue_date': datetime.now().strftime('%d. %B %Y'),
             'background_image_path': f'file://{background_image_path}',
@@ -630,7 +637,7 @@ class PDFGeneratorService:
                 if not donation:
                     continue
                     
-                # Alle Spenden sind Einzelspenden
+                # Verwende personal_certificate für alle Donations
                 cert_type = 'personal_certificate'
                 
                 # Zertifikat generieren

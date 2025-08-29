@@ -45,8 +45,8 @@ class StripeService:
             if not donations:
                 raise StripeError("No valid donations could be created")
             
-            # Calculate total amount (all verses are €100 each)
-            total_amount = len(donations) * 100 * 100  # Convert to cents for Stripe
+            # Calculate total amount from the consolidated donation
+            total_amount = int(donations[0].total_amount * 100)  # Convert to cents for Stripe
             
             if total_amount <= 0:
                 raise StripeError("Invalid donation amount")
@@ -58,11 +58,10 @@ class StripeService:
             # Prepare billing details using Person object
             billing_details = StripeService._prepare_billing_details_from_person(person)
             
-            # Minimal metadata - only what we actually need
-            donation_ids = [str(d.id) for d in donations]
+            # Simplified metadata for single donation
             metadata = {
-                'donation_ids': ','.join(donation_ids),
-                'donation_count': str(len(donations))
+                'donation_id': str(donations[0].id),
+                'verse_count': str(donations[0].verse_count)
             }
             
             # Create PaymentIntent
@@ -83,7 +82,7 @@ class StripeService:
                 
                 # Customer information
                 receipt_email=person.email,
-                description=f"NGÜ Bibelvers-Sponsoring: {len(donations)} Verse",
+                description=f"NGÜ Bibelvers-Sponsoring: {donations[0].verse_count} Verse",
                 
                 # Metadata for webhook processing
                 metadata=metadata
@@ -128,70 +127,70 @@ class StripeService:
     @staticmethod
     def create_donations_from_cart(cart_items, person_id):
         """
-        Create Donation records from cart items using Person/Donation structure
+        Erstellt EINE Donation mit MEHREREN Versen
         
         Args:
             cart_items: List of cart items from session
             person_id: Person ID (required)
             
         Returns:
-            list: Created Donation objects
+            list: Created Donation objects (single donation in list for compatibility)
         """
-        donations = []
-        
         try:
-            # Get person from database
             person = Person.query.get(person_id)
             if not person:
                 raise StripeError("Invalid person ID")
             
-            # Create donations for all cart items using the same person
+            # Gruppiere Cart-Items (alle Verse einer Person = eine Donation)
+            verses_to_add = []
+            total_amount = Decimal('0')
+            
             for item in cart_items:
-                # Get verse
                 verse = Verse.query.get(item['verse_id'])
                 if not verse or verse.is_sponsored:
                     continue
-                
-                # All donations are individual donations - simplified structure
-                item_data = item.get('donor_data', {})  # Get item-specific data
-                
-                # Get wants_receipt directly from cart item data
-                wants_receipt = item_data.get('wants_receipt', True)
-                
-                # Create donation record with simplified structure
-                donation = Donation(
-                    person_id=person.id,
-                    verse_id=verse.id,
-                    person_snapshot=person.to_snapshot(),  # Contains all person data
-                    amount=Decimal(str(item['amount'])),
-                    currency=item.get('currency', 'EUR'),
-                    wants_receipt=wants_receipt,  # From item_data instead of session
-                    privacy_consent=True,  # Always true for new flow, required for legacy
-                    payment_status='pending'
-                )
-                
-                db.session.add(donation)
-                donations.append(donation)
+                verses_to_add.append((verse, Decimal(str(item['amount']))))
+                total_amount += Decimal(str(item['amount']))
             
-            # Commit all donations
+            if not verses_to_add:
+                raise StripeError("No valid verses to process")
+            
+            # EINE Donation für ALLE Verse
+            item_data = cart_items[0].get('donor_data', {})  # Donor data ist für alle gleich
+            
+            donation = Donation(
+                person_id=person.id,
+                person_snapshot=person.to_snapshot(),
+                verse_count=len(verses_to_add),
+                total_amount=total_amount,
+                currency='EUR',
+                wants_receipt=item_data.get('wants_receipt', True),
+                privacy_consent=True,
+                payment_status='pending'
+            )
+            
+            db.session.add(donation)
+            db.session.flush()  # ID generieren
+            
+            # Verse zur Donation hinzufügen (ohne sofortige Sponsoring-Markierung)
+            for verse, amount in verses_to_add:
+                donation.add_verse(verse, amount)
+                # Note: Verses will be marked as sponsored in mark_completed() after successful payment
+            
+            # Payment Transaction
+            payment_transaction = PaymentTransaction(
+                donation_id=donation.id,
+                provider='stripe'
+            )
+            db.session.add(payment_transaction)
+            
             db.session.commit()
-            
-            # Create payment transactions
-            for donation in donations:
-                payment_transaction = PaymentTransaction(
-                    donation_id=donation.id,
-                    provider='stripe'
-                )
-                db.session.add(payment_transaction)
-                donation.payment = payment_transaction
-            
-            db.session.commit()
-            return donations
+            return [donation]  # Liste für Kompatibilität
             
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Error creating donations from cart: {e}")
-            raise StripeError(f"Failed to create donation records: {str(e)}")
+            logger.error(f"Error creating donation from cart: {e}")
+            raise StripeError(f"Failed to create donation: {str(e)}")
     
     @staticmethod
     def get_or_create_customer(person):
@@ -254,38 +253,36 @@ class StripeService:
             payment_intent: Stripe PaymentIntent object
         """
         try:
-            # Get donation IDs from metadata
-            donation_ids = payment_intent.metadata.get('donation_ids', '').split(',')
-            donation_ids = [int(did) for did in donation_ids if did.isdigit()]
-            
-            if not donation_ids:
-                logger.error(f"No valid donation IDs in PaymentIntent {payment_intent.id}")
+            # Get donation ID from metadata
+            donation_id = payment_intent.metadata.get('donation_id')
+            if not donation_id or not donation_id.isdigit():
+                logger.error(f"No valid donation ID in PaymentIntent {payment_intent.id}")
                 return False
+            donation_id = int(donation_id)
             
-            # Find donations by donation IDs
-            donations = Donation.query.filter(
-                Donation.id.in_(donation_ids),
+            # Find donation by ID
+            donation = Donation.query.filter(
+                Donation.id == donation_id,
                 Donation.payment_status.in_(['pending', 'processing'])
-            ).all()
+            ).first()
             
-            if not donations:
-                logger.error(f"No pending donations found for PaymentIntent {payment_intent.id}")
+            if not donation:
+                logger.error(f"No pending donation found for PaymentIntent {payment_intent.id}")
                 return False
             
             # Start database transaction
             try:
-                # Mark all donations as completed
-                for donation in donations:
-                    donation.mark_completed()
-                    
-                    # Update payment transaction
-                    if donation.payment:
-                        donation.payment.update_stripe_data(payment_intent)
-                        donation.payment.mark_confirmed()
+                # Mark donation as completed
+                donation.mark_completed()
+                
+                # Update payment transaction
+                if donation.payment:
+                    donation.payment.update_stripe_data(payment_intent)
+                    donation.payment.mark_confirmed()
                 
                 db.session.commit()
                 
-                logger.info(f"Successfully processed payment for {len(donations)} donations")
+                logger.info(f"Successfully processed payment for donation {donation.id}")
                 return True
                 
             except Exception as e:
@@ -306,32 +303,34 @@ class StripeService:
             payment_intent: Stripe PaymentIntent object
         """
         try:
-            # Get donation IDs from metadata
-            donation_ids = payment_intent.metadata.get('donation_ids', '').split(',')
-            donation_ids = [int(did) for did in donation_ids if did.isdigit()]
-            
-            if not donation_ids:
-                logger.error(f"No valid donation IDs in failed PaymentIntent {payment_intent.id}")
+            # Get donation ID from metadata
+            donation_id = payment_intent.metadata.get('donation_id')
+            if not donation_id or not donation_id.isdigit():
+                logger.error(f"No valid donation ID in failed PaymentIntent {payment_intent.id}")
                 return False
+            donation_id = int(donation_id)
             
-            donations = Donation.query.filter(
-                Donation.id.in_(donation_ids),
+            donation = Donation.query.filter(
+                Donation.id == donation_id,
                 Donation.payment_status.in_(['pending', 'processing'])
-            ).all()
+            ).first()
+            
+            if not donation:
+                logger.error(f"No pending donation found for failed PaymentIntent {payment_intent.id}")
+                return False
             
             error_message = "Payment failed"
             if hasattr(payment_intent, 'last_payment_error') and payment_intent.last_payment_error:
                 error_message = payment_intent.last_payment_error.get('message', error_message)
             
-            for donation in donations:
-                donation.mark_failed(error_message)
-                
-                if donation.payment:
-                    donation.payment.update_stripe_data(payment_intent)
-                    donation.payment.mark_failed(error_message)
+            donation.mark_failed(error_message)
+            
+            if donation.payment:
+                donation.payment.update_stripe_data(payment_intent)
+                donation.payment.mark_failed(error_message)
             
             db.session.commit()
-            logger.info(f"Marked {len(donations)} donations as failed")
+            logger.info(f"Marked donation {donation.id} as failed")
             return True
             
         except Exception as e:
@@ -348,27 +347,29 @@ class StripeService:
             payment_intent: Stripe PaymentIntent object
         """
         try:
-            # Get donation IDs from metadata
-            donation_ids = payment_intent.metadata.get('donation_ids', '').split(',')
-            donation_ids = [int(did) for did in donation_ids if did.isdigit()]
+            # Get donation ID from metadata
+            donation_id = payment_intent.metadata.get('donation_id')
+            if not donation_id or not donation_id.isdigit():
+                logger.error(f"No valid donation ID in processing PaymentIntent {payment_intent.id}")
+                return False
+            donation_id = int(donation_id)
             
-            if not donation_ids:
-                logger.error(f"No valid donation IDs in processing PaymentIntent {payment_intent.id}")
+            donation = Donation.query.filter(
+                Donation.id == donation_id,
+                Donation.payment_status == 'pending'
+            ).first()
+            
+            if not donation:
+                logger.error(f"No pending donation found for processing PaymentIntent {payment_intent.id}")
                 return False
             
-            donations = Donation.query.filter(
-                Donation.id.in_(donation_ids),
-                Donation.payment_status == 'pending'
-            ).all()
+            donation.payment_status = 'processing'
             
-            for donation in donations:
-                donation.payment_status = 'processing'
-                
-                if donation.payment:
-                    donation.payment.update_stripe_data(payment_intent)
+            if donation.payment:
+                donation.payment.update_stripe_data(payment_intent)
             
             db.session.commit()
-            logger.info(f"Marked {len(donations)} donations as processing (SEPA)")
+            logger.info(f"Marked donation {donation.id} as processing (SEPA)")
             return True
             
         except Exception as e:
@@ -461,12 +462,13 @@ class StripeService:
             ).first()
             
             if payment and payment.donation:
-                # Mark verse as available again
-                payment.donation.verse.is_sponsored = False
+                # Mark all verses as available again
+                for verse_assoc in payment.donation.verse_associations:
+                    verse_assoc.verse.is_sponsored = False
                 payment.donation.payment_status = 'disputed'
                 
                 # Log the dispute
-                logger.warning(f"Chargeback for donation {payment.donation.id}, verse {payment.donation.verse.reference}")
+                logger.warning(f"Chargeback for donation {payment.donation.id}, verses: {', '.join([va.verse.reference for va in payment.donation.verse_associations])}")
                 
                 db.session.commit()
                 return True
@@ -487,29 +489,31 @@ class StripeService:
             payment_intent: Stripe PaymentIntent object
         """
         try:
-            # Get donation IDs from metadata
-            donation_ids = payment_intent.metadata.get('donation_ids', '').split(',')
-            donation_ids = [int(did) for did in donation_ids if did.isdigit()]
+            # Get donation ID from metadata
+            donation_id = payment_intent.metadata.get('donation_id')
+            if not donation_id or not donation_id.isdigit():
+                logger.error(f"No valid donation ID in requires_action PaymentIntent {payment_intent.id}")
+                return False
+            donation_id = int(donation_id)
             
-            if not donation_ids:
-                logger.error(f"No valid donation IDs in requires_action PaymentIntent {payment_intent.id}")
+            donation = Donation.query.filter(
+                Donation.id == donation_id,
+                Donation.payment_status.in_(['pending', 'processing'])
+            ).first()
+            
+            if not donation:
+                logger.error(f"No pending donation found for requires_action PaymentIntent {payment_intent.id}")
                 return False
             
-            donations = Donation.query.filter(
-                Donation.id.in_(donation_ids),
-                Donation.payment_status.in_(['pending', 'processing'])
-            ).all()
+            # Keep status as processing for now - user needs to complete action
+            if donation.payment_status == 'pending':
+                donation.payment_status = 'processing'
             
-            for donation in donations:
-                # Keep status as processing for now - user needs to complete action
-                if donation.payment_status == 'pending':
-                    donation.payment_status = 'processing'
-                
-                if donation.payment:
-                    donation.payment.update_stripe_data(payment_intent)
+            if donation.payment:
+                donation.payment.update_stripe_data(payment_intent)
             
             db.session.commit()
-            logger.info(f"Updated {len(donations)} donations requiring action")
+            logger.info(f"Updated donation {donation.id} requiring action")
             return True
             
         except Exception as e:
@@ -526,31 +530,33 @@ class StripeService:
             payment_intent: Stripe PaymentIntent object
         """
         try:
-            # Get donation IDs from metadata
-            donation_ids = payment_intent.metadata.get('donation_ids', '').split(',')
-            donation_ids = [int(did) for did in donation_ids if did.isdigit()]
-            
-            if not donation_ids:
-                logger.error(f"No valid donation IDs in canceled PaymentIntent {payment_intent.id}")
+            # Get donation ID from metadata
+            donation_id = payment_intent.metadata.get('donation_id')
+            if not donation_id or not donation_id.isdigit():
+                logger.error(f"No valid donation ID in canceled PaymentIntent {payment_intent.id}")
                 return False
+            donation_id = int(donation_id)
             
-            donations = Donation.query.filter(
-                Donation.id.in_(donation_ids),
+            donation = Donation.query.filter(
+                Donation.id == donation_id,
                 Donation.payment_status.in_(['pending', 'processing'])
-            ).all()
+            ).first()
+            
+            if not donation:
+                logger.error(f"No pending donation found for canceled PaymentIntent {payment_intent.id}")
+                return False
             
             cancellation_reason = payment_intent.cancellation_reason or 'canceled'
             error_message = f"Payment canceled: {cancellation_reason}"
             
-            for donation in donations:
-                donation.mark_failed(error_message)
-                
-                if donation.payment:
-                    donation.payment.update_stripe_data(payment_intent)
-                    donation.payment.mark_failed(error_message)
+            donation.mark_failed(error_message)
+            
+            if donation.payment:
+                donation.payment.update_stripe_data(payment_intent)
+                donation.payment.mark_failed(error_message)
             
             db.session.commit()
-            logger.info(f"Marked {len(donations)} donations as canceled/failed")
+            logger.info(f"Marked donation {donation.id} as canceled/failed")
             return True
             
         except Exception as e:
