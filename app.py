@@ -1945,6 +1945,9 @@ def checkout_spendendaten():
                                  has_only_groups=has_only_groups,
                                  form_data=request.form)
         
+        # Get newsletter consent (explicit opt-in)
+        newsletter_consent = request.form.get('newsletter') == 'on'
+        
         # Find or create person
         # Handle salutation: "Ohne" becomes None/NULL in database
         salutation_value = request.form.get('salutation')
@@ -1959,7 +1962,8 @@ def checkout_spendendaten():
             street=request.form.get('street'),
             house_number=request.form.get('houseNumber'),
             postal_code=request.form.get('postalCode'),
-            city=request.form.get('city')
+            city=request.form.get('city'),
+            newsletter_consent=newsletter_consent
         )
         
         db.session.commit()

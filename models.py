@@ -32,7 +32,7 @@ class Person(db.Model):
     country = db.Column(db.String(2), default='DE')
     
     # Preferences
-    # (No preferences currently)
+    newsletter_consent = db.Column(db.Boolean, default=False, nullable=False)
     
     # Metadata
     last_donation_at = db.Column(db.DateTime)
@@ -91,7 +91,8 @@ class Person(db.Model):
             'house_number': self.house_number,
             'postal_code': self.postal_code,
             'city': self.city,
-            'country': self.country
+            'country': self.country,
+            'newsletter_consent': self.newsletter_consent
         }
     
     @classmethod
@@ -104,7 +105,8 @@ class Person(db.Model):
         else:
             # Update with new data
             for key, value in kwargs.items():
-                if hasattr(person, key) and value:
+                if hasattr(person, key) and (value is not None):
+                    # Special handling for boolean fields like newsletter_consent
                     setattr(person, key, value)
             person.data_updated_at = datetime.utcnow()
         

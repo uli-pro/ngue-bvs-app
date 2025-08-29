@@ -115,6 +115,25 @@
                 </div>
                 {% endif %}
                 
+                <!-- Newsletter Opt-In -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" 
+                                   id="newsletter" name="newsletter"
+                                   {% if form_data.get('newsletter') %}checked{% endif %}>
+                            <label class="form-check-label" for="newsletter">
+                                <i class="fas fa-envelope text-success me-2"></i>
+                                Ich möchte gerne über Neuigkeiten zum NGÜ-Bibelübersetzungsprojekt 
+                                informiert werden (ca. 2x jährlich)
+                            </label>
+                            <small class="form-text text-muted d-block mt-1">
+                                Sie können sich jederzeit wieder abmelden. Ihre Daten werden nicht an Dritte weitergegeben.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Privacy -->
                 <div class="card mb-4">
                     <div class="card-body">
