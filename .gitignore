@@ -124,6 +124,33 @@ ngue-bvs-app.code-workspace  # Specific workspace file
 *.bak                     # Alternative backup extension
 *.old                     # Old file backups
 
+# Runtime directories
+certificates/
+flask_session/
+uploads/
+logs/
+
+# Python
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*.old
+
 # Directory exclusions (must be at end to work properly)
 do_not_deploy/
 /do_not_deploy/
