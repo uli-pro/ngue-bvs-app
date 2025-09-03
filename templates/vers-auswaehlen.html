@@ -27,15 +27,15 @@
             <div class="col-lg-4">
                 <div class="card h-100 verse-card">
                     <div class="card-body text-center p-4">
-                        <h4 class="text-primary mb-3">{{ verse.reference }}</h4>
+                        <h4 class="text-primary mb-3">{{ verse.german_reference }}</h4>
                         <blockquote class="blockquote">
                             <p class="mb-4">"{{ verse.text }}"</p>
                             <footer class="blockquote-footer">
                                 <cite title="Schlachter 1951">Schlachter 1951</cite>
                             </footer>
                         </blockquote>
-                        <a href="/vers/{{ verse.url_slug }}/spendenart" 
-                           class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                        <button onclick="addToCart({{ verse.id }}, '{{ verse.german_reference }}')" 
+                                class="btn btn-primary" id="btn-vers-{{ verse.id }}">DIESEN VERS WÄHLEN</button>
                     </div>
                 </div>
             </div>
@@ -141,4 +141,81 @@
     </div>
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+function addToCart(verseId, verseReference) {
+    const button = document.getElementById(`btn-vers-${verseId}`);
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'WIRD HINZUGEFÜGT...';
+    
+    fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            verse_id: verseId,
+            donation_details: {}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart count in navigation
+            const cartBadge = document.querySelector('.cart-count');
+            if (cartBadge) {
+                cartBadge.textContent = data.cart_count;
+                cartBadge.style.display = data.cart_count > 0 ? 'inline' : 'none';
+            }
+            
+            // Show success feedback
+            button.textContent = 'HINZUGEFÜGT!';
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-success');
+            
+            // Direct redirect to cart without alert or flash message
+            window.location.href = '/spendenkorb';
+        } else {
+            // Show error
+            showToast(data.error || 'Ein Fehler ist aufgetreten.', 'error');
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', 'error');
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="me-2">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+            </div>
+            <div class="flex-grow-1">${message}</div>
+            <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
+}
+</script>
 {% endblock %}

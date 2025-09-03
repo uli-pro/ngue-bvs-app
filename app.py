@@ -9,11 +9,65 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import secrets
 
+# 🔧 DEBUG INFRASTRUCTURE - REMOVE AFTER DEBUGGING 🔧
+import json
+import logging
+from flask import g
+import uuid
+import time
+
+# Configure terminal logging for debugging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # Terminal output
+        logging.FileHandler('debug_flow.log')  # File output
+    ]
+)
+
+debug_logger = logging.getLogger('debug_flow')
+
+def debug_print(location, data, level="DEBUG"):
+    """🔧 PRINTF DEBUGGING - REMOVE AFTER DEBUGGING 🔧"""
+    timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+    trace_id = getattr(g, 'trace_id', 'no-trace')
+    message = f"[{timestamp}] [{level}] [{trace_id}] {location}: {json.dumps(data, default=str)}"
+    print(f"🐛 {message}")  # Terminal
+    debug_logger.info(message)  # File
+
+def strategic_log(operation, component, data, success=True):
+    """🔧 STRATEGIC LOGGING - CAN STAY LONGER 🔧"""
+    log_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'trace_id': getattr(g, 'trace_id', 'no-trace'),
+        'operation': operation,
+        'component': component,
+        'success': success,
+        'data': data
+    }
+    debug_logger.info(f"STRATEGIC: {json.dumps(log_entry)}")
+    print(f"📊 STRATEGIC [{component}] {operation}: {'✅' if success else '❌'} - {data}")
+# 🔧 END DEBUG INFRASTRUCTURE 🔧
+
 # Load environment variables
 load_dotenv()
 
 # Configure application
 app = Flask(__name__)
+
+# 🔧 DEBUG REQUEST HANDLER - MOVE AFTER APP CREATION 🔧
+@app.before_request
+def before_request():
+    """Generate trace ID for each request"""
+    g.trace_id = f"{datetime.now().strftime('%H%M%S')}-{str(uuid.uuid4())[:6]}"
+    g.start_time = time.time()
+    
+    debug_print("REQUEST_START", {
+        'method': request.method,
+        'path': request.path,
+        'endpoint': request.endpoint
+    })
 
 # Load configuration from environment
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
@@ -24,11 +78,20 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['CERTIFICATE_STORAGE_PATH'] = os.path.join(os.getcwd(), 'certificates')
 app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'
 
+# Flask-Mail configuration (loaded from .env for provider-agnostic setup)
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or os.environ.get('GMAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or os.environ.get('GMAIL_APP_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, Verse, Donation, VerseReservation, Certificate
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken
 from sqlalchemy import text
 from stripe_service import StripeService, StripeError
 from pdf_service import PDFGeneratorService, PDFGenerationError
@@ -38,6 +101,10 @@ db.init_app(app)
 # Initialize PDF Generator Service
 pdf_service = PDFGeneratorService()
 pdf_service.init_app(app)
+
+# Initialize Email Service
+from email_service import email_service
+email_service.init_app(app)
 
 # Configure session to use database (production-ready)
 app.config["SESSION_PERMANENT"] = True  # Make sessions permanent so they get expiry dates
@@ -103,7 +170,14 @@ def inject_context():
 
 def validate_cart_item(item):
     """Validate cart item structure and content."""
+    # 🔧 DEBUG POINT 1: Cart Item Validation 🔧
+    debug_print("CART_ITEM_VALIDATION", {
+        'item_type': type(item).__name__,
+        'item_data': str(item)[:200] if item else None
+    })
+    
     if not isinstance(item, dict):
+        debug_print("CART_ITEM_INVALID", {'reason': 'not_dict', 'type': type(item).__name__})
         return False
     
     required_fields = ['verse_id', 'donor_data', 'amount']
@@ -111,60 +185,129 @@ def validate_cart_item(item):
     # Check required fields exist
     for field in required_fields:
         if field not in item:
+            debug_print("CART_ITEM_INVALID", {'reason': 'missing_field', 'field': field})
             return False
     
     # Check field types and values
     try:
         verse_id = int(item['verse_id'])
         if verse_id <= 0:
+            debug_print("CART_ITEM_INVALID", {'reason': 'invalid_verse_id', 'value': verse_id})
             return False
     except (ValueError, TypeError):
+        debug_print("CART_ITEM_INVALID", {'reason': 'verse_id_not_int', 'value': item.get('verse_id')})
         return False
     
     
     if not isinstance(item['donor_data'], dict):
+        debug_print("CART_ITEM_INVALID", {'reason': 'donor_data_not_dict', 'type': type(item['donor_data']).__name__})
         return False
     
     try:
         amount = float(item['amount'])
         if amount <= 0:
+            debug_print("CART_ITEM_INVALID", {'reason': 'invalid_amount', 'value': amount})
             return False
     except (ValueError, TypeError):
+        debug_print("CART_ITEM_INVALID", {'reason': 'amount_not_float', 'value': item.get('amount')})
         return False
     
+    debug_print("CART_ITEM_VALID", {'verse_id': verse_id, 'amount': amount})
     return True
 
 
 def sanitize_cart(cart):
     """Clean up cart by removing invalid items."""
+    # 🔧 DEBUG POINT 2: Cart Sanitization 🔧
+    original_count = len(cart) if isinstance(cart, list) else 0
+    debug_print("CART_SANITIZE_START", {
+        'cart_type': type(cart).__name__,
+        'original_count': original_count
+    })
+    
     if not isinstance(cart, list):
+        debug_print("CART_SANITIZE_FAILED", {'reason': 'not_list', 'type': type(cart).__name__})
         return []
     
     valid_items = []
-    for item in cart:
+    invalid_count = 0
+    for i, item in enumerate(cart):
         if validate_cart_item(item):
             # Ensure currency field exists
             if 'currency' not in item:
                 item['currency'] = 'EUR'
+                debug_print("CART_ITEM_CURRENCY_ADDED", {'item_index': i, 'verse_id': item.get('verse_id')})
             valid_items.append(item)
+        else:
+            invalid_count += 1
+    
+    debug_print("CART_SANITIZE_COMPLETE", {
+        'original_count': original_count,
+        'valid_count': len(valid_items),
+        'removed_count': invalid_count
+    })
     
     return valid_items
 
 
 def handle_corrupted_session():
     """Handle corrupted session data gracefully."""
+    # 🔧 DEBUG POINT 3 + STRATEGIC LOGGING 1: Session Recovery 🔧
+    session_id = session.get('session_id', 'unknown')
+    original_cart = session.get('cart', 'missing')
+    
+    debug_print("SESSION_CORRUPTION_CHECK", {
+        'session_id': session_id,
+        'cart_exists': 'cart' in session,
+        'cart_type': type(original_cart).__name__ if original_cart != 'missing' else 'missing',
+        'cart_size': len(original_cart) if isinstance(original_cart, list) else 'n/a'
+    })
+    
+    strategic_log("session_recovery_start", "cart_session", {
+        'session_id': session_id,
+        'cart_corrupt': 'cart' not in session or not isinstance(session.get('cart'), list)
+    })
+    
     try:
         # Initialize empty cart if missing or corrupted
         if 'cart' not in session or not isinstance(session['cart'], list):
+            debug_print("SESSION_CART_CORRUPTED", {
+                'problem': 'missing_or_invalid_cart',
+                'cart_value': str(session.get('cart', 'MISSING'))[:100]
+            })
+            strategic_log("cart_corruption_fixed", "cart_session", {
+                'action': 'reset_to_empty',
+                'reason': 'cart_missing_or_invalid'
+            }, success=True)
             session['cart'] = []
         else:
             # Sanitize existing cart
+            old_size = len(session['cart'])
             session['cart'] = sanitize_cart(session['cart'])
+            new_size = len(session['cart'])
+            
+            if old_size != new_size:
+                debug_print("SESSION_CART_SANITIZED", {
+                    'removed_items': old_size - new_size,
+                    'old_size': old_size,
+                    'new_size': new_size
+                })
+                strategic_log("cart_sanitized", "cart_session", {
+                    'items_removed': old_size - new_size,
+                    'final_size': new_size
+                }, success=True)
         
         session.modified = True
+        debug_print("SESSION_RECOVERY_SUCCESS", {'final_cart_size': len(session['cart'])})
         
     except Exception as e:
         # If all else fails, reset cart completely
+        debug_print("SESSION_RECOVERY_FAILED", {'error': str(e)}, level="ERROR")
+        strategic_log("session_recovery_failed", "cart_session", {
+            'error': str(e),
+            'action': 'emergency_reset'
+        }, success=False)
+        
         session['cart'] = []
         session.modified = True
         app.logger.error(f"Session corruption recovery failed: {e}")
@@ -375,6 +518,7 @@ def api_verse_by_reference(book, chapter, verse_num):
                 'verse': verse.verse,
                 'text': verse.text,
                 'reference': verse.reference,
+                'german_reference': verse.german_reference,
                 'positivity_score': verse.positivity_score,
                 'is_sponsored': verse.is_sponsored,
                 'url_slug': verse.url_slug
@@ -388,6 +532,7 @@ def api_verse_by_reference(book, chapter, verse_num):
                 {
                     'id': alt.id,
                     'reference': alt.reference,
+                    'german_reference': alt.german_reference,
                     'text': alt.text,  # Show full text for alternative verses
                     'positivity_score': alt.positivity_score,
                     'url_slug': alt.url_slug
@@ -435,6 +580,7 @@ def api_similar_verses(verse_id):
             'original_verse': {
                 'id': verse.id,
                 'reference': verse.reference,
+                'german_reference': verse.german_reference,
                 'is_sponsored': verse.is_sponsored
             },
             'alternatives': alternatives_data
@@ -486,8 +632,16 @@ def api_verse_books():
             'MAL'       # Maleachi
         ]
         
-        # Return only books that exist in database, in biblical order
-        book_list = [book for book in biblical_order if book in available_books]
+        # Return only books that exist in database, in biblical order with German names
+        from book_names import get_german_book_name
+        
+        book_list = []
+        for book in biblical_order:
+            if book in available_books:
+                book_list.append({
+                    'code': book,
+                    'german_name': get_german_book_name(book)
+                })
         
         return {
             'success': True,
@@ -637,6 +791,7 @@ def api_keyword_search():
                 'verse': verse.verse,
                 'text': verse.text,
                 'reference': verse.reference,
+                'german_reference': verse.german_reference,
                 'positivity_score': verse.positivity_score,
                 'is_sponsored': verse.is_sponsored,
                 'url_slug': verse.url_slug
@@ -752,17 +907,30 @@ def vers_spendenart_by_id(verse_id):
 @app.route("/spendenkorb")
 def spendenkorb():
     """Donation cart page showing all selected verses"""
+    # 🔧 DEBUG POINT 4: Cart Display and Validation 🔧
+    debug_print("CART_PAGE_ACCESS", {
+        'session_id': session.get('session_id', 'unknown'),
+        'has_cart': 'cart' in session,
+        'initial_cart_size': len(session.get('cart', [])) if isinstance(session.get('cart'), list) else 'invalid'
+    })
+    
     # Handle corrupted session data gracefully
     handle_corrupted_session()
     
     # Initialize cart if it doesn't exist
     if 'cart' not in session:
         session['cart'] = []
+        debug_print("CART_INITIALIZED", {'action': 'created_empty_cart'})
     
     # Load verse data for all items in cart
     cart_items = []
     total_amount = 0
     expired_count = 0
+    
+    debug_print("CART_PROCESSING_START", {
+        'cart_size': len(session['cart']),
+        'cart_items': [{'verse_id': item.get('verse_id'), 'amount': item.get('amount')} for item in session['cart']]
+    })
     
     # Check and update reservations for cart items
     for i, item in enumerate(session['cart']):
@@ -1283,22 +1451,20 @@ def checkout_erfolg():
             
             # Only process if payment actually succeeded
             if payment_intent.status == 'succeeded':
-                # Get donation IDs from metadata
-                donation_ids_str = payment_intent.metadata.get('donation_ids', '')
-                donation_ids = [int(did) for did in donation_ids_str.split(',') if did.isdigit()]
+                # Get donation ID from metadata (single donation per PaymentIntent)
+                donation_id_str = payment_intent.metadata.get('donation_id', '')
                 
-                if donation_ids:
-                    # Find and complete donations
-                    donations = Donation.query.filter(Donation.id.in_(donation_ids)).all()
-                    completed_count = 0
-                    
-                    for donation in donations:
+                if donation_id_str and donation_id_str.isdigit():
+                    donation_id = int(donation_id_str)
+                    # Find and complete donation
+                    donation = Donation.query.get(donation_id)
+                    if donation:
                         donation.mark_completed()
-                        completed_count += 1
-                    
-                    app.logger.info(f"Successfully marked {completed_count} donations as completed from success page")
+                        app.logger.info(f"Successfully marked donation {donation_id} as completed from success page")
+                    else:
+                        app.logger.error(f"Donation {donation_id} not found for PaymentIntent {payment_intent_id}")
                 else:
-                    app.logger.warning(f"No valid donation IDs found in PaymentIntent {payment_intent_id} metadata")
+                    app.logger.warning(f"No valid donation ID found in PaymentIntent {payment_intent_id} metadata")
             else:
                 app.logger.warning(f"PaymentIntent {payment_intent_id} has status {payment_intent.status}, not succeeded")
                 
@@ -1317,73 +1483,102 @@ def checkout_erfolg():
     payment_intent_id = session.get('completed_payment_intent')
     if payment_intent_id:
         try:
-            # Get donations from the completed payment intent
+            # Get donation from the completed payment intent
             payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
             if payment_intent.status == 'succeeded':
-                donation_ids_str = payment_intent.metadata.get('donation_ids', '')
-                donation_ids = [int(did) for did in donation_ids_str.split(',') if did.isdigit()]
+                donation_id_str = payment_intent.metadata.get('donation_id', '')
                 
-                if donation_ids:
-                    # Generate PDFs for all donations in this payment
-                    template_context = prepare_success_page_with_pdfs(donation_ids, payment_intent_id)
+                if donation_id_str and donation_id_str.isdigit():
+                    donation_id = int(donation_id_str)
+                    # Generate PDF for the donation in this payment
+                    template_context = prepare_success_page_with_pdfs(donation_id, payment_intent_id)
                     return render_template("checkout-erfolg.html", **template_context)
         except Exception as e:
             app.logger.error(f"Error preparing success page with PDFs: {e}")
     
     # Fallback: render template without PDF links
+    # Try to get the actual user email and verse references
+    user_email = "support@peter-schoeffer-stiftung.de"  # Final fallback
+    verse_references = []  # Will be populated if data is found
+    
+    try:
+        # Try to get user email from session
+        if session.get('checkout_person_id'):
+            person = Person.query.get(session.get('checkout_person_id'))
+            if person:
+                user_email = person.email
+        
+        # Try to get actual verse references from completed payment intent
+        if session.get('completed_payment_intent'):
+            payment_intent = stripe.PaymentIntent.retrieve(session.get('completed_payment_intent'))
+            if payment_intent.status == 'succeeded':
+                donation_id_str = payment_intent.metadata.get('donation_id', '')
+                if donation_id_str and donation_id_str.isdigit():
+                    donation_id = int(donation_id_str)
+                    donation = Donation.query.get(donation_id)
+                    if donation:
+                        user_email = donation.person.email
+                        # Extract verse references from Many-to-Many relationship
+                        verse_references = []
+                        for verse_assoc in donation.verse_associations:
+                            verse_references.append(verse_assoc.verse.german_reference)
+                        # If no verses found, leave verse_references empty to trigger error message in template
+        
+    except Exception as e:
+        app.logger.error(f"Error getting user data for fallback: {e}")
+    
     return render_template("checkout-erfolg.html", 
-                         user_email="support@peter-schoeffer-stiftung.de",
-                         verse_reference="Jeremia 29,11",
-                         verse_references=["Jeremia 29,11"],  # Default for multi-verse compatibility
+                         user_email=user_email,
+                         verse_reference=verse_references[0] if len(verse_references) == 1 else None,
+                         verse_references=verse_references,
                          pdfs_available=False)
 
-def prepare_success_page_with_pdfs(donation_ids, session_id):
+def prepare_success_page_with_pdfs(donation_id, session_id):
     """Bereitet Template-Context mit PDF-Generierung vor"""
     from sqlalchemy import func
     
     try:
-        # Generate PDFs for all donations
+        # Generate PDFs for the donation
         # Ensure fresh database session for PDF generation
         db.session.commit()  # Commit any pending changes
         db.session.close()   # Close current session
         
-        # Generate PDFs individually to avoid transaction conflicts
+        # Generate PDFs to avoid transaction conflicts
         generated_documents = {
             'certificates': [],
             'tax_receipts': [],
             'errors': []
         }
         
-        for donation_id in donation_ids:
-            try:
-                # Create fresh PDF service instance with new DB session
-                pdf_service_fresh = PDFGeneratorService(app)
-                
-                # Generate personal certificate
-                cert = pdf_service_fresh.generate_certificate_atomic(
-                    donation_id, 
-                    'personal_certificate', 
+        try:
+            # Create fresh PDF service instance with new DB session
+            pdf_service_fresh = PDFGeneratorService(app)
+            
+            # Generate personal certificate
+            cert = pdf_service_fresh.generate_certificate_atomic(
+                donation_id, 
+                'personal_certificate', 
+                session_id
+            )
+            if cert:
+                generated_documents['certificates'].append(cert)
+            
+            # Generate tax receipt if wanted
+            donation = Donation.query.get(donation_id)
+            if donation and donation.wants_receipt:
+                tax_receipt = pdf_service_fresh.generate_tax_receipt_atomic(
+                    donation_id,
                     session_id
                 )
-                if cert:
-                    generated_documents['certificates'].append(cert)
-                
-                # Generate tax receipt if wanted
-                donation = Donation.query.get(donation_id)
-                if donation and donation.wants_receipt:
-                    tax_receipt = pdf_service_fresh.generate_tax_receipt_atomic(
-                        donation_id,
-                        session_id
-                    )
-                    if tax_receipt:
-                        generated_documents['tax_receipts'].append(tax_receipt)
-                        
-            except Exception as e:
-                app.logger.error(f"Error generating PDFs for donation {donation_id}: {e}")
-                generated_documents['errors'].append({
-                    'donation_id': donation_id,
-                    'error': str(e)
-                })
+                if tax_receipt:
+                    generated_documents['tax_receipts'].append(tax_receipt)
+                    
+        except Exception as e:
+            app.logger.error(f"Error generating PDFs for donation {donation_id}: {e}")
+            generated_documents['errors'].append({
+                'donation_id': donation_id,
+                'error': str(e)
+            })
         
         # Prepare download links
         certificate_links = []
@@ -1404,17 +1599,77 @@ def prepare_success_page_with_pdfs(donation_ids, session_id):
                 'filename': receipt.filename
             })
         
-        # Get donation details for display - support multi-verse donations
-        donations = Donation.query.filter(Donation.id.in_(donation_ids)).all() if donation_ids else []
-        latest_donation = donations[-1] if donations else None
-        user_email = latest_donation.person.email if latest_donation else 'support@peter-schoeffer-stiftung.de'
+        # Get donation details for display
+        donation = Donation.query.get(donation_id)
+        user_email = donation.person.email if donation else 'support@peter-schoeffer-stiftung.de'
         
-        # Collect all verse references for multi-verse display
-        verse_references = [d.verse.reference for d in donations if d.verse]
+        # Collect verse references for display (fix Many-to-Many access)
+        verse_references = []
+        if donation:
+            for verse_assoc in donation.verse_associations:
+                verse_references.append(verse_assoc.verse.german_reference)
         verse_reference = verse_references[0] if len(verse_references) == 1 else None  # Single verse fallback
         
         # Setup PDF session for access control
-        setup_pdf_session(donation_ids, session_id)
+        setup_pdf_session([donation_id], session_id)
+        
+        # Send certificate email after successful PDF generation
+        try:
+            if donation and (generated_documents['certificates'] or generated_documents['tax_receipts']):
+                # Collect all generated PDFs for email attachments
+                pdf_attachments = []
+                
+                # Add certificate PDF
+                for cert in generated_documents.get('certificates', []):
+                    if cert.file_path:
+                        pdf_attachments.append({
+                            'path': cert.file_path,
+                            'filename': f"NGÜ_Zertifikat_{donation.id}.pdf",
+                            'mimetype': 'application/pdf'
+                        })
+                
+                # Add tax receipt PDF if available
+                for receipt in generated_documents.get('tax_receipts', []):
+                    if receipt.file_path:
+                        pdf_attachments.append({
+                            'path': receipt.file_path,
+                            'filename': f"NGÜ_Spendenbescheinigung_{donation.id}.pdf",
+                            'mimetype': 'application/pdf'
+                        })
+                
+                # Send email with both PDFs if any were generated
+                if pdf_attachments:
+                    donation_data = {
+                        'id': donation.id,
+                        'amount': float(donation.amount),
+                        'created_at': donation.created_at,
+                        'person': {
+                            'email': donation.person.email,
+                            'first_name': donation.person.first_name,
+                            'last_name': donation.person.last_name
+                        },
+                        'verses': [{
+                            'reference': va.verse.german_reference,
+                            'text': va.verse.text
+                        } for va in donation.verse_associations]
+                    }
+                    
+                    # Send email with all PDFs using the first PDF path (email service expects single path but we'll modify it)
+                    email_service.send_certificate_email_with_attachments(
+                        donation_data, 
+                        pdf_attachments
+                    )
+                    
+                    # Mark email as sent in database
+                    donation.email_sent = True
+                    donation.email_sent_at = datetime.utcnow()
+                    db.session.commit()
+                    
+                    app.logger.info(f"Certificate email sent for donation {donation.id} with {len(pdf_attachments)} PDF attachments")
+                
+        except Exception as email_error:
+            app.logger.error(f"Failed to send certificate email for donation {donation_id}: {email_error}")
+            # Don't fail the success page for email errors
         
         return {
             'user_email': user_email,
@@ -1422,7 +1677,7 @@ def prepare_success_page_with_pdfs(donation_ids, session_id):
             'verse_references': verse_references,  # For multi-verse display
             'certificate_links': certificate_links,
             'tax_receipt_links': tax_receipt_links,
-            'total_donations': len(donation_ids),
+            'total_donations': 1,
             'pdfs_available': True,
             'total_sponsored': Verse.query.filter_by(is_sponsored=True).count(),
             'total_amount': db.session.query(func.sum(Donation.amount)).filter_by(payment_status='completed').scalar() or 0,
@@ -1433,17 +1688,21 @@ def prepare_success_page_with_pdfs(donation_ids, session_id):
         app.logger.error(f"PDF generation failed: {str(e)}")
         
         # Fallback: prepare context without PDFs
-        donations = Donation.query.filter(Donation.id.in_(donation_ids)).all() if donation_ids else []
-        latest_donation = donations[-1] if donations else None
-        verse_references = [d.verse.reference for d in donations if d.verse]
+        donation = Donation.query.get(donation_id)
+        
+        # Fix Many-to-Many relationship access
+        verse_references = []
+        if donation:
+            for verse_assoc in donation.verse_associations:
+                verse_references.append(verse_assoc.verse.german_reference)
         
         return {
-            'user_email': latest_donation.person.email if latest_donation else 'support@peter-schoeffer-stiftung.de',
-            'verse_reference': verse_references[0] if len(verse_references) == 1 else 'Jeremia 29,11',
+            'user_email': donation.person.email if donation else 'support@peter-schoeffer-stiftung.de',
+            'verse_reference': verse_references[0] if len(verse_references) == 1 else None,
             'verse_references': verse_references,
             'certificate_links': [],
             'tax_receipt_links': [],
-            'total_donations': len(donation_ids),
+            'total_donations': 1,
             'pdfs_available': False,
             'pdf_error': True,
             'total_sponsored': Verse.query.filter_by(is_sponsored=True).count(),
@@ -1653,9 +1912,22 @@ def api_cart_add():
 @limiter.limit("30 per minute")
 def checkout_spendendaten():
     """Unified data collection after cart"""
+    # 🔧 DEBUG POINT 5 + STRATEGIC LOGGING 2: Form Data → Person Model 🔧
+    debug_print("CHECKOUT_SPENDENDATEN_ACCESS", {
+        'method': request.method,
+        'has_cart': 'cart' in session,
+        'cart_size': len(session.get('cart', [])) if isinstance(session.get('cart'), list) else 'invalid',
+        'session_id': session.get('session_id', 'unknown')
+    })
+    
+    strategic_log("checkout_form_access", "person_data", {
+        'method': request.method,
+        'cart_size': len(session.get('cart', [])) if isinstance(session.get('cart'), list) else 0
+    })
     
     # Check cart exists
     if 'cart' not in session or not session['cart']:
+        debug_print("CHECKOUT_CART_EMPTY", {'action': 'redirect_to_selection'})
         flash("Ihr Spendenkorb ist leer.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
@@ -1671,6 +1943,12 @@ def checkout_spendendaten():
             })
     
     total_amount = len(cart_items) * 100
+    
+    debug_print("CHECKOUT_CART_LOADED", {
+        'valid_items': len(cart_items),
+        'total_amount': total_amount,
+        'verse_ids': [item['verse'].id for item in cart_items]
+    })
     
     if request.method == "POST":
         email = request.form.get('email', '').strip().lower()
@@ -1722,8 +2000,7 @@ def checkout_spendendaten():
                                  total_amount=total_amount,
                                  form_data=request.form)
         
-        person_data['privacy_consent'] = privacy_consent
-        person_data['wants_receipt'] = wants_receipt
+        # Note: privacy_consent and wants_receipt are donation-specific, not person-specific
         
         # Handle salutation: "Ohne" becomes None/NULL in database
         salutation_value = request.form.get('salutation')
@@ -1731,16 +2008,50 @@ def checkout_spendendaten():
             salutation_value = None
         person_data['salutation'] = salutation_value
         
+        # 🔧 DEBUG POINT 6 + STRATEGIC LOGGING 2: Person.find_or_create 🔧
+        debug_print("PERSON_FIND_OR_CREATE_START", {
+            'email': email,
+            'wants_receipt': wants_receipt,
+            'person_data_fields': list(person_data.keys()),
+            'person_data': {k: v for k, v in person_data.items() if k != 'email'}  # Don't log email twice
+        })
+        
+        strategic_log("person_find_or_create_start", "person_data", {
+            'email_domain': email.split('@')[1] if '@' in email else 'invalid',
+            'wants_receipt': wants_receipt,
+            'has_address_data': all(field in person_data for field in ['first_name', 'last_name', 'street']),
+            'data_fields_count': len(person_data)
+        })
+        
         # Create or find person
         person = Person.find_or_create(**person_data)
         
+        debug_print("PERSON_FIND_OR_CREATE_RESULT", {
+            'person_id': person.id,
+            'was_created': person.id not in [p.id for p in Person.query.filter_by(email=email).all()[:-1]] if Person.query.filter_by(email=email).count() > 1 else True,
+            'person_email': person.email
+        })
+        
+        strategic_log("person_find_or_create_complete", "person_data", {
+            'person_id': person.id,
+            'email_domain': email.split('@')[1],
+            'final_data_complete': person.has_complete_address if hasattr(person, 'has_complete_address') else False
+        }, success=True)
+        
         db.session.commit()
+        
+        debug_print("PERSON_SESSION_STORAGE", {
+            'person_id': person.id,
+            'session_checkout_person_id': person.id,
+            'wants_receipt': wants_receipt
+        })
         
         # Store person in session for payment
         session['checkout_person_id'] = person.id
         session['wants_receipt'] = wants_receipt
         session.modified = True
         
+        debug_print("CHECKOUT_REDIRECT_TO_PAYMENT", {'action': 'redirect_to_zahlung'})
         return redirect(url_for('checkout_zahlung'))
     
     return render_template("checkout-spendendaten.html",
@@ -1802,6 +2113,85 @@ def health_check():
 def ping():
     """Simple ping endpoint"""
     return {'status': 'pong'}, 200
+
+# E-Mail Test Endpoints (Development only)
+@app.route("/api/email/test")
+@limiter.limit("3 per minute")
+def test_email():
+    """Test email functionality"""
+    try:
+        test_email_address = request.args.get('email', 'ue.probst@gmail.com')
+        
+        if email_service.send_test_email(test_email_address):
+            return jsonify({
+                'status': 'success',
+                'message': f'Test email sent to {test_email_address}',
+                'provider': email_service.provider.__class__.__name__
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to send test email'
+            }), 500
+            
+    except Exception as e:
+        app.logger.error(f"Email test failed: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route("/api/email/connection-test")
+@limiter.limit("5 per minute") 
+def test_email_connection():
+    """Test email provider connection"""
+    try:
+        connection_ok = email_service.test_connection()
+        provider_name = email_service.provider.__class__.__name__
+        
+        return jsonify({
+            'status': 'success' if connection_ok else 'error',
+            'provider': provider_name,
+            'connection': 'OK' if connection_ok else 'FAILED',
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Connection test failed: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route("/api/email/provider-switch", methods=['POST'])
+@limiter.limit("2 per minute")
+def switch_email_provider():
+    """Switch email provider (for testing)"""
+    try:
+        new_provider = request.json.get('provider', '').lower()
+        
+        if new_provider not in ['gmail', 'mailgun']:
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid provider. Use gmail or mailgun.'
+            }), 400
+        
+        # Update environment and reinitialize
+        os.environ['EMAIL_PROVIDER'] = new_provider
+        email_service.init_app(current_app)
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Switched to {new_provider} provider',
+            'provider': email_service.provider.__class__.__name__
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Provider switch failed: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 if __name__ == "__main__":
     # Run in debug mode for development

@@ -95,7 +95,7 @@
                             <i class="fas fa-check-circle me-2"></i>
                             <strong>Dieser Vers ist verfügbar!</strong> Sie können ihn für €100 sponsern.
                         </div>
-                        <a href="#" class="btn btn-primary btn-lg" id="selectVerseBtn">DIESEN VERS WÄHLEN</a>
+                        <button onclick="addToCartFromResult()" class="btn btn-primary btn-lg" id="selectVerseBtn">DIESEN VERS WÄHLEN</button>
                     </div>
                 </div>
             </div>
@@ -217,22 +217,11 @@
             // Clear existing options except first
             this.bookSelect.innerHTML = '<option value="">Buch wählen...</option>';
             
-            // Book name mapping for display
-            const bookNames = {
-                'GEN': '1. Mose', 'EXO': '2. Mose', 'LEV': '3. Mose', 'NUM': '4. Mose', 'DEU': '5. Mose',
-                'JOS': 'Josua', 'JDG': 'Richter', 'RUT': 'Rut', '1SA': '1. Samuel', '2SA': '2. Samuel',
-                '1KI': '1. Könige', '2KI': '2. Könige', '1CH': '1. Chronik', '2CH': '2. Chronik',
-                'EZR': 'Esra', 'NEH': 'Nehemia', 'EST': 'Ester', 'JOB': 'Hiob', 'PSA': 'Psalm',
-                'PRO': 'Sprüche', 'ECC': 'Prediger', 'SNG': 'Hohelied', 'ISA': 'Jesaja', 'JER': 'Jeremia',
-                'LAM': 'Klagelieder', 'EZK': 'Hesekiel', 'DAN': 'Daniel', 'HOS': 'Hosea', 'JOL': 'Joel',
-                'AMO': 'Amos', 'OBA': 'Obadja', 'JON': 'Jona', 'MIC': 'Micha', 'NAM': 'Nahum',
-                'HAB': 'Habakuk', 'ZEP': 'Zefanja', 'HAG': 'Haggai', 'ZEC': 'Sacharja', 'MAL': 'Maleachi'
-            };
-            
+            // API now provides the correct german book names directly
             books.forEach(book => {
                 const option = document.createElement('option');
-                option.value = book.toLowerCase();
-                option.textContent = bookNames[book] || book;
+                option.value = book.code.toLowerCase();
+                option.textContent = book.german_name;
                 this.bookSelect.appendChild(option);
             });
         }
@@ -366,9 +355,10 @@
         }
         
         displayAvailableVerse(verse) {
-            document.getElementById('resultReference').textContent = verse.reference;
+            document.getElementById('resultReference').textContent = verse.german_reference;
             document.getElementById('resultText').textContent = `"${verse.text}"`;
-            document.getElementById('selectVerseBtn').href = `/vers/${verse.url_slug}/spendenart`;
+            // Store verse data for cart addition
+            this.currentVerse = verse;
             
             document.getElementById('searchResult').style.display = 'block';
             document.getElementById('sponsoredResult').style.display = 'none';
@@ -376,7 +366,7 @@
         }
         
         displaySponsoredVerse(verse, similarVerses) {
-            document.getElementById('sponsoredReference').textContent = verse.reference;
+            document.getElementById('sponsoredReference').textContent = verse.german_reference;
             document.getElementById('sponsoredText').textContent = `"${verse.text}"`;
             
             this.displaySimilarVerses(similarVerses);
@@ -401,12 +391,13 @@
             container.innerHTML = verses.map(verse => `
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h6 class="card-title text-primary">${verse.reference}</h6>
+                        <h6 class="card-title text-primary">${verse.german_reference}</h6>
                         <p class="card-text">"${verse.text}"</p>
                         <div class="text-end">
-                            <a href="/vers/${verse.url_slug}/spendenart" class="btn btn-primary">
+                            <button onclick="addToCart(${verse.id}, '${verse.german_reference}')" 
+                                    class="btn btn-primary" id="btn-vers-${verse.id}">
                                 Diesen Vers wählen
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -459,7 +450,103 @@
     
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        new ReferenceSearch();
+        window.referenceSearchInstance = new ReferenceSearch();
     });
+
+    // Cart functionality for adding verses from search result
+    function addToCartFromResult() {
+        // Get the current verse from the search instance
+        const searchInstance = window.referenceSearchInstance;
+        if (!searchInstance || !searchInstance.currentVerse) {
+            showToast('Kein Vers ausgewählt.', 'error');
+            return;
+        }
+        
+        const verse = searchInstance.currentVerse;
+        addToCart(verse.id, verse.german_reference);
+    }
+
+    // Add to cart functionality for any verse
+    function addToCart(verseId, verseReference) {
+        const button = document.getElementById(`btn-vers-${verseId}`) || document.getElementById('selectVerseBtn');
+        const originalText = button ? button.textContent : 'DIESEN VERS WÄHLEN';
+        
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'WIRD HINZUGEFÜGT...';
+        }
+        
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                verse_id: verseId,
+                donation_details: {}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update cart count in navigation
+                const cartBadge = document.querySelector('.cart-count');
+                if (cartBadge) {
+                    cartBadge.textContent = data.cart_count;
+                    cartBadge.style.display = data.cart_count > 0 ? 'inline' : 'none';
+                }
+                
+                // Show success feedback
+                if (button) {
+                    button.textContent = 'HINZUGEFÜGT!';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-success');
+                }
+                
+                // Direct redirect to cart without alert or flash message
+                window.location.href = '/spendenkorb';
+            } else {
+                // Show error
+                showToast(data.error || 'Ein Fehler ist aufgetreten.', 'error');
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', 'error');
+            if (button) {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        });
+    }
+
+    function showToast(message, type = 'info') {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+        toast.innerHTML = `
+            <div class="d-flex align-items-center">
+                <div class="me-2">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                </div>
+                <div class="flex-grow-1">${message}</div>
+                <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 5000);
+    }
 </script>
 {% endblock %}

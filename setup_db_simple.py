@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-Database Setup Script - Simplified Version for Single Donation Type
+Database Setup Script - Modern Many-to-Many Version with Email Service
 NGÜ Bibelvers-Sponsoring App
 
-This simplified version removes support for group and gift donations,
-keeping only individual donations (Einzelspenden).
+This modern version includes:
+- Many-to-Many donation-verse relationships (multiple verses per donation)
+- Email service integration with tracking fields
+- Magic Link tokens for future admin authentication
+- Optimized indexes for performance
 
 Usage:
     python setup_db_simple.py [--drop-existing] [--import-verses] [--sample-data]
@@ -21,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import app
-from models import db, Person, Verse, Donation, PaymentTransaction, Certificate, TranslationNotification, VerseReservation
+from models import db, Person, Verse, Donation, PaymentTransaction, Certificate, TranslationNotification, VerseReservation, MagicLinkToken, DonationVerse
 from sqlalchemy import text, Index
 import logging
 
@@ -79,11 +82,16 @@ def create_database():
             CREATE INDEX IF NOT EXISTS idx_verse_text_search ON verses USING gin(text_search) 
                 WHERE text_search IS NOT NULL;
             
-            -- Simplified donation indexes (no donation_type or donation_details needed)
+            -- Many-to-Many donation indexes (updated for new structure)
             CREATE INDEX IF NOT EXISTS idx_donations_person ON donations(person_id);
-            CREATE INDEX IF NOT EXISTS idx_donations_verse ON donations(verse_id);
             CREATE INDEX IF NOT EXISTS idx_donations_status ON donations(payment_status);
             CREATE INDEX IF NOT EXISTS idx_donations_snapshot ON donations USING gin(person_snapshot);
+            CREATE INDEX IF NOT EXISTS idx_donations_email_sent ON donations(email_sent);
+            
+            -- Donation-Verse junction table indexes
+            CREATE INDEX IF NOT EXISTS idx_donation_verses_donation ON donation_verses(donation_id);
+            CREATE INDEX IF NOT EXISTS idx_donation_verses_verse ON donation_verses(verse_id);
+            CREATE INDEX IF NOT EXISTS idx_donation_verses_unique ON donation_verses(donation_id, verse_id);
             
             -- Payment transaction indexes
             CREATE INDEX IF NOT EXISTS idx_payment_donation ON payment_transactions(donation_id);
@@ -103,6 +111,11 @@ def create_database():
             CREATE INDEX IF NOT EXISTS idx_reservation_verse ON verse_reservations(verse_id);
             CREATE INDEX IF NOT EXISTS idx_reservation_session ON verse_reservations(session_id);
             CREATE INDEX IF NOT EXISTS idx_reservation_expires ON verse_reservations(expires_at);
+            
+            -- Magic Link Token indexes (for future admin system)
+            CREATE INDEX IF NOT EXISTS idx_magic_token_email ON magic_link_tokens(email);
+            CREATE INDEX IF NOT EXISTS idx_magic_token_expires ON magic_link_tokens(expires_at);
+            CREATE INDEX IF NOT EXISTS idx_magic_token_used ON magic_link_tokens(used);
             """
             
             db.session.execute(text(create_indexes_sql))
@@ -248,45 +261,85 @@ def create_sample_data():
                 existing_donations = Donation.query.filter_by(person_id=person_id).count()
                 
                 if existing_donations == 0:
-                    # Create first sample donation (completed)
+                    # Create first sample donation (completed) - Many-to-Many structure
                     donation1 = Donation(
                         person_id=person_id,
-                        verse_id=1,
                         person_snapshot=person_snapshot,
                         amount=100.00,
+                        verse_count=1,
+                        total_amount=100.00,
                         currency='EUR',
                         wants_receipt=True,
                         privacy_consent=True,
                         payment_status='completed',
-                        completed_at=datetime.utcnow()
+                        completed_at=datetime.utcnow(),
+                        email_sent=True,  # New email tracking field
+                        email_sent_at=datetime.utcnow()
                     )
                     db.session.add(donation1)
+                    db.session.flush()  # Get the ID
                     
-                    # Create second sample donation (pending)
+                    # Create verse association for first donation
+                    verse_assoc1 = DonationVerse(
+                        donation_id=donation1.id,
+                        verse_id=1,
+                        amount=100.00
+                    )
+                    db.session.add(verse_assoc1)
+                    
+                    # Create second sample donation (pending) - Multiple verses
                     donation2 = Donation(
                         person_id=person_id,
-                        verse_id=2,
                         person_snapshot=person_snapshot,
-                        amount=100.00,
+                        amount=100.00,  # Per verse
+                        verse_count=2,
+                        total_amount=200.00,
                         currency='EUR',
                         wants_receipt=True,
                         privacy_consent=True,
-                        payment_status='pending'
+                        payment_status='pending',
+                        email_sent=False
                     )
                     db.session.add(donation2)
+                    db.session.flush()  # Get the ID
+                    
+                    # Create verse associations for second donation
+                    verse_assoc2a = DonationVerse(
+                        donation_id=donation2.id,
+                        verse_id=2,
+                        amount=100.00
+                    )
+                    verse_assoc2b = DonationVerse(
+                        donation_id=donation2.id,
+                        verse_id=3,
+                        amount=100.00
+                    )
+                    db.session.add(verse_assoc2a)
+                    db.session.add(verse_assoc2b)
                     
                     # Create third sample donation (processing)
                     donation3 = Donation(
                         person_id=person_id,
-                        verse_id=3,
                         person_snapshot=person_snapshot,
                         amount=100.00,
+                        verse_count=1,
+                        total_amount=100.00,
                         currency='EUR',
                         wants_receipt=False,
                         privacy_consent=True,
-                        payment_status='processing'
+                        payment_status='processing',
+                        email_sent=False
                     )
                     db.session.add(donation3)
+                    db.session.flush()  # Get the ID
+                    
+                    # Create verse association for third donation
+                    verse_assoc3 = DonationVerse(
+                        donation_id=donation3.id,
+                        verse_id=4,
+                        amount=100.00
+                    )
+                    db.session.add(verse_assoc3)
                 
                     # Mark first verse as sponsored
                     verse1 = Verse.query.get(1)
@@ -295,7 +348,7 @@ def create_sample_data():
                         verse1.sponsored_at = datetime.utcnow()
                     
                     db.session.commit()
-                    logger.info("✓ Created 3 sample donations (individual donations only)")
+                    logger.info("✓ Created 3 sample donations with Many-to-Many verse associations")
                 else:
                     logger.info("✓ Sample donations already exist")
             
@@ -320,7 +373,9 @@ def verify_setup():
             logger.info(f"\n✓ Created {len(tables)} tables:")
             expected_tables = [
                 'certificates',
+                'donation_verses',  # New Many-to-Many junction table
                 'donations', 
+                'magic_link_tokens',  # New email service table
                 'payment_transactions',
                 'persons',
                 'sessions',
@@ -381,10 +436,12 @@ def verify_setup():
             
             # Summary
             logger.info("\n" + "="*50)
-            logger.info("SIMPLIFIED DATABASE READY")
-            logger.info("- Single donation type only (Einzelspenden)")
+            logger.info("MODERN DATABASE READY")
+            logger.info("- Many-to-Many donation-verse relationships")
+            logger.info("- Email service integration with tracking")
+            logger.info("- Magic Link tokens for future admin system")
             logger.info("- No user accounts or login tables")
-            logger.info("- Streamlined donation structure")
+            logger.info("- Optimized for multiple verses per donation")
             logger.info("="*50)
             
         except Exception as e:
@@ -405,8 +462,8 @@ def main():
     args = parser.parse_args()
     
     try:
-        logger.info("=== NGÜ Simplified Database Setup ===")
-        logger.info("=== Single Donation Type Only ===\n")
+        logger.info("=== NGÜ Modern Database Setup ===")
+        logger.info("=== Many-to-Many + Email Service ===\n")
         
         if args.drop_existing:
             response = input("⚠️  WARNING: This will DELETE all existing data! Continue? (yes/no): ")
@@ -426,12 +483,13 @@ def main():
         if not args.skip_verification:
             verify_setup()
         
-        logger.info("\n✅ Simplified database setup completed successfully!")
+        logger.info("\n✅ Modern database setup completed successfully!")
         logger.info("\nNext steps:")
-        logger.info("1. Update models.py to remove donation_type and donation_details")
-        logger.info("2. Run vectorization: python vectorize_simple.py")
-        logger.info("3. Update app.py to remove donation type logic")
+        logger.info("1. Run vectorization: python vectorize_simple.py")
+        logger.info("2. Install Flask-Mail: pip install Flask-Mail")
+        logger.info("3. Test email service: python test_email_service.py")
         logger.info("4. Start the app: python app.py")
+        logger.info("5. Test email endpoints: curl localhost:5000/api/email/test")
         
     except Exception as e:
         logger.error(f"\n❌ Setup failed: {e}")

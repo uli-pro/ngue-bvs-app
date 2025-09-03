@@ -11,6 +11,31 @@ from models import db, Person, Donation, PaymentTransaction, Verse
 from datetime import datetime
 import logging
 
+# 🔧 DEBUG INFRASTRUCTURE FOR STRIPE - REMOVE AFTER DEBUGGING 🔧
+import json
+
+stripe_logger = logging.getLogger('debug_flow')
+
+def stripe_debug_print(location, data, level="DEBUG"):
+    """🔧 STRIPE PRINTF DEBUGGING - REMOVE AFTER DEBUGGING 🔧"""
+    timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+    message = f"[{timestamp}] [STRIPE-{level}] {location}: {json.dumps(data, default=str)}"
+    print(f"💳 {message}")
+    stripe_logger.info(message)
+
+def stripe_strategic_log(operation, component, data, success=True):
+    """🔧 STRIPE STRATEGIC LOGGING - CAN STAY LONGER 🔧"""
+    log_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'operation': operation,
+        'component': f"stripe_{component}",
+        'success': success,
+        'data': data
+    }
+    stripe_logger.info(f"STRATEGIC: {json.dumps(log_entry)}")
+    print(f"💳 STRIPE-STRATEGIC [{component}] {operation}: {'✅' if success else '❌'} - {data}")
+# 🔧 END STRIPE DEBUG INFRASTRUCTURE 🔧
+
 # Configure Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
@@ -252,13 +277,45 @@ class StripeService:
         Args:
             payment_intent: Stripe PaymentIntent object
         """
+        # 🔧 DEBUG POINT 8 + STRATEGIC LOGGING 3: Stripe Webhook → Database 🔧
+        payment_intent_id = payment_intent.id
+        
+        stripe_debug_print("WEBHOOK_SUCCESS_START", {
+            'payment_intent_id': payment_intent_id,
+            'amount': payment_intent.get('amount', 0),
+            'currency': payment_intent.get('currency', 'unknown'),
+            'metadata': payment_intent.get('metadata', {})
+        })
+        
+        stripe_strategic_log("webhook_payment_success", "webhook", {
+            'payment_intent_id': payment_intent_id,
+            'amount_cents': payment_intent.get('amount', 0),
+            'payment_method': payment_intent.get('payment_method_types', [])
+        })
+        
         try:
             # Get donation ID from metadata
             donation_id = payment_intent.metadata.get('donation_id')
             if not donation_id or not donation_id.isdigit():
+                stripe_debug_print("WEBHOOK_NO_DONATION_ID", {
+                    'payment_intent_id': payment_intent_id,
+                    'metadata': payment_intent.get('metadata', {}),
+                    'error': 'missing_or_invalid_donation_id'
+                }, level="ERROR")
+                
+                stripe_strategic_log("webhook_donation_lookup_failed", "webhook", {
+                    'payment_intent_id': payment_intent_id,
+                    'error': 'no_donation_id_in_metadata'
+                }, success=False)
+                
                 logger.error(f"No valid donation ID in PaymentIntent {payment_intent.id}")
                 return False
+            
             donation_id = int(donation_id)
+            stripe_debug_print("WEBHOOK_DONATION_LOOKUP", {
+                'payment_intent_id': payment_intent_id,
+                'donation_id': donation_id
+            })
             
             # Find donation by ID
             donation = Donation.query.filter(
@@ -267,30 +324,108 @@ class StripeService:
             ).first()
             
             if not donation:
+                stripe_debug_print("WEBHOOK_DONATION_NOT_FOUND", {
+                    'payment_intent_id': payment_intent_id,
+                    'donation_id': donation_id,
+                    'error': 'donation_not_found_or_wrong_status'
+                }, level="ERROR")
+                
+                stripe_strategic_log("donation_not_found", "webhook", {
+                    'payment_intent_id': payment_intent_id,
+                    'donation_id': donation_id
+                }, success=False)
+                
                 logger.error(f"No pending donation found for PaymentIntent {payment_intent.id}")
                 return False
+            
+            # Track verses before completion
+            verse_ids_before = [va.verse_id for va in donation.verse_associations]
+            stripe_debug_print("WEBHOOK_DONATION_FOUND", {
+                'donation_id': donation.id,
+                'person_email_domain': donation.person.email.split('@')[1] if donation.person and donation.person.email else 'unknown',
+                'verse_count': len(verse_ids_before),
+                'verse_ids': verse_ids_before,
+                'current_status': donation.payment_status
+            })
             
             # Start database transaction
             try:
                 # Mark donation as completed
                 donation.mark_completed()
                 
+                stripe_debug_print("DONATION_MARKED_COMPLETE", {
+                    'donation_id': donation.id,
+                    'new_status': donation.payment_status
+                })
+                
                 # Update payment transaction
                 if donation.payment:
                     donation.payment.update_stripe_data(payment_intent)
                     donation.payment.mark_confirmed()
+                    
+                    stripe_debug_print("PAYMENT_TRANSACTION_UPDATED", {
+                        'donation_id': donation.id,
+                        'payment_transaction_updated': True
+                    })
+                
+                # Track verse sponsorship changes
+                verses_sponsored = []
+                for verse_assoc in donation.verse_associations:
+                    verse = verse_assoc.verse
+                    if verse.is_sponsored:
+                        verses_sponsored.append({
+                            'verse_id': verse.id,
+                            'reference': verse.reference,
+                            'sponsored_at': verse.sponsored_at.isoformat() if verse.sponsored_at else None
+                        })
                 
                 db.session.commit()
+                
+                stripe_debug_print("WEBHOOK_SUCCESS_COMPLETE", {
+                    'donation_id': donation.id,
+                    'verses_sponsored': verses_sponsored,
+                    'database_committed': True
+                })
+                
+                stripe_strategic_log("donation_completed_successfully", "webhook", {
+                    'donation_id': donation.id,
+                    'payment_intent_id': payment_intent_id,
+                    'verses_sponsored': len(verses_sponsored),
+                    'person_email_domain': donation.person.email.split('@')[1] if donation.person.email else 'unknown'
+                }, success=True)
                 
                 logger.info(f"Successfully processed payment for donation {donation.id}")
                 return True
                 
             except Exception as e:
                 db.session.rollback()
+                
+                stripe_debug_print("WEBHOOK_DATABASE_ERROR", {
+                    'donation_id': donation.id,
+                    'error': str(e),
+                    'action': 'rollback_performed'
+                }, level="ERROR")
+                
+                stripe_strategic_log("donation_completion_failed", "webhook", {
+                    'donation_id': donation.id,
+                    'payment_intent_id': payment_intent_id,
+                    'error': str(e)
+                }, success=False)
+                
                 logger.error(f"Database error processing successful payment: {e}")
                 raise
                 
         except Exception as e:
+            stripe_debug_print("WEBHOOK_GENERAL_ERROR", {
+                'payment_intent_id': payment_intent_id,
+                'error': str(e)
+            }, level="ERROR")
+            
+            stripe_strategic_log("webhook_processing_failed", "webhook", {
+                'payment_intent_id': payment_intent_id,
+                'error': str(e)
+            }, success=False)
+            
             logger.error(f"Error handling successful payment: {e}")
             return False
     

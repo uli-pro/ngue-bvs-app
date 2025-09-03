@@ -41,8 +41,9 @@ const NGUEApp = {
      * Initialize common events and functionality
      */
     initCommonEvents: function() {
-        // Track if navigation is intentional (form submit or link click)
+        // Track navigation states
         let intentionalNavigation = false;
+        let isAjaxNavigation = false;
         
         // Mark when forms are being submitted normally
         document.addEventListener('submit', function(e) {
@@ -53,18 +54,34 @@ const NGUEApp = {
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a[href]');
             if (link && link.href) {
-                intentionalNavigation = true;
+                // Check if it's an internal link (same domain)
+                const url = new URL(link.href, window.location.origin);
+                if (url.origin === window.location.origin) {
+                    intentionalNavigation = true;
+                } else {
+                    intentionalNavigation = false; // External links should warn
+                }
             }
         });
         
+        // Intercept fetch requests to mark AJAX navigation
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            isAjaxNavigation = true;
+            // Reset the flag after a delay to allow the response handling
+            setTimeout(() => { isAjaxNavigation = false; }, 100);
+            return originalFetch.apply(this, args);
+        };
+        
         // Prevent data loss warning for forms with content (but not during intentional navigation)
         window.addEventListener('beforeunload', function(e) {
-            // Don't warn if navigation is intentional
-            if (intentionalNavigation) {
+            // Don't warn if navigation is intentional or it's an AJAX request
+            if (intentionalNavigation || isAjaxNavigation) {
                 return;
             }
             
-            const forms = document.querySelectorAll('form input[type="text"], form input[type="email"], form textarea');
+            // Only check forms that are not search forms (to avoid keyword search warnings)
+            const forms = document.querySelectorAll('form:not(#keywordSearchForm):not([data-no-warning]) input[type="text"], form:not(#keywordSearchForm):not([data-no-warning]) input[type="email"], form:not(#keywordSearchForm):not([data-no-warning]) textarea');
             let hasContent = false;
             
             forms.forEach(field => {

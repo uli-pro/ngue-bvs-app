@@ -173,7 +173,7 @@
                     {% for item in cart_items %}
                     <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                         <div class="flex-grow-1">
-                            <h6 class="mb-1">{{ item.verse.reference }}</h6>
+                            <h6 class="mb-1">{{ item.verse.german_reference }}</h6>
                             <small class="text-muted">{{ item.verse.text[:50] }}{% if item.verse.text|length > 50 %}...{% endif %}</small>
                         </div>
                         <div class="text-end ms-3">

@@ -499,6 +499,18 @@ class PDFGeneratorService:
         # ALLE Verse der Donation laden und sortieren
         verses = donation.get_verses_sorted()
         
+        # Validierung: Prüfen ob Verse gefunden wurden
+        if not verses:
+            self.logger.error(f"No verses found for donation {donation.id}. "
+                            f"verse_associations count: {len(donation.verse_associations)}")
+            # Debug-Info über verse_associations
+            for i, assoc in enumerate(donation.verse_associations):
+                self.logger.error(f"Association {i}: donation_id={assoc.donation_id}, "
+                                f"verse_id={assoc.verse_id}, verse={assoc.verse}")
+            raise PDFGenerationError(f"No verses found for donation {donation.id}")
+        
+        self.logger.info(f"PDF generation for donation {donation.id}: {len(verses)} verses found")
+        
         # Absoluter Pfad für Hintergrundbild (WeasyPrint benötigt absolute Pfade)
         static_dir = os.path.join(os.path.dirname(__file__), 'static')
         background_image_path = os.path.join(static_dir, 'certificates', 'certificate-background.png')

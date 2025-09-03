@@ -1,0 +1,27 @@
+{% extends "email/base.html" %}
+
+{% block title %}Spendenbestätigung{% endblock %}
+{% block header %}Spendenbestätigung{% endblock %}
+
+{% block content %}
+<h2>Ihre Spende wurde erfolgreich verarbeitet</h2>
+
+<p>Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},</p>
+
+<p>wir bestätigen hiermit den Eingang Ihrer Spende für die NGÜ Bibelübersetzung.</p>
+
+<div class="highlight">
+    <h3>💳 Zahlungsdetails:</h3>
+    <p><strong>Betrag:</strong> {{ donation.amount }}€<br>
+    <strong>Spenden-ID:</strong> #{{ donation.id }}<br>
+    <strong>Datum:</strong> {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}<br>
+    <strong>Status:</strong> Erfolgreich verarbeitet</p>
+</div>
+
+<p>Ihr Zertifikat wird in den nächsten Minuten generiert und Ihnen per E-Mail zugesandt.</p>
+
+<p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
+
+<p>Herzliche Grüße<br>
+Ihr NGÜ-Team</p>
+{% endblock %}

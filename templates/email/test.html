@@ -1,0 +1,27 @@
+{% extends "email/base.html" %}
+
+{% block title %}E-Mail Test{% endblock %}
+{% block header %}E-Mail System Test{% endblock %}
+
+{% block content %}
+<div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
+    <h2 style="margin: 0;">✅ Test erfolgreich!</h2>
+</div>
+
+<p>Das E-Mail-System der NGÜ Bibelvers-Sponsoring App funktioniert einwandfrei.</p>
+
+<div class="highlight">
+    <h3>📧 System-Informationen:</h3>
+    <p><strong>Provider:</strong> {{ provider }}<br>
+    <strong>Zeitstempel:</strong> {{ timestamp }}<br>
+    <strong>Status:</strong> Operational</p>
+</div>
+
+<p>Alle E-Mail-Funktionen sind einsatzbereit:</p>
+<ul>
+    <li>✅ Zertifikats-Versendung</li>
+    <li>✅ Spendenbestätigungen</li>
+    <li>✅ Magic Link Authentication (vorbereitet)</li>
+    <li>✅ Template-System</li>
+</ul>
+{% endblock %}

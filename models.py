@@ -11,6 +11,33 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from pgvector.sqlalchemy import Vector
 
+# 🔧 DEBUG INFRASTRUCTURE FOR MODELS - REMOVE AFTER DEBUGGING 🔧
+import json
+import logging
+
+# Get logger for models
+models_logger = logging.getLogger('debug_flow')
+
+def model_debug_print(location, data, level="DEBUG"):
+    """🔧 MODEL PRINTF DEBUGGING - REMOVE AFTER DEBUGGING 🔧"""
+    timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+    message = f"[{timestamp}] [MODEL-{level}] {location}: {json.dumps(data, default=str)}"
+    print(f"🔧 {message}")
+    models_logger.info(message)
+
+def model_strategic_log(operation, component, data, success=True):
+    """🔧 MODEL STRATEGIC LOGGING - CAN STAY LONGER 🔧"""
+    log_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'operation': operation,
+        'component': f"model_{component}",
+        'success': success,
+        'data': data
+    }
+    models_logger.info(f"STRATEGIC: {json.dumps(log_entry)}")
+    print(f"🔧 MODEL-STRATEGIC [{component}] {operation}: {'✅' if success else '❌'} - {data}")
+# 🔧 END MODEL DEBUG INFRASTRUCTURE 🔧
+
 db = SQLAlchemy()
 
 class Person(db.Model):
@@ -98,16 +125,78 @@ class Person(db.Model):
     @classmethod
     def find_or_create(cls, email, **kwargs):
         """Find or create person based on email"""
-        person = cls.query.filter_by(email=email.lower()).first()
+        # 🔧 DEBUG POINT 7 + STRATEGIC LOGGING 2: Person Data Merge 🔧
+        email_lower = email.lower()
+        
+        model_debug_print("PERSON_FIND_OR_CREATE_START", {
+            'email_domain': email_lower.split('@')[1] if '@' in email_lower else 'invalid',
+            'provided_fields': list(kwargs.keys()),
+            'has_address_fields': all(f in kwargs for f in ['first_name', 'last_name', 'street'])
+        })
+        
+        person = cls.query.filter_by(email=email_lower).first()
+        
         if not person:
-            person = cls(email=email.lower(), **kwargs)
+            # Creating new person
+            model_debug_print("PERSON_CREATING_NEW", {
+                'email_domain': email_lower.split('@')[1],
+                'initial_fields': list(kwargs.keys())
+            })
+            
+            model_strategic_log("person_created", "person", {
+                'email_domain': email_lower.split('@')[1],
+                'fields_provided': len(kwargs),
+                'has_complete_data': all(f in kwargs for f in ['first_name', 'last_name', 'street', 'postal_code'])
+            }, success=True)
+            
+            person = cls(email=email_lower, **kwargs)
             db.session.add(person)
         else:
-            # Update with new data
+            # Update existing person - track changes
+            changes = {}
             for key, value in kwargs.items():
                 if hasattr(person, key) and (value is not None):
-                    setattr(person, key, value)
-            person.data_updated_at = datetime.utcnow()
+                    old_value = getattr(person, key)
+                    if old_value != value:
+                        changes[key] = {
+                            'old': old_value,
+                            'new': value
+                        }
+                        setattr(person, key, value)
+            
+            if changes:
+                model_debug_print("PERSON_DATA_UPDATED", {
+                    'person_id': person.id,
+                    'email_domain': email_lower.split('@')[1],
+                    'changed_fields': list(changes.keys()),
+                    'changes': changes
+                })
+                
+                model_strategic_log("person_data_merged", "person", {
+                    'person_id': person.id,
+                    'changed_fields': list(changes.keys()),
+                    'overwritten_data': len(changes) > 0,
+                    'email_domain': email_lower.split('@')[1]
+                }, success=True)
+                
+                person.data_updated_at = datetime.utcnow()
+            else:
+                model_debug_print("PERSON_NO_CHANGES", {
+                    'person_id': person.id,
+                    'email_domain': email_lower.split('@')[1],
+                    'action': 'existing_person_unchanged'
+                })
+                
+                model_strategic_log("person_no_merge_needed", "person", {
+                    'person_id': person.id,
+                    'action': 'data_identical'
+                }, success=True)
+        
+        model_debug_print("PERSON_FIND_OR_CREATE_COMPLETE", {
+            'person_id': getattr(person, 'id', 'not_yet_assigned'),
+            'email_domain': email_lower.split('@')[1],
+            'final_complete_address': hasattr(person, 'has_complete_address')
+        })
         
         return person
 
@@ -147,6 +236,13 @@ class Verse(db.Model):
     def reference(self):
         """Human-readable verse reference"""
         return f"{self.book} {self.chapter},{self.verse}"
+    
+    @property
+    def german_reference(self):
+        """German verse reference with German book names"""
+        from book_names import get_german_book_name
+        german_book = get_german_book_name(self.book)
+        return f"{german_book} {self.chapter},{self.verse}"
     
     @property
     def url_slug(self):
@@ -272,6 +368,131 @@ class Verse(db.Model):
         if self.donation_associations:
             return self.donation_associations[0].donation
         return None
+    
+    def find_similar_verses(self, limit=3, positivity_tolerance=10, 
+                           use_semantic=True, use_keywords=True):
+        """Find semantically and thematically similar verses."""
+        if not self.text:
+            return []
+        
+        # Start with all unsponsored verses in positivity range
+        min_score = max(0, self.positivity_score - positivity_tolerance)
+        max_score = min(100, self.positivity_score + positivity_tolerance)
+        
+        base_query = self.__class__.query.filter(
+            self.__class__.is_sponsored == False,
+            self.__class__.id != self.id,
+            self.__class__.positivity_score.between(min_score, max_score)
+        )
+        
+        # Use semantic search if available and requested
+        if use_semantic and hasattr(self.__class__, 'search_semantic'):
+            # Try semantic search first if embeddings are available
+            similar_verses = self.__class__.search_semantic(
+                embedding=self.text_embedding,  # Use actual embedding
+                limit=limit * 2
+            )
+            
+            # Filter to match our criteria
+            filtered = [v for v in similar_verses 
+                       if not v.is_sponsored 
+                       and v.id != self.id
+                       and min_score <= (v.positivity_score or 0) <= max_score]
+            
+            if filtered:
+                return filtered[:limit]
+        
+        # Fallback to hybrid search if available
+        if use_keywords and hasattr(self.__class__, 'search_hybrid'):
+            # Extract keywords for hybrid search
+            keywords = self.extract_keywords(max_keywords=3) if use_keywords else []
+            query_text = ' '.join(keywords) if keywords else self.text[:100]
+            
+            # Use existing hybrid search method
+            similar_verses = self.__class__.search_hybrid(
+                query_text, 
+                embedding=self.text_embedding,
+                limit=limit * 2  # Get more to filter
+            )
+            
+            # Filter to match our criteria
+            filtered = [v for v in similar_verses 
+                       if not v.is_sponsored 
+                       and v.id != self.id
+                       and min_score <= (v.positivity_score or 0) <= max_score]
+            
+            if filtered:
+                return filtered[:limit]
+        
+        # Final fallback: just return verses with similar positivity scores
+        return base_query.order_by(
+            func.abs(self.__class__.positivity_score - self.positivity_score)
+        ).limit(limit).all()
+    
+    def extract_keywords(self, max_keywords=5):
+        """Extract important keywords from verse text with religious term priority."""
+        if not self.text:
+            return []
+        
+        import re
+        
+        # German stopwords (comprehensive list)
+        stopwords = {
+            'der', 'die', 'das', 'und', 'in', 'zu', 'mit', 'auf', 'für', 
+            'von', 'ist', 'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr',
+            'ein', 'eine', 'einen', 'dem', 'den', 'des', 'als', 'aber',
+            'so', 'da', 'wenn', 'wie', 'auch', 'noch', 'wird', 'war',
+            'hat', 'haben', 'dass', 'sich', 'nicht', 'nur', 'alle',
+            'am', 'im', 'um', 'an', 'bei', 'nach', 'vor', 'über',
+            'unter', 'durch', 'bis', 'dann', 'schon', 'sein', 'seine',
+            'ihm', 'ihn', 'ihre', 'mir', 'mich', 'uns', 'euch', 'aus',
+            'oder', 'kann', 'will', 'soll', 'muss', 'doch', 'was', 'wer'
+        }
+        
+        # High-priority religious and positive terms
+        high_priority_terms = {
+            'gott', 'herr', 'jesus', 'christus', 'geist', 'heilig',
+            'liebe', 'hoffnung', 'frieden', 'freude', 'gnade', 'segen',
+            'vertrauen', 'glauben', 'treue', 'barmherzigkeit', 'güte',
+            'hirte', 'vater', 'sohn', 'erlöser', 'retter', 'heiland',
+            'ewigkeit', 'himmel', 'königreich', 'erlösung', 'vergebung'
+        }
+        
+        # Clean text and split into words
+        text = re.sub(r'[^\w\s]', ' ', self.text.lower())
+        words = text.split()
+        
+        # Categorize words
+        priority_keywords = []
+        regular_keywords = []
+        
+        for word in words:
+            if (len(word) >= 3 and 
+                word not in stopwords and 
+                not word.isdigit()):
+                
+                if word.lower() in high_priority_terms:
+                    priority_keywords.append(word.capitalize())
+                else:
+                    regular_keywords.append(word.capitalize())
+        
+        # Remove duplicates while preserving order
+        def deduplicate(word_list):
+            seen = set()
+            unique = []
+            for word in word_list:
+                if word.lower() not in seen:
+                    seen.add(word.lower())
+                    unique.append(word)
+            return unique
+        
+        priority_keywords = deduplicate(priority_keywords)
+        regular_keywords = deduplicate(regular_keywords)
+        
+        # Combine with priority terms first
+        final_keywords = priority_keywords + regular_keywords
+        
+        return final_keywords[:max_keywords]
 
 
 class DonationVerse(db.Model):
@@ -316,6 +537,10 @@ class Donation(db.Model):
     payment_status = db.Column(db.String(20), default='pending', nullable=False)
     certificate_generated = db.Column(db.Boolean, default=False, nullable=False)
     receipt_generated = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Email tracking
+    email_sent = db.Column(db.Boolean, default=False, nullable=False)
+    email_sent_at = db.Column(db.DateTime, nullable=True)
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -388,17 +613,50 @@ class Donation(db.Model):
         dv = DonationVerse(donation=self, verse=verse, amount=Decimal(str(amount)))
         self.verse_associations.append(dv)
         self.verse_count = len(self.verse_associations)
-        self.total_amount = sum(Decimal(str(va.amount)) for va in self.verse_associations)
+        # Don't recalculate total_amount here - it's already set correctly in stripe_service.py
+        # Removing: self.total_amount = sum(Decimal(str(va.amount)) for va in self.verse_associations)
         return dv
         
     def get_verses_sorted(self):
         """Get verses sorted by biblical order (book, chapter, verse)"""
-        return sorted(self.verses, key=lambda v: (v.book, v.chapter, v.verse))
+        # Über verse_associations gehen für zuverlässigen Zugriff
+        verses = [assoc.verse for assoc in self.verse_associations]
+        return sorted(verses, key=lambda v: (v.book, v.chapter, v.verse))
     
     @property
     def has_multiple_verses(self):
         """Check if this donation has multiple verses"""
         return self.verse_count > 1
+
+
+class MagicLinkToken(db.Model):
+    """Magic Link Tokens für Admin-Authentication (vorbereitet)"""
+    __tablename__ = 'magic_link_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(255), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False, nullable=False)
+    ip_address = db.Column(db.String(45), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    used_at = db.Column(db.DateTime, nullable=True)
+    
+    def is_valid(self):
+        """Check if token is still valid"""
+        return (not self.used and 
+                datetime.utcnow() < self.expires_at)
+    
+    def mark_used(self, ip_address=None):
+        """Mark token as used"""
+        self.used = True
+        self.used_at = datetime.utcnow()
+        if ip_address:
+            self.ip_address = ip_address
+        db.session.commit()
+
+    def __repr__(self):
+        return f'<MagicLinkToken {self.token[:8]}... for {self.email}>'
 
 
 class PaymentTransaction(db.Model):

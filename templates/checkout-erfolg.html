@@ -16,9 +16,12 @@
                 {% if verse_references and verse_references|length > 1 %}
                     Sie haben erfolgreich <strong class="text-primary">{{ verse_references|length }} Verse</strong> gesponsert<br>
                     und tragen zur Finanzierung der NGÜ bei.
-                {% else %}
-                    Sie haben erfolgreich den Vers <strong class="text-primary">{{ verse_reference or 'Jeremia 29,11' }}</strong> gesponsert<br>
+                {% elif verse_references and verse_references|length == 1 %}
+                    Sie haben erfolgreich den Vers <strong class="text-primary">{{ verse_references[0] }}</strong> gesponsert<br>
                     und tragen zur Finanzierung der NGÜ bei.
+                {% else %}
+                    <span class="text-warning">Es gab ein technisches Problem mit der Erstellung Ihrer Zertifikate.<br>
+                    Bitte wenden Sie sich an den Support.</span>
                 {% endif %}
             </p>
         </div>
@@ -152,43 +155,6 @@
     </div>
 </section>
 
-<!-- Registration Offer -->
-<section class="bg-light-custom section-padding">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-primary">
-                    <div class="card-body p-4 text-center">
-                        <h3 class="mb-3">
-                            <i class="fas fa-user-plus text-primary me-2"></i>
-                            Registrieren Sie sich jetzt kostenlos!
-                        </h3>
-                        
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <h5>Vorteile eines Benutzerkontos:</h5>
-                                <ul class="list-unstyled text-start">
-                                    <li><i class="fas fa-check text-success me-2"></i>Jederzeit Zugriff auf alle Ihre gesponserten Verse</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Dokumente wiederholt herunterladen</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Übersicht über Ihre Spendenhistorie</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Schnellerer Checkout bei weiteren Spenden</li>
-                                </ul>
-                            </div>
-                            <div class="col12 mb-3">
-                                <div class="d-grid gap-2">
-                                    <a href="/register" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-user-plus me-2"></i>
-                                        JETZT REGISTRIEREN
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- Continue Actions -->
 <section class="section-padding">
@@ -197,23 +163,9 @@
             <div class="col-lg-10">
                 <div class="row g-4">
                     
-                    <!-- Gift Another Verse -->
-                    <div class="col-lg-6">
-                        <div class="card h-100 text-center">
-                            <div class="card-body p-4">
-                                <i class="fas fa-gift fa-3x text-primary mb-3"></i>
-                                <h4>Verschenken Sie ein Bibelvers-Sponsoring!</h4>
-                                <p>Machen Sie anderen eine Freude mit einem sinnvollen Geschenk.</p>
-                                <a href="/vers-auswaehlen" class="btn btn-primary">
-                                    <i class="fas fa-plus me-2"></i>
-                                    Weiteren Vers als Geschenk auswählen
-                                </a>
-                            </div>
-                        </div>
-                    </div>
                     
                     <!-- Share Project -->
-                    <div class="col-lg-6">
+                    <div class="col-lg-8 offset-lg-2">
                         <div class="card h-100 text-center">
                             <div class="card-body p-4">
                                 <i class="fas fa-share-alt fa-3x text-secondary mb-3"></i>

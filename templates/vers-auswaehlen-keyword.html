@@ -71,7 +71,8 @@
                                 <cite title="Schlachter 1951">Schlachter 1951</cite>
                             </footer>
                         </blockquote>
-                        <a href="/vers/jesaja-43-1/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                        <button onclick="addToCartBySlug('jesaja-43-1', 'Jesaja 43,1')" 
+                                class="btn btn-primary" id="btn-jesaja-43-1">DIESEN VERS WÄHLEN</button>
                     </div>
                 </div>
             </div>
@@ -86,7 +87,8 @@
                                 <cite title="Schlachter 1951">Schlachter 1951</cite>
                             </footer>
                         </blockquote>
-                        <a href="/vers/jeremia-29-11/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                        <button onclick="addToCartBySlug('jeremia-29-11', 'Jeremia 29,11')" 
+                                class="btn btn-primary" id="btn-jeremia-29-11">DIESEN VERS WÄHLEN</button>
                     </div>
                 </div>
             </div>
@@ -101,7 +103,8 @@
                                 <cite title="Schlachter 1951">Schlachter 1951</cite>
                             </footer>
                         </blockquote>
-                        <a href="/vers/zefanja-3-17/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                        <button onclick="addToCartBySlug('zefanja-3-17', 'Zefanja 3,17')" 
+                                class="btn btn-primary" id="btn-zefanja-3-17">DIESEN VERS WÄHLEN</button>
                     </div>
                 </div>
             </div>
@@ -259,19 +262,179 @@
         col.innerHTML = `
             <div class="card h-100 verse-card">
                 <div class="card-body text-center p-4">
-                    <h4 class="text-primary mb-3">${verse.reference}</h4>
+                    <h4 class="text-primary mb-3">${verse.german_reference}</h4>
                     <blockquote class="blockquote">
                         <p class="mb-4">"${verse.text}"</p>
                         <footer class="blockquote-footer">
                             <cite title="Schlachter 1951">Schlachter 1951</cite>
                         </footer>
                     </blockquote>
-                    <a href="/vers/${verse.url_slug}/spendenart" class="btn btn-primary">DIESEN VERS WÄHLEN</a>
+                    <button onclick="addToCart(${verse.id}, '${verse.german_reference}')" 
+                            class="btn btn-primary" id="btn-vers-${verse.id}">DIESEN VERS WÄHLEN</button>
                 </div>
             </div>
         `;
         
         return col;
+    }
+
+    // Add to cart functionality for direct verse ID
+    function addToCart(verseId, verseReference) {
+        const button = document.getElementById(`btn-vers-${verseId}`);
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'WIRD HINZUGEFÜGT...';
+        
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                verse_id: verseId,
+                donation_details: {}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update cart count in navigation
+                const cartBadge = document.querySelector('.cart-count');
+                if (cartBadge) {
+                    cartBadge.textContent = data.cart_count;
+                    cartBadge.style.display = data.cart_count > 0 ? 'inline' : 'none';
+                }
+                
+                // Show success feedback
+                button.textContent = 'HINZUGEFÜGT!';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-success');
+                
+                // Direct redirect to cart without alert or flash message
+                window.location.href = '/spendenkorb';
+            } else {
+                // Show error
+                showToast(data.error || 'Ein Fehler ist aufgetreten.', 'error');
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', 'error');
+            button.disabled = false;
+            button.textContent = originalText;
+        });
+    }
+
+    // Add to cart functionality for URL slug (for static examples)
+    function addToCartBySlug(urlSlug, verseReference) {
+        // Parse slug to get verse details (e.g., "jesaja-43-1" -> book="JESAJA", chapter=43, verse=1)
+        const button = document.getElementById(`btn-${urlSlug}`);
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'WIRD HINZUGEFÜGT...';
+        
+        // First need to get verse ID from slug
+        const parts = urlSlug.split('-');
+        if (parts.length !== 3) {
+            showToast('Ungültige Vers-Referenz.', 'error');
+            button.disabled = false;
+            button.textContent = originalText;
+            return;
+        }
+        
+        const book = parts[0].toUpperCase();
+        const chapter = parseInt(parts[1]);
+        const verse = parseInt(parts[2]);
+        
+        // Find verse ID using existing reference endpoint
+        fetch(`/api/verse/reference/${book}/${chapter}/${verse}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.verse && data.verse.id) {
+                // Now add to cart using verse ID
+                fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        verse_id: data.verse.id,
+                        donation_details: {}
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update cart count in navigation
+                        const cartBadge = document.querySelector('.cart-count');
+                        if (cartBadge) {
+                            cartBadge.textContent = data.cart_count;
+                            cartBadge.style.display = data.cart_count > 0 ? 'inline' : 'none';
+                        }
+                        
+                        // Show success feedback
+                        button.textContent = 'HINZUGEFÜGT!';
+                        button.classList.remove('btn-primary');
+                        button.classList.add('btn-success');
+                        
+                        // Direct redirect to cart without alert or flash message
+                        window.location.href = '/spendenkorb';
+                    } else {
+                        showToast(data.error || 'Ein Fehler ist aufgetreten.', 'error');
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', 'error');
+                    button.disabled = false;
+                    button.textContent = originalText;
+                });
+            } else {
+                showToast('Vers nicht gefunden.', 'error');
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', 'error');
+            button.disabled = false;
+            button.textContent = originalText;
+        });
+    }
+
+    function showToast(message, type = 'info') {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+        toast.innerHTML = `
+            <div class="d-flex align-items-center">
+                <div class="me-2">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                </div>
+                <div class="flex-grow-1">${message}</div>
+                <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 5000);
     }
 </script>
 {% endblock %}
