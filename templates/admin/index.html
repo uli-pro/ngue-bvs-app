@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Übersicht - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Admin-Übersicht</h2>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5 class="text-muted">Personen</h5>
+            <h2>{{ stats.total_persons }}</h2>
+            <a href="{{ url_for('admin.persons_list') }}" class="btn btn-sm btn-outline-primary mt-2">Verwalten →</a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5 class="text-muted">Spenden</h5>
+            <h2>{{ stats.total_donations }}</h2>
+            <a href="{{ url_for('admin.donations_list') }}" class="btn btn-sm btn-outline-primary mt-2">Anzeigen →</a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5 class="text-muted">Gesponserte Verse</h5>
+            <h2>{{ stats.sponsored_verses }}</h2>
+            <a href="{{ url_for('admin.verses_list', filter='sponsored') }}" class="btn btn-sm btn-outline-primary mt-2">Anzeigen →</a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h5 class="text-muted">Aktive Reservierungen</h5>
+            <h2>{{ stats.active_reservations }}</h2>
+            <form method="POST" action="{{ url_for('admin.clear_reservations') }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger mt-2" 
+                        onclick="return confirm('Alle abgelaufenen Reservierungen löschen?')">
+                    Aufräumen →
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Schnellaktionen</h5>
+        <div class="list-group list-group-flush">
+            <a href="{{ url_for('admin.persons_list') }}" class="list-group-item list-group-item-action">
+                <strong>Personen durchsuchen</strong> - E-Mail, Name oder PLZ
+            </a>
+            <a href="{{ url_for('admin.verses_list') }}" class="list-group-item list-group-item-action">
+                <strong>Verse verwalten</strong> - Status ändern, Reservierungen löschen
+            </a>
+            <a href="{{ url_for('admin.donations_list', filter='pending') }}" class="list-group-item list-group-item-action">
+                <strong>Offene Spenden</strong> - Zahlungsstatus prüfen
+            </a>
+            <a href="{{ url_for('admin.donations_list', filter='completed') }}" class="list-group-item list-group-item-action">
+                <strong>Zertifikate</strong> - Neu generieren oder versenden
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

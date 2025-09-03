@@ -1,0 +1,185 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Spende #{{ donation.id }} - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Spenden-Details #{{ donation.id }}</h2>
+
+<!-- Donation Data Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Spendendaten</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Status</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-{{ 'success' if donation.payment_status == 'completed' else 'warning' if donation.payment_status == 'pending' else 'danger' }}">
+                            {{ donation.payment_status }}
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-3">Betrag</dt>
+                    <dd class="col-sm-9">€{{ "%.2f"|format(donation.total_amount) }}</dd>
+                    
+                    <dt class="col-sm-3">Erstellt am</dt>
+                    <dd class="col-sm-9">{{ donation.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</dd>
+                    
+                    {% if donation.completed_at %}
+                    <dt class="col-sm-3">Abgeschlossen am</dt>
+                    <dd class="col-sm-9">{{ donation.completed_at.strftime('%d.%m.%Y %H:%M:%S') }}</dd>
+                    {% endif %}
+                    
+                    {% if donation.payment and donation.payment.stripe_payment_intent_id %}
+                    <dt class="col-sm-3">Stripe Payment Intent</dt>
+                    <dd class="col-sm-9">
+                        <code>{{ donation.payment.stripe_payment_intent_id }}</code>
+                        <a href="https://dashboard.stripe.com/test/payments/{{ donation.payment.stripe_payment_intent_id }}" 
+                           target="_blank" class="ms-2">
+                            Stripe Dashboard →
+                        </a>
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Spender</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>{{ donation.person.full_name_with_salutation }}</strong></p>
+                <p>{{ donation.person.email }}</p>
+                {% if donation.person.address %}
+                <p>{{ donation.person.address|replace('\n', '<br>')|safe }}</p>
+                {% endif %}
+                <a href="{{ url_for('admin.person_edit', person_id=donation.person_id) }}" 
+                   class="btn btn-sm btn-outline-primary">Person bearbeiten</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sponsored Verses Row - Full Width -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Gesponserte Verse ({{ donation.verse_count }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for verse in donation.get_verses_sorted() %}
+                    <div class="list-group-item">
+                        <strong>{{ verse.reference }}</strong><br>
+                        <span class="text-muted">{{ verse.text[:150] }}{% if verse.text|length > 150 %}...{% endif %}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Certificate and Tax Receipt Row - Full Width Split -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Zertifikat</h5>
+            </div>
+            <div class="card-body">
+                {% if certificate and certificate.exists_on_disk %}
+                    <p class="text-success">✓ Zertifikat vorhanden</p>
+                    <p class="small text-muted">
+                        Generiert: {{ certificate.generated_at.strftime('%d.%m.%Y %H:%M') }}<br>
+                        Dateigröße: {{ certificate.file_size }} Bytes<br>
+                        Pfad: {{ certificate.filename }}
+                    </p>
+                {% else %}
+                    <p class="text-warning">⚠ Kein Zertifikat vorhanden</p>
+                {% endif %}
+                
+                {% if donation.payment_status == 'completed' %}
+                <form method="POST" action="{{ url_for('admin.regenerate_certificate', donation_id=donation.id) }}" class="mb-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Zertifikat neu generieren
+                    </button>
+                </form>
+                
+                {% if certificate and certificate.exists_on_disk %}
+                <a href="{{ url_for('admin.view_certificate', donation_id=donation.id) }}" 
+                   target="_blank" class="btn btn-info w-100 mb-2">
+                    📄 Zertifikat anzeigen
+                </a>
+                
+                <form method="POST" action="{{ url_for('admin.resend_certificate', donation_id=donation.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success w-100">
+                        Per E-Mail versenden
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Spendenbescheinigung</h5>
+            </div>
+            <div class="card-body">
+                {% if not donation.wants_receipt %}
+                    <p class="text-muted">📋 Spendenbescheinigung nicht angefordert</p>
+                {% else %}
+                    {% if tax_receipt and tax_receipt.exists_on_disk %}
+                        <p class="text-success">✓ Spendenbescheinigung vorhanden</p>
+                        <p class="small text-muted">
+                            Generiert: {{ tax_receipt.generated_at.strftime('%d.%m.%Y %H:%M') }}<br>
+                            Dateigröße: {{ tax_receipt.file_size }} Bytes<br>
+                            Pfad: {{ tax_receipt.filename }}
+                        </p>
+                    {% else %}
+                        <p class="text-warning">⚠ Keine Spendenbescheinigung vorhanden</p>
+                    {% endif %}
+                    
+                    {% if donation.payment_status == 'completed' %}
+                    <form method="POST" action="{{ url_for('admin.regenerate_tax_receipt', donation_id=donation.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary w-100">
+                            Spendenbescheinigung neu generieren
+                        </button>
+                    </form>
+                    
+                    {% if tax_receipt and tax_receipt.exists_on_disk %}
+                    <a href="{{ url_for('admin.view_tax_receipt', donation_id=donation.id) }}" 
+                       target="_blank" class="btn btn-info w-100 mb-2">
+                        📄 Spendenbescheinigung anzeigen
+                    </a>
+                    
+                    <form method="POST" action="{{ url_for('admin.resend_tax_receipt', donation_id=donation.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success w-100">
+                            Per E-Mail versenden
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('admin.donations_list') }}" class="btn btn-secondary">← Zurück zur Liste</a>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin - NGÜ Bibelvers-Sponsoring{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .admin-header { background-color: #343a40; color: white; padding: 1rem 0; margin-bottom: 2rem; }
+        .admin-nav { background-color: #495057; padding: 0.5rem 0; }
+        .admin-nav a { color: #fff; text-decoration: none; padding: 0.5rem 1rem; }
+        .admin-nav a:hover { background-color: #6c757d; }
+        .admin-nav a.active { background-color: #28a745; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .admin-badge { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="m-0">NGÜ Admin <span class="admin-badge">ADMIN</span></h3>
+                <div>
+                    <span class="me-3">{{ session.admin_email }}</span>
+                    <a href="{{ url_for('admin.logout') }}" class="btn btn-sm btn-outline-light">Abmelden</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="admin-nav">
+        <div class="container">
+            <nav class="d-flex">
+                <a href="{{ url_for('admin.index') }}" {% if request.endpoint == 'admin.index' %}class="active"{% endif %}>Übersicht</a>
+                <a href="{{ url_for('admin.persons_list') }}" {% if 'person' in request.endpoint %}class="active"{% endif %}>Personen</a>
+                <a href="{{ url_for('admin.verses_list') }}" {% if 'verse' in request.endpoint %}class="active"{% endif %}>Verse</a>
+                <a href="{{ url_for('admin.donations_list') }}" {% if 'donation' in request.endpoint %}class="active"{% endif %}>Spenden</a>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="container my-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,117 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Person bearbeiten - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Person bearbeiten</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">E-Mail</label>
+                    <input type="email" name="email" class="form-control" value="{{ person.email }}" required>
+                    <div class="form-text">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        Vorsicht: E-Mail-Änderung kann Auswirkungen auf Zustellungen haben
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Anrede</label>
+                    <select name="salutation" class="form-select">
+                        <option value="">Ohne</option>
+                        <option value="Herr" {% if person.salutation == 'Herr' %}selected{% endif %}>Herr</option>
+                        <option value="Frau" {% if person.salutation == 'Frau' %}selected{% endif %}>Frau</option>
+                        <option value="Eheleute" {% if person.salutation == 'Eheleute' %}selected{% endif %}>Eheleute</option>
+                        <option value="Familie" {% if person.salutation == 'Familie' %}selected{% endif %}>Familie</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Vorname</label>
+                    <input type="text" name="first_name" class="form-control" value="{{ person.first_name or '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nachname</label>
+                    <input type="text" name="last_name" class="form-control" value="{{ person.last_name or '' }}">
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-9">
+                    <label class="form-label">Straße</label>
+                    <input type="text" name="street" class="form-control" value="{{ person.street or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hausnummer</label>
+                    <input type="text" name="house_number" class="form-control" value="{{ person.house_number or '' }}">
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">PLZ</label>
+                    <input type="text" name="postal_code" class="form-control" value="{{ person.postal_code or '' }}">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Ort</label>
+                    <input type="text" name="city" class="form-control" value="{{ person.city or '' }}">
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" name="newsletter_consent" class="form-check-input" id="newsletter"
+                           {% if person.newsletter_consent %}checked{% endif %}>
+                    <label class="form-check-label" for="newsletter">
+                        Newsletter-Einwilligung
+                    </label>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('admin.persons_list') }}" class="btn btn-secondary">Abbrechen</a>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Spenden dieser Person</h5>
+    </div>
+    <div class="card-body">
+        {% if person.donations.count() > 0 %}
+        <div class="list-group">
+            {% for donation in recent_donations %}
+            <a href="{{ url_for('admin.donation_detail', donation_id=donation.id) }}" 
+               class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between">
+                    <span>
+                        Spende #{{ donation.id }} - 
+                        {{ donation.verse_count }} Vers(e)
+                    </span>
+                    <span>
+                        <span class="badge bg-{{ 'success' if donation.payment_status == 'completed' else 'warning' }}">
+                            {{ donation.payment_status }}
+                        </span>
+                        {{ donation.created_at.strftime('%d.%m.%Y') }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">Noch keine Spenden vorhanden.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

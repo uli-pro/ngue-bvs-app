@@ -279,6 +279,34 @@ class EmailService:
             self.logger.error(f"Certificate email failed: {e}")
             raise EmailServiceError(f"Failed to send certificate email: {e}")
     
+    def send_tax_receipt_email(self, donation_data: Dict[str, Any], 
+                             pdf_path: str) -> bool:
+        """Send tax receipt email with PDF attachment"""
+        try:
+            html_body, text_body = self._render_template(
+                'tax_receipt',
+                donation=donation_data,
+                timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
+            )
+            
+            attachments = [{
+                'path': pdf_path,
+                'filename': f"NGÜ_Spendenbescheinigung_{donation_data['id']}.pdf",
+                'mimetype': 'application/pdf'
+            }]
+            
+            return self.provider.send_email(
+                to_email=donation_data['person']['email'],
+                subject=f"Ihre NGÜ Spendenbescheinigung - Spende #{donation_data['id']}",
+                html_body=html_body,
+                text_body=text_body,
+                attachments=attachments
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Tax receipt email failed: {e}")
+            return False
+    
     def send_certificate_email_with_attachments(self, donation_data: Dict[str, Any], 
                                               pdf_attachments: List[Dict[str, str]]) -> bool:
         """Send certificate email with multiple PDF attachments"""
@@ -352,6 +380,48 @@ class EmailService:
             self.logger.error(f"Magic link email failed: {e}")
             raise EmailServiceError(f"Failed to send magic link email: {e}")
     
+    def send_admin_magic_link(self, to_email, magic_link):
+        """Send magic link for admin login"""
+        subject = "NGÜ Admin - Ihr Login-Link"
+        
+        html_content = f"""
+        <h2>Admin Login</h2>
+        <p>Sie haben einen Login-Link für den NGÜ Admin-Bereich angefordert.</p>
+        <p>
+            <a href="{magic_link}" style="display: inline-block; padding: 10px 20px; 
+               background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px;">
+                Jetzt anmelden
+            </a>
+        </p>
+        <p>Oder kopieren Sie diesen Link in Ihren Browser:</p>
+        <p>{magic_link}</p>
+        <p><strong>Dieser Link ist 15 Minuten gültig.</strong></p>
+        <p>Falls Sie diesen Link nicht angefordert haben, ignorieren Sie diese E-Mail.</p>
+        """
+        
+        text_content = f"""
+        Admin Login
+        
+        Sie haben einen Login-Link für den NGÜ Admin-Bereich angefordert.
+        
+        Klicken Sie hier zum Anmelden:
+        {magic_link}
+        
+        Dieser Link ist 15 Minuten gültig.
+        
+        Falls Sie diesen Link nicht angefordert haben, ignorieren Sie diese E-Mail.
+        """
+        
+        return self.send_email(to_email, subject, text_content, html_content)
+    
+    def send_email(self, to_email: str, subject: str, text_body: str, html_body: str = None) -> bool:
+        """Direct email send method"""
+        if not self.provider:
+            raise EmailConfigurationError("Email service not initialized")
+        
+        html_body = html_body or text_body
+        return self.provider.send_email(to_email, subject, html_body, text_body)
+
     def send_test_email(self, to_email: str) -> bool:
         """Send test email for verification"""
         try:

@@ -98,6 +98,9 @@ from pdf_service import PDFGeneratorService, PDFGenerationError
 import stripe
 db.init_app(app)
 
+# Import admin blueprint
+from admin import init_admin
+
 # Initialize PDF Generator Service
 pdf_service = PDFGeneratorService()
 pdf_service.init_app(app)
@@ -122,6 +125,10 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["1000 per hour"]
 )
+
+# Initialize and register admin blueprint
+admin_bp = init_admin(app)
+app.register_blueprint(admin_bp)
 
 # Session Security (development-safe)
 if app.debug:

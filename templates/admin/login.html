@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - NGÜ Bibelvers-Sponsoring</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #343a40; display: flex; align-items: center; height: 100vh; }
+        .login-card { max-width: 400px; width: 100%; }
+        .admin-badge { background-color: #dc3545; color: white; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-card mx-auto">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h4 class="text-center mb-4">NGÜ Admin <span class="admin-badge">ADMIN</span></h4>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('admin.login') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Administrator E-Mail</label>
+                            <input type="email" class="form-control" id="email" name="email" required autofocus>
+                            <div class="form-text">Geben Sie Ihre autorisierte Admin-E-Mail-Adresse ein.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Magic Link anfordern</button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    <p class="text-center text-muted small mb-0">
+                        Sie erhalten einen sicheren Login-Link per E-Mail.<br>
+                        Der Link ist 15 Minuten gültig.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

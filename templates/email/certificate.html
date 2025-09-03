@@ -8,7 +8,7 @@
 
 <p>Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},</p>
 
-<p>vielen Dank für Ihre großzügige Spende von <strong>{{ donation.amount }}€</strong> für die NGÜ Bibelübersetzung!</p>
+<p>vielen Dank für Ihre großzügige Spende von <strong>{{ "%.2f"|format(donation.total_amount) }}€</strong> für die NGÜ Bibelübersetzung!</p>
 
 <div class="highlight">
     <h3>📜 Ihre gesponserten Bibelverse:</h3>
@@ -25,7 +25,7 @@
 <ul>
     <li>Spenden-ID: #{{ donation.id }}</li>
     <li>Datum: {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}</li>
-    <li>Betrag: {{ donation.amount }}€</li>
+    <li>Betrag: {{ "%.2f"|format(donation.total_amount) }}€</li>
     <li>Anzahl Verse: {{ donation.verses|length }}</li>
 </ul>
 

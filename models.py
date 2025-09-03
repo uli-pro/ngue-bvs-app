@@ -910,3 +910,62 @@ class VerseReservation(db.Model):
         cls.query.filter_by(session_id=session_id).delete()
         db.session.commit()
         return count
+
+
+class AdminToken(db.Model):
+    """Magic Link Tokens für Admin-Login"""
+    __tablename__ = 'admin_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    used_at = db.Column(db.DateTime)
+    ip_address = db.Column(db.String(45))
+    
+    @classmethod
+    def create_token(cls, email, ip_address=None):
+        """Create new magic link token"""
+        import secrets
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.utcnow() + timedelta(minutes=15)
+        
+        admin_token = cls(
+            token=token,
+            email=email,
+            expires_at=expires_at,
+            ip_address=ip_address
+        )
+        db.session.add(admin_token)
+        db.session.commit()
+        return admin_token
+    
+    @classmethod
+    def verify_token(cls, token):
+        """Verify and invalidate token"""
+        admin_token = cls.query.filter_by(
+            token=token,
+            used=False
+        ).first()
+        
+        if not admin_token:
+            return None
+            
+        if admin_token.expires_at < datetime.utcnow():
+            return None
+        
+        # Mark as used
+        admin_token.used = True
+        admin_token.used_at = datetime.utcnow()
+        db.session.commit()
+        
+        return admin_token
+    
+    @classmethod
+    def cleanup_expired(cls):
+        """Delete expired tokens"""
+        cutoff = datetime.utcnow() - timedelta(hours=24)
+        cls.query.filter(cls.created_at < cutoff).delete()
+        db.session.commit()

@@ -1,0 +1,38 @@
+{% extends "email/base.html" %}
+
+{% block title %}Ihre NGÜ Spendenbescheinigung{% endblock %}
+{% block header %}Ihre NGÜ Spendenbescheinigung{% endblock %}
+
+{% block content %}
+<h2>Ihre offizielle Spendenbescheinigung</h2>
+
+<p>Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},</p>
+
+<p>anbei erhalten Sie Ihre offizielle Spendenbescheinigung für Ihre großzügige Spende von <strong>{{ "%.2f"|format(donation.total_amount) }}€</strong> an die Peter-Schöffer-Stiftung.</p>
+
+<div class="highlight">
+    <h3>📄 Spendenbescheinigung Details:</h3>
+    <ul>
+        <li><strong>Spenden-ID:</strong> #{{ donation.id }}</li>
+        <li><strong>Datum:</strong> {{ donation.created_at.strftime('%d.%m.%Y') }}</li>
+        <li><strong>Betrag:</strong> {{ "%.2f"|format(donation.total_amount) }}€</li>
+        <li><strong>Zweck:</strong> NGÜ Bibelvers-Sponsoring</li>
+    </ul>
+</div>
+
+<p>Diese Spendenbescheinigung können Sie für Ihre Steuererklärung verwenden. Die Peter-Schöffer-Stiftung ist als gemeinnützig anerkannt.</p>
+
+<p><strong>Ihre gesponserten Bibelverse:</strong></p>
+<ul>
+{% for verse in donation.verses %}
+    <li><strong>{{ verse.reference }}</strong></li>
+{% endfor %}
+</ul>
+
+<p>Vielen Dank für Ihre Unterstützung der NGÜ Bibelübersetzung!</p>
+
+<p>Mit herzlichen Grüßen<br>
+Ihr Team der Peter-Schöffer-Stiftung</p>
+{% endblock %}
+
+{% block footer_text %}Spendenbescheinigung erstellt am {{ timestamp }}{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Personen - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Personen-Verwaltung</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.persons_list') }}" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" class="form-control" name="search" 
+                       value="{{ search }}" placeholder="Suche nach E-Mail, Name oder PLZ...">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Suchen</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>E-Mail</th>
+                    <th>PLZ/Ort</th>
+                    <th>Newsletter</th>
+                    <th>Spenden</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for person in persons.items %}
+                <tr>
+                    <td>{{ person.id }}</td>
+                    <td>{{ person.full_name_with_salutation }}</td>
+                    <td>{{ person.email }}</td>
+                    <td>
+                        {% if person.postal_code %}
+                            {{ person.postal_code }} {{ person.city }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if person.newsletter_consent %}
+                            <span class="badge bg-success">Ja</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Nein</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ person.donations.count() }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.person_edit', person_id=person.id) }}" 
+                           class="btn btn-sm btn-outline-primary">Bearbeiten</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if persons.pages > 1 %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if persons.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.persons_list', page=persons.prev_num, search=search) }}">←</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in persons.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == persons.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.persons_list', page=page_num, search=search) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if persons.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.persons_list', page=persons.next_num, search=search) }}">→</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

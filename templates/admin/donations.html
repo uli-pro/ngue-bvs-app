@@ -1,0 +1,99 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Spenden - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Spenden-Verwaltung</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.donations_list') }}" class="row g-3">
+            <div class="col-md-10">
+                <select name="filter" class="form-select">
+                    <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Alle Spenden</option>
+                    <option value="completed" {% if filter_type == 'completed' %}selected{% endif %}>Abgeschlossen</option>
+                    <option value="pending" {% if filter_type == 'pending' %}selected{% endif %}>Ausstehend</option>
+                    <option value="failed" {% if filter_type == 'failed' %}selected{% endif %}>Fehlgeschlagen</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Spender</th>
+                    <th>Verse</th>
+                    <th>Betrag</th>
+                    <th>Status</th>
+                    <th>Datum</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donation in donations.items %}
+                <tr>
+                    <td>#{{ donation.id }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.person_edit', person_id=donation.person_id) }}">
+                            {{ donation.person.full_name }}
+                        </a>
+                        <br>
+                        <small class="text-muted">{{ donation.person.email }}</small>
+                    </td>
+                    <td>{{ donation.verse_count }}</td>
+                    <td>€{{ "%.2f"|format(donation.total_amount) }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if donation.payment_status == 'completed' else 'warning' if donation.payment_status == 'pending' else 'danger' }}">
+                            {{ donation.payment_status }}
+                        </span>
+                    </td>
+                    <td>{{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.donation_detail', donation_id=donation.id) }}" 
+                           class="btn btn-sm btn-outline-primary">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if donations.pages > 1 %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if donations.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.donations_list', page=donations.prev_num, filter=filter_type) }}">←</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in donations.iter_pages() %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == donations.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.donations_list', page=page_num, filter=filter_type) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if donations.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.donations_list', page=donations.next_num, filter=filter_type) }}">→</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
