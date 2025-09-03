@@ -523,7 +523,7 @@ class PDFGeneratorService:
             'verse_count': len(verses),
             'is_multiple': len(verses) > 1,
             'background_image_path': f'file://{background_image_path}',
-            'formatted_amount': f"{donation.total_amount:.2f}",
+            'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             'formatted_date': donation.completed_at.strftime('%d.%m.%Y') if donation.completed_at else 'Unbekannt',
             'certificate_title': f"Sponsoring-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}"
         }
@@ -554,7 +554,7 @@ class PDFGeneratorService:
             'person_snapshot': person_data,
             'verses': verses,  # Für Konsistenz mit Certificate-Context
             'verse_count': len(verses),
-            'formatted_amount': f"{donation.total_amount:.2f}",
+            'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             'amount_in_words': self._amount_to_words(donation.total_amount),
             'formatted_date': donation.completed_at.strftime('%d. %B %Y') if donation.completed_at else '',
             'issue_date': datetime.now().strftime('%d. %B %Y'),

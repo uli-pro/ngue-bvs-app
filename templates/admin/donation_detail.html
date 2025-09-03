@@ -22,7 +22,7 @@
                     </dd>
                     
                     <dt class="col-sm-3">Betrag</dt>
-                    <dd class="col-sm-9">€{{ "%.2f"|format(donation.total_amount) }}</dd>
+                    <dd class="col-sm-9">{{ donation.total_amount|currency }}</dd>
                     
                     <dt class="col-sm-3">Erstellt am</dt>
                     <dd class="col-sm-9">{{ donation.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</dd>

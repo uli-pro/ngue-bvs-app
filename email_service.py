@@ -62,7 +62,7 @@ class GmailProvider(BaseEmailProvider):
         super().__init__()
         self.mail = mail_instance
         self.from_email = os.environ.get('GMAIL_USERNAME')
-        self.from_name = os.environ.get('EMAIL_FROM_NAME', 'NGÜ Zertifikate')
+        self.from_name = os.environ.get('EMAIL_FROM_NAME', 'NGÜ Sponsoring')
     
     def send_email(self, to_email: str, subject: str, html_body: str, 
                    text_body: str, attachments: List[Dict] = None) -> bool:
@@ -121,7 +121,7 @@ class MailgunProvider(BaseEmailProvider):
         self.api_key = os.environ.get('MAILGUN_API_KEY')
         self.domain = os.environ.get('MAILGUN_DOMAIN')
         self.from_email = os.environ.get('MAILGUN_FROM_EMAIL')
-        self.from_name = os.environ.get('EMAIL_FROM_NAME', 'NGÜ Zertifikate')
+        self.from_name = os.environ.get('EMAIL_FROM_NAME', 'NGÜ Sponsoring')
         # Use EU API for European domains
         self.api_url = f"https://api.eu.mailgun.net/v3/{self.domain}/messages"
     
@@ -354,31 +354,6 @@ class EmailService:
         token = secrets.token_urlsafe(32)
         self.logger.info(f"Generated magic link token for {email} (expires in {expiry_minutes}min)")
         return token
-    
-    def send_magic_link_email(self, email: str, token: str, 
-                            login_url: str, expiry_minutes: int = 15) -> bool:
-        """Send magic link login email (prepared for future admin functionality)"""
-        try:
-            magic_link = f"{login_url}?token={token}"
-            
-            html_body, text_body = self._render_template(
-                'magic_link',
-                email=email,
-                magic_link=magic_link,
-                expiry_minutes=expiry_minutes,
-                timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
-            )
-            
-            return self.provider.send_email(
-                to_email=email,
-                subject="NGÜ Admin Login - Ihr Anmelde-Link",
-                html_body=html_body,
-                text_body=text_body
-            )
-            
-        except Exception as e:
-            self.logger.error(f"Magic link email failed: {e}")
-            raise EmailServiceError(f"Failed to send magic link email: {e}")
     
     def send_admin_magic_link(self, to_email, magic_link):
         """Send magic link for admin login"""

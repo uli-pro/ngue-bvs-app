@@ -9,46 +9,6 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import secrets
 
-# 🔧 DEBUG INFRASTRUCTURE - REMOVE AFTER DEBUGGING 🔧
-import json
-import logging
-from flask import g
-import uuid
-import time
-
-# Configure terminal logging for debugging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.StreamHandler(),  # Terminal output
-        logging.FileHandler('debug_flow.log')  # File output
-    ]
-)
-
-debug_logger = logging.getLogger('debug_flow')
-
-def debug_print(location, data, level="DEBUG"):
-    """🔧 PRINTF DEBUGGING - REMOVE AFTER DEBUGGING 🔧"""
-    timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-    trace_id = getattr(g, 'trace_id', 'no-trace')
-    message = f"[{timestamp}] [{level}] [{trace_id}] {location}: {json.dumps(data, default=str)}"
-    print(f"🐛 {message}")  # Terminal
-    debug_logger.info(message)  # File
-
-def strategic_log(operation, component, data, success=True):
-    """🔧 STRATEGIC LOGGING - CAN STAY LONGER 🔧"""
-    log_entry = {
-        'timestamp': datetime.now().isoformat(),
-        'trace_id': getattr(g, 'trace_id', 'no-trace'),
-        'operation': operation,
-        'component': component,
-        'success': success,
-        'data': data
-    }
-    debug_logger.info(f"STRATEGIC: {json.dumps(log_entry)}")
-    print(f"📊 STRATEGIC [{component}] {operation}: {'✅' if success else '❌'} - {data}")
-# 🔧 END DEBUG INFRASTRUCTURE 🔧
 
 # Load environment variables
 load_dotenv()
@@ -56,18 +16,6 @@ load_dotenv()
 # Configure application
 app = Flask(__name__)
 
-# 🔧 DEBUG REQUEST HANDLER - MOVE AFTER APP CREATION 🔧
-@app.before_request
-def before_request():
-    """Generate trace ID for each request"""
-    g.trace_id = f"{datetime.now().strftime('%H%M%S')}-{str(uuid.uuid4())[:6]}"
-    g.start_time = time.time()
-    
-    debug_print("REQUEST_START", {
-        'method': request.method,
-        'path': request.path,
-        'endpoint': request.endpoint
-    })
 
 # Load configuration from environment
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
@@ -177,14 +125,8 @@ def inject_context():
 
 def validate_cart_item(item):
     """Validate cart item structure and content."""
-    # 🔧 DEBUG POINT 1: Cart Item Validation 🔧
-    debug_print("CART_ITEM_VALIDATION", {
-        'item_type': type(item).__name__,
-        'item_data': str(item)[:200] if item else None
-    })
     
     if not isinstance(item, dict):
-        debug_print("CART_ITEM_INVALID", {'reason': 'not_dict', 'type': type(item).__name__})
         return False
     
     required_fields = ['verse_id', 'donor_data', 'amount']
@@ -192,48 +134,35 @@ def validate_cart_item(item):
     # Check required fields exist
     for field in required_fields:
         if field not in item:
-            debug_print("CART_ITEM_INVALID", {'reason': 'missing_field', 'field': field})
             return False
     
     # Check field types and values
     try:
         verse_id = int(item['verse_id'])
         if verse_id <= 0:
-            debug_print("CART_ITEM_INVALID", {'reason': 'invalid_verse_id', 'value': verse_id})
             return False
     except (ValueError, TypeError):
-        debug_print("CART_ITEM_INVALID", {'reason': 'verse_id_not_int', 'value': item.get('verse_id')})
         return False
     
     
     if not isinstance(item['donor_data'], dict):
-        debug_print("CART_ITEM_INVALID", {'reason': 'donor_data_not_dict', 'type': type(item['donor_data']).__name__})
         return False
     
     try:
         amount = float(item['amount'])
         if amount <= 0:
-            debug_print("CART_ITEM_INVALID", {'reason': 'invalid_amount', 'value': amount})
             return False
     except (ValueError, TypeError):
-        debug_print("CART_ITEM_INVALID", {'reason': 'amount_not_float', 'value': item.get('amount')})
         return False
     
-    debug_print("CART_ITEM_VALID", {'verse_id': verse_id, 'amount': amount})
     return True
 
 
 def sanitize_cart(cart):
     """Clean up cart by removing invalid items."""
-    # 🔧 DEBUG POINT 2: Cart Sanitization 🔧
     original_count = len(cart) if isinstance(cart, list) else 0
-    debug_print("CART_SANITIZE_START", {
-        'cart_type': type(cart).__name__,
-        'original_count': original_count
-    })
     
     if not isinstance(cart, list):
-        debug_print("CART_SANITIZE_FAILED", {'reason': 'not_list', 'type': type(cart).__name__})
         return []
     
     valid_items = []
@@ -243,49 +172,20 @@ def sanitize_cart(cart):
             # Ensure currency field exists
             if 'currency' not in item:
                 item['currency'] = 'EUR'
-                debug_print("CART_ITEM_CURRENCY_ADDED", {'item_index': i, 'verse_id': item.get('verse_id')})
             valid_items.append(item)
         else:
             invalid_count += 1
     
-    debug_print("CART_SANITIZE_COMPLETE", {
-        'original_count': original_count,
-        'valid_count': len(valid_items),
-        'removed_count': invalid_count
-    })
     
     return valid_items
 
 
 def handle_corrupted_session():
     """Handle corrupted session data gracefully."""
-    # 🔧 DEBUG POINT 3 + STRATEGIC LOGGING 1: Session Recovery 🔧
-    session_id = session.get('session_id', 'unknown')
-    original_cart = session.get('cart', 'missing')
-    
-    debug_print("SESSION_CORRUPTION_CHECK", {
-        'session_id': session_id,
-        'cart_exists': 'cart' in session,
-        'cart_type': type(original_cart).__name__ if original_cart != 'missing' else 'missing',
-        'cart_size': len(original_cart) if isinstance(original_cart, list) else 'n/a'
-    })
-    
-    strategic_log("session_recovery_start", "cart_session", {
-        'session_id': session_id,
-        'cart_corrupt': 'cart' not in session or not isinstance(session.get('cart'), list)
-    })
     
     try:
         # Initialize empty cart if missing or corrupted
         if 'cart' not in session or not isinstance(session['cart'], list):
-            debug_print("SESSION_CART_CORRUPTED", {
-                'problem': 'missing_or_invalid_cart',
-                'cart_value': str(session.get('cart', 'MISSING'))[:100]
-            })
-            strategic_log("cart_corruption_fixed", "cart_session", {
-                'action': 'reset_to_empty',
-                'reason': 'cart_missing_or_invalid'
-            }, success=True)
             session['cart'] = []
         else:
             # Sanitize existing cart
@@ -294,26 +194,12 @@ def handle_corrupted_session():
             new_size = len(session['cart'])
             
             if old_size != new_size:
-                debug_print("SESSION_CART_SANITIZED", {
-                    'removed_items': old_size - new_size,
-                    'old_size': old_size,
-                    'new_size': new_size
-                })
-                strategic_log("cart_sanitized", "cart_session", {
-                    'items_removed': old_size - new_size,
-                    'final_size': new_size
-                }, success=True)
+                pass
         
         session.modified = True
-        debug_print("SESSION_RECOVERY_SUCCESS", {'final_cart_size': len(session['cart'])})
         
     except Exception as e:
         # If all else fails, reset cart completely
-        debug_print("SESSION_RECOVERY_FAILED", {'error': str(e)}, level="ERROR")
-        strategic_log("session_recovery_failed", "cart_session", {
-            'error': str(e),
-            'action': 'emergency_reset'
-        }, success=False)
         
         session['cart'] = []
         session.modified = True
@@ -914,12 +800,6 @@ def vers_spendenart_by_id(verse_id):
 @app.route("/spendenkorb")
 def spendenkorb():
     """Donation cart page showing all selected verses"""
-    # 🔧 DEBUG POINT 4: Cart Display and Validation 🔧
-    debug_print("CART_PAGE_ACCESS", {
-        'session_id': session.get('session_id', 'unknown'),
-        'has_cart': 'cart' in session,
-        'initial_cart_size': len(session.get('cart', [])) if isinstance(session.get('cart'), list) else 'invalid'
-    })
     
     # Handle corrupted session data gracefully
     handle_corrupted_session()
@@ -927,17 +807,12 @@ def spendenkorb():
     # Initialize cart if it doesn't exist
     if 'cart' not in session:
         session['cart'] = []
-        debug_print("CART_INITIALIZED", {'action': 'created_empty_cart'})
     
     # Load verse data for all items in cart
     cart_items = []
     total_amount = 0
     expired_count = 0
     
-    debug_print("CART_PROCESSING_START", {
-        'cart_size': len(session['cart']),
-        'cart_items': [{'verse_id': item.get('verse_id'), 'amount': item.get('amount')} for item in session['cart']]
-    })
     
     # Check and update reservations for cart items
     for i, item in enumerate(session['cart']):
@@ -1648,7 +1523,7 @@ def prepare_success_page_with_pdfs(donation_id, session_id):
                 if pdf_attachments:
                     donation_data = {
                         'id': donation.id,
-                        'amount': float(donation.amount),
+                        'total_amount': float(donation.total_amount),
                         'created_at': donation.created_at,
                         'person': {
                             'email': donation.person.email,
@@ -1919,22 +1794,9 @@ def api_cart_add():
 @limiter.limit("30 per minute")
 def checkout_spendendaten():
     """Unified data collection after cart"""
-    # 🔧 DEBUG POINT 5 + STRATEGIC LOGGING 2: Form Data → Person Model 🔧
-    debug_print("CHECKOUT_SPENDENDATEN_ACCESS", {
-        'method': request.method,
-        'has_cart': 'cart' in session,
-        'cart_size': len(session.get('cart', [])) if isinstance(session.get('cart'), list) else 'invalid',
-        'session_id': session.get('session_id', 'unknown')
-    })
-    
-    strategic_log("checkout_form_access", "person_data", {
-        'method': request.method,
-        'cart_size': len(session.get('cart', [])) if isinstance(session.get('cart'), list) else 0
-    })
     
     # Check cart exists
     if 'cart' not in session or not session['cart']:
-        debug_print("CHECKOUT_CART_EMPTY", {'action': 'redirect_to_selection'})
         flash("Ihr Spendenkorb ist leer.", "warning")
         return redirect(url_for("vers_auswaehlen"))
     
@@ -1951,11 +1813,6 @@ def checkout_spendendaten():
     
     total_amount = len(cart_items) * 100
     
-    debug_print("CHECKOUT_CART_LOADED", {
-        'valid_items': len(cart_items),
-        'total_amount': total_amount,
-        'verse_ids': [item['verse'].id for item in cart_items]
-    })
     
     if request.method == "POST":
         email = request.form.get('email', '').strip().lower()
@@ -2015,50 +1872,19 @@ def checkout_spendendaten():
             salutation_value = None
         person_data['salutation'] = salutation_value
         
-        # 🔧 DEBUG POINT 6 + STRATEGIC LOGGING 2: Person.find_or_create 🔧
-        debug_print("PERSON_FIND_OR_CREATE_START", {
-            'email': email,
-            'wants_receipt': wants_receipt,
-            'person_data_fields': list(person_data.keys()),
-            'person_data': {k: v for k, v in person_data.items() if k != 'email'}  # Don't log email twice
-        })
-        
-        strategic_log("person_find_or_create_start", "person_data", {
-            'email_domain': email.split('@')[1] if '@' in email else 'invalid',
-            'wants_receipt': wants_receipt,
-            'has_address_data': all(field in person_data for field in ['first_name', 'last_name', 'street']),
-            'data_fields_count': len(person_data)
-        })
         
         # Create or find person
         person = Person.find_or_create(**person_data)
         
-        debug_print("PERSON_FIND_OR_CREATE_RESULT", {
-            'person_id': person.id,
-            'was_created': person.id not in [p.id for p in Person.query.filter_by(email=email).all()[:-1]] if Person.query.filter_by(email=email).count() > 1 else True,
-            'person_email': person.email
-        })
-        
-        strategic_log("person_find_or_create_complete", "person_data", {
-            'person_id': person.id,
-            'email_domain': email.split('@')[1],
-            'final_data_complete': person.has_complete_address if hasattr(person, 'has_complete_address') else False
-        }, success=True)
         
         db.session.commit()
         
-        debug_print("PERSON_SESSION_STORAGE", {
-            'person_id': person.id,
-            'session_checkout_person_id': person.id,
-            'wants_receipt': wants_receipt
-        })
         
         # Store person in session for payment
         session['checkout_person_id'] = person.id
         session['wants_receipt'] = wants_receipt
         session.modified = True
         
-        debug_print("CHECKOUT_REDIRECT_TO_PAYMENT", {'action': 'redirect_to_zahlung'})
         return redirect(url_for('checkout_zahlung'))
     
     return render_template("checkout-spendendaten.html",

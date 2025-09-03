@@ -11,32 +11,6 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from pgvector.sqlalchemy import Vector
 
-# 🔧 DEBUG INFRASTRUCTURE FOR MODELS - REMOVE AFTER DEBUGGING 🔧
-import json
-import logging
-
-# Get logger for models
-models_logger = logging.getLogger('debug_flow')
-
-def model_debug_print(location, data, level="DEBUG"):
-    """🔧 MODEL PRINTF DEBUGGING - REMOVE AFTER DEBUGGING 🔧"""
-    timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-    message = f"[{timestamp}] [MODEL-{level}] {location}: {json.dumps(data, default=str)}"
-    print(f"🔧 {message}")
-    models_logger.info(message)
-
-def model_strategic_log(operation, component, data, success=True):
-    """🔧 MODEL STRATEGIC LOGGING - CAN STAY LONGER 🔧"""
-    log_entry = {
-        'timestamp': datetime.now().isoformat(),
-        'operation': operation,
-        'component': f"model_{component}",
-        'success': success,
-        'data': data
-    }
-    models_logger.info(f"STRATEGIC: {json.dumps(log_entry)}")
-    print(f"🔧 MODEL-STRATEGIC [{component}] {operation}: {'✅' if success else '❌'} - {data}")
-# 🔧 END MODEL DEBUG INFRASTRUCTURE 🔧
 
 db = SQLAlchemy()
 
@@ -125,34 +99,15 @@ class Person(db.Model):
     @classmethod
     def find_or_create(cls, email, **kwargs):
         """Find or create person based on email"""
-        # 🔧 DEBUG POINT 7 + STRATEGIC LOGGING 2: Person Data Merge 🔧
         email_lower = email.lower()
-        
-        model_debug_print("PERSON_FIND_OR_CREATE_START", {
-            'email_domain': email_lower.split('@')[1] if '@' in email_lower else 'invalid',
-            'provided_fields': list(kwargs.keys()),
-            'has_address_fields': all(f in kwargs for f in ['first_name', 'last_name', 'street'])
-        })
-        
         person = cls.query.filter_by(email=email_lower).first()
         
         if not person:
             # Creating new person
-            model_debug_print("PERSON_CREATING_NEW", {
-                'email_domain': email_lower.split('@')[1],
-                'initial_fields': list(kwargs.keys())
-            })
-            
-            model_strategic_log("person_created", "person", {
-                'email_domain': email_lower.split('@')[1],
-                'fields_provided': len(kwargs),
-                'has_complete_data': all(f in kwargs for f in ['first_name', 'last_name', 'street', 'postal_code'])
-            }, success=True)
-            
             person = cls(email=email_lower, **kwargs)
             db.session.add(person)
         else:
-            # Update existing person - track changes
+            # Update existing person
             changes = {}
             for key, value in kwargs.items():
                 if hasattr(person, key) and (value is not None):
@@ -165,38 +120,7 @@ class Person(db.Model):
                         setattr(person, key, value)
             
             if changes:
-                model_debug_print("PERSON_DATA_UPDATED", {
-                    'person_id': person.id,
-                    'email_domain': email_lower.split('@')[1],
-                    'changed_fields': list(changes.keys()),
-                    'changes': changes
-                })
-                
-                model_strategic_log("person_data_merged", "person", {
-                    'person_id': person.id,
-                    'changed_fields': list(changes.keys()),
-                    'overwritten_data': len(changes) > 0,
-                    'email_domain': email_lower.split('@')[1]
-                }, success=True)
-                
                 person.data_updated_at = datetime.utcnow()
-            else:
-                model_debug_print("PERSON_NO_CHANGES", {
-                    'person_id': person.id,
-                    'email_domain': email_lower.split('@')[1],
-                    'action': 'existing_person_unchanged'
-                })
-                
-                model_strategic_log("person_no_merge_needed", "person", {
-                    'person_id': person.id,
-                    'action': 'data_identical'
-                }, success=True)
-        
-        model_debug_print("PERSON_FIND_OR_CREATE_COMPLETE", {
-            'person_id': getattr(person, 'id', 'not_yet_assigned'),
-            'email_domain': email_lower.split('@')[1],
-            'final_complete_address': hasattr(person, 'has_complete_address')
-        })
         
         return person
 

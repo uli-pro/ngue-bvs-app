@@ -126,7 +126,8 @@
                             <div class="alert alert-info mt-4 text-center">
                                 <i class="fas fa-envelope me-2"></i>
                                 Alle Dokumente wurden auch an Ihre E-Mail-Adresse 
-                                <strong>{{ user_email }}</strong> versendet.
+                                <strong>{{ user_email }}</strong> versendet.<br>
+                                <small class="text-muted">Bitte prüfen Sie auch Ihren Spam-Ordner, falls die E-Mail nicht ankommt.</small>
                             </div>
                             
                         {% else %}
@@ -135,7 +136,8 @@
                                 <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                                 <h5>Dokumente werden vorbereitet</h5>
                                 <p>Ihre Zertifikate und Spendenbescheinigungen werden gerade erstellt 
-                                   und an <strong>{{ user_email }}</strong> versendet.</p>
+                                   und an <strong>{{ user_email }}</strong> versendet.<br>
+                                   <small class="text-muted">Bitte prüfen Sie auch Ihren Spam-Ordner, falls die E-Mail nicht ankommt.</small></p>
                                 <p class="mb-0"><small>Falls Sie die Dokumente nicht innerhalb von 
                                    30 Minuten erhalten, wenden Sie sich bitte an unseren Support.</small></p>
                             </div>
@@ -212,7 +214,7 @@
                     <p class="mb-0">Verse gesponsert</p>
                 </div>
                 <div class="col-md-4">
-                    <h3 class="text-primary">{{ total_amount or '35.800' }} €</h3>
+                    <h3 class="text-primary">{{ total_amount|currency }}</h3>
                     <p class="mb-0">Gespendet</p>
                 </div>
                 <div class="col-md-4">

@@ -102,7 +102,7 @@
                         <p class="small mb-2">
                             Mit der Erteilung des SEPA-Mandats ermächtigen Sie die 
                             <strong>Peter-Schöffer-Stiftung</strong>, den Betrag von 
-                            <strong>{{ "%.2f"|format(total_amount) }} €</strong> von Ihrem Konto einzuziehen.
+                            <strong>{{ total_amount|currency }}</strong> von Ihrem Konto einzuziehen.
                         </p>
                         <p class="small mb-0 text-muted">
                             Sie können innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum, 
@@ -138,7 +138,7 @@
                     <div class="d-grid mt-4">
                         <button id="submit-payment" class="btn btn-primary btn-lg" disabled>
                             <i class="fas fa-lock me-2"></i>
-                            Jetzt sicher spenden - {{ "%.2f"|format(total_amount) }} €
+                            Jetzt sicher spenden - {{ total_amount|currency }}
                         </button>
                     </div>
 
@@ -177,7 +177,7 @@
                             <small class="text-muted">{{ item.verse.text[:50] }}{% if item.verse.text|length > 50 %}...{% endif %}</small>
                         </div>
                         <div class="text-end ms-3">
-                            <strong>{{ "%.2f"|format(item.amount) }} €</strong>
+                            <strong>{{ item.amount|currency }}</strong>
                         </div>
                     </div>
                     {% endfor %}
@@ -187,7 +187,7 @@
                     <!-- Totals -->
                     <div class="d-flex justify-content-between mb-2">
                         <span>{{ cart_items|length }} {% if cart_items|length == 1 %}Vers{% else %}Verse{% endif %}</span>
-                        <span>{{ "%.2f"|format(total_amount) }} €</span>
+                        <span>{{ total_amount|currency }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2 text-success">
                         <small>Bearbeitungsgebühr</small>
@@ -200,7 +200,7 @@
                     
                     <div class="d-flex justify-content-between mb-3">
                         <strong>Gesamtbetrag:</strong>
-                        <strong class="text-primary">{{ "%.2f"|format(total_amount) }} €</strong>
+                        <strong class="text-primary">{{ total_amount|currency }}</strong>
                     </div>
                 </div>
             </div>

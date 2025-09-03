@@ -12,7 +12,7 @@
 
 <div class="highlight">
     <h3>💳 Zahlungsdetails:</h3>
-    <p><strong>Betrag:</strong> {{ donation.amount }}€<br>
+    <p><strong>Betrag:</strong> {{ donation.total_amount|currency }}<br>
     <strong>Spenden-ID:</strong> #{{ donation.id }}<br>
     <strong>Datum:</strong> {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}<br>
     <strong>Status:</strong> Erfolgreich verarbeitet</p>
