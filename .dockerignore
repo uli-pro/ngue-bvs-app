@@ -182,6 +182,10 @@ celerybeat.pid
 .dmypy.json
 dmypy.json
 
+# letsencrypt
+app-deployment/traefik/letsencrypt/
+app-deployment/traefik/letsencrypt/acme.json
+
 # Keep important files that ARE needed in container
 !requirements.txt
 !app-deployment/requirements.txt
