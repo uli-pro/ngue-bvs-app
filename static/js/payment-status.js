@@ -1,3 +1,7 @@
+/* This file was developed with assistance from Claude Code (Anthropic)
+ * for implementation and optimization. Core design is original work.
+ */
+
 /**
  * Payment Status Checker - Simplified Version
  * Handles real-time payment status updates with clear status mapping

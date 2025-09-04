@@ -1,3 +1,7 @@
+/* This file was developed with assistance from Claude Code (Anthropic)
+ * for implementation and optimization. Core design is original work.
+ */
+
 /**
  * CSRF Token Helper for NGÜ BVS App
  * Provides centralized CSRF token management for all AJAX requests

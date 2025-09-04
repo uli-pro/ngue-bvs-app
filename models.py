@@ -1,3 +1,8 @@
+# This file was developed with assistance from Claude Code (Anthropic)
+# for implementation, debugging, and code optimization.
+# Core design decisions and project architecture are original work.
+# All code is understood and can be explained by the author.
+
 """
 Database models for NGÜ Bible Verse Sponsoring App - Simplified Version
 Single donation type only (Einzelspenden)

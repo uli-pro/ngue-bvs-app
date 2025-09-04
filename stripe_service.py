@@ -1,3 +1,8 @@
+# This file was developed with assistance from Claude Code (Anthropic)
+# for implementation, debugging, and code optimization.
+# Core design decisions and project architecture are original work.
+# All code is understood and can be explained by the author.
+
 """
 Stripe Payment Service Module
 Handles Stripe payment integration with SEPA Direct Debit and 3D Secure support

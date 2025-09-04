@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# This file was developed with assistance from Claude Code (Anthropic)
+# for implementation, debugging, and code optimization.
+# Core design decisions and project architecture are original work.
+# All code is understood and can be explained by the author.
+
 """
 E-Mail Service für NGÜ Bibelvers-Sponsoring App
 Unterstützt Gmail (SMTP) und Mailgun (REST API) Provider

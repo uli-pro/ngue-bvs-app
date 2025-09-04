@@ -1,3 +1,7 @@
+/* This file was developed with assistance from Claude Code (Anthropic)
+ * for implementation and optimization. Core design is original work.
+ */
+
 /**
  * Stripe Checkout JavaScript
  * Handles Stripe Payment Element with SEPA preference and 3D Secure support

@@ -1,3 +1,8 @@
+# This file was developed with assistance from Claude Code (Anthropic)
+# for implementation, debugging, and code optimization.
+# Core design decisions and project architecture are original work.
+# All code is understood and can be explained by the author.
+
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, abort
 from flask_session import Session
