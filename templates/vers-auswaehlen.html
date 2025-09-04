@@ -151,15 +151,9 @@ function addToCart(verseId, verseReference) {
     button.disabled = true;
     button.textContent = 'WIRD HINZUGEFÜGT...';
     
-    fetch('/api/cart/add', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            verse_id: verseId,
-            donation_details: {}
-        })
+    csrfHelper.postJSON('/api/cart/add', {
+        verse_id: verseId,
+        donation_details: {}
     })
     .then(response => response.json())
     .then(data => {

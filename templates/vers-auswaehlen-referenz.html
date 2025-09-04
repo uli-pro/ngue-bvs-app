@@ -198,7 +198,7 @@
         async loadBooks() {
             try {
                 this.showSpinner('bookSpinner');
-                const response = await fetch('/api/verse/books');
+                const response = await csrfHelper.get('/api/verse/books');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -238,7 +238,7 @@
             
             try {
                 this.showSpinner('chapterSpinner');
-                const response = await fetch(`/api/verse/chapters/${selectedBook}`);
+                const response = await csrfHelper.get(`/api/verse/chapters/${selectedBook}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -278,7 +278,7 @@
             
             try {
                 this.showSpinner('verseSpinner');
-                const response = await fetch(`/api/verse/verses/${selectedBook}/${selectedChapter}`);
+                const response = await csrfHelper.get(`/api/verse/verses/${selectedBook}/${selectedChapter}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -329,7 +329,7 @@
                 this.hideError();
                 this.hideResults();
                 
-                const response = await fetch(`/api/verse/reference/${book}/${chapter}/${verse}`);
+                const response = await csrfHelper.get(`/api/verse/reference/${book}/${chapter}/${verse}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -476,15 +476,9 @@
             button.textContent = 'WIRD HINZUGEFÜGT...';
         }
         
-        fetch('/api/cart/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                verse_id: verseId,
-                donation_details: {}
-            })
+        csrfHelper.postJSON('/api/cart/add', {
+            verse_id: verseId,
+            donation_details: {}
         })
         .then(response => response.json())
         .then(data => {

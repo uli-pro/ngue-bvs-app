@@ -370,6 +370,7 @@ def vers_auswaehlen_keyword():
 # ==========================================
 
 @app.route("/api/verse/reference/<book>/<int:chapter>/<int:verse_num>")
+@csrf.exempt  # GET requests don't need CSRF protection
 def api_verse_by_reference(book, chapter, verse_num):
     """API endpoint for verse reference search with enhanced error handling."""
     # Input validation
@@ -443,6 +444,7 @@ def api_verse_by_reference(book, chapter, verse_num):
         }, 500
 
 @app.route("/api/verse/<int:verse_id>/similar")
+@csrf.exempt  # GET requests don't need CSRF protection
 def api_similar_verses(verse_id):
     """Get similar verses for a sponsored verse"""
     try:
@@ -485,6 +487,7 @@ def api_similar_verses(verse_id):
         }, 500
 
 @app.route("/api/verse/books")
+@csrf.exempt  # GET requests don't need CSRF protection
 def api_verse_books():
     """Get list of all available books in biblical order"""
     try:
@@ -547,6 +550,7 @@ def api_verse_books():
         }, 500
 
 @app.route("/api/verse/chapters/<book>")
+@csrf.exempt  # GET requests don't need CSRF protection
 def api_verse_chapters(book):
     """Get list of chapters for a specific book"""
     try:
@@ -568,6 +572,7 @@ def api_verse_chapters(book):
         }, 500
 
 @app.route("/api/verse/verses/<book>/<int:chapter>")
+@csrf.exempt  # GET requests don't need CSRF protection
 def api_verse_verses(book, chapter):
     """Get list of verses for a specific book and chapter"""
     try:
@@ -594,7 +599,6 @@ def api_verse_verses(book, chapter):
 # ==========================================
 
 @app.route("/api/verse/search/keyword", methods=["POST"])
-@csrf.exempt
 def api_keyword_search():
     """Keyword search API with positivity-based ranking and pagination"""
     try:
@@ -1112,7 +1116,6 @@ def cleanup_pdf_session():
         session.pop(key, None)
 
 @app.route('/api/track-download', methods=['POST'])
-@csrf.exempt
 @limiter.limit("30 per minute")
 def api_track_download():
     """Optional tracking endpoint for PDF downloads"""
@@ -1189,7 +1192,6 @@ def checkout_zahlung():
                          stripe_public_key=os.environ.get('STRIPE_PUBLIC_KEY'))
 
 @app.route("/checkout/create-payment-intent", methods=["POST"])
-@csrf.exempt
 @limiter.limit("10 per minute")  # Prevent DoS attacks on payment API
 def create_payment_intent():
     """Create Stripe PaymentIntent for cart"""
@@ -1622,7 +1624,7 @@ def checkout_verarbeitung():
                          total_amount=f"{total_amount:.2f}")
 
 @app.route("/api/payment/status/<payment_intent_id>")
-@csrf.exempt
+@csrf.exempt  # GET requests for status checking don't need CSRF protection
 @limiter.limit("30 per minute")  # Allow frequent status checks but prevent abuse
 def api_payment_status(payment_intent_id):
     """API endpoint to check payment status"""
@@ -1684,6 +1686,7 @@ def api_payment_status(payment_intent_id):
 # ==========================================
 
 @app.route("/api/cart/count", methods=["GET"])
+@csrf.exempt  # GET requests don't need CSRF protection
 @limiter.limit("120 per minute")
 def api_cart_count():
     """Get cart item count for badge display"""
@@ -1706,7 +1709,6 @@ def api_cart_count():
         })
 
 @app.route("/api/cart/add", methods=["POST"])
-@csrf.exempt
 @limiter.limit("60 per minute")
 def api_cart_add():
     """Add item to cart with donation details"""
@@ -1949,6 +1951,7 @@ def ping():
 
 # E-Mail Test Endpoints (Development only)
 @app.route("/api/email/test")
+@csrf.exempt  # GET requests don't need CSRF protection
 @limiter.limit("3 per minute")
 def test_email():
     """Test email functionality"""
@@ -1975,6 +1978,7 @@ def test_email():
         }), 500
 
 @app.route("/api/email/connection-test")
+@csrf.exempt  # GET requests don't need CSRF protection
 @limiter.limit("5 per minute") 
 def test_email_connection():
     """Test email provider connection"""

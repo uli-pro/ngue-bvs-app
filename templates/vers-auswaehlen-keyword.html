@@ -186,15 +186,9 @@
             document.getElementById('searchTerm').textContent = query;
         }
         
-        fetch('/api/verse/search/keyword', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                'query': query,
-                'offset': offset
-            })
+        csrfHelper.postJSON('/api/verse/search/keyword', {
+            'query': query,
+            'offset': offset
         })
         .then(response => response.json())
         .then(data => {
@@ -285,15 +279,9 @@
         button.disabled = true;
         button.textContent = 'WIRD HINZUGEFÜGT...';
         
-        fetch('/api/cart/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                verse_id: verseId,
-                donation_details: {}
-            })
+        csrfHelper.postJSON('/api/cart/add', {
+            verse_id: verseId,
+            donation_details: {}
         })
         .then(response => response.json())
         .then(data => {
@@ -349,25 +337,14 @@
         const verse = parseInt(parts[2]);
         
         // Find verse ID using existing reference endpoint
-        fetch(`/api/verse/reference/${book}/${chapter}/${verse}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
+        csrfHelper.get(`/api/verse/reference/${book}/${chapter}/${verse}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.verse && data.verse.id) {
                 // Now add to cart using verse ID
-                fetch('/api/cart/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        verse_id: data.verse.id,
-                        donation_details: {}
-                    })
+                csrfHelper.postJSON('/api/cart/add', {
+                    verse_id: data.verse.id,
+                    donation_details: {}
                 })
                 .then(response => response.json())
                 .then(data => {
