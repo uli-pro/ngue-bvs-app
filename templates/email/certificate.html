@@ -14,7 +14,7 @@
     <h3>📜 Ihre gesponserten Bibelverse:</h3>
     <ul>
     {% for verse in donation.verses %}
-        <li><strong>{{ verse.reference }}</strong>: {{ verse.text[:100] }}{% if verse.text|length > 100 %}...{% endif %}</li>
+        <li><strong>{{ verse.reference }}</strong></li>
     {% endfor %}
     </ul>
 </div>
