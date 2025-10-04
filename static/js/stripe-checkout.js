@@ -15,15 +15,16 @@ class StripeCheckout {
         this.clientSecret = null;
         this.processing = false;
         this.isIntentionalRedirect = false; // Flag for planned redirects
-        
+        this.selectedPaymentType = null; // Track selected payment method type
+
         // Get configuration from window
         this.config = window.stripeConfig || {};
-        
+
         // Debug mode detection (only in development)
-        this.debugMode = window.location.hostname === 'localhost' || 
+        this.debugMode = window.location.hostname === 'localhost' ||
                         window.location.hostname === '127.0.0.1' ||
                         window.location.port === '5000';
-        
+
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.init());
@@ -37,37 +38,37 @@ class StripeCheckout {
             if (!this.config.publicKey) {
                 throw new Error('Stripe public key not configured');
             }
-            
+
             // Initialize Stripe
             this.stripe = Stripe(this.config.publicKey);
-            
-            // Create PaymentIntent
-            await this.createPaymentIntent();
-            
-            // Setup Payment Element
-            await this.setupPaymentElement();
-            
-            // Setup event listeners
-            this.setupEventListeners();
-            
-            this.debugLog('Stripe checkout initialized successfully');
-            
+
+            // Don't create PaymentIntent yet - wait for user to select payment method
+            // This ensures we can specify the payment method type when creating the intent
+
+            this.debugLog('Stripe initialized successfully - waiting for payment method selection');
+
         } catch (error) {
             this.debugError('Error initializing Stripe checkout:', error);
             this.showError('Fehler beim Laden der Zahlungsabwicklung. Bitte laden Sie die Seite neu.');
         }
     }
     
-    async createPaymentIntent() {
+    async createPaymentIntent(paymentType = null) {
         try {
-            this.debugLog('🔄 Creating PaymentIntent...');
-            
+            this.debugLog('🔄 Creating PaymentIntent...', paymentType ? `for ${paymentType}` : '');
+
+            const requestBody = {};
+            if (paymentType) {
+                requestBody.payment_type = paymentType;
+            }
+
             const response = await fetch('/checkout/create-payment-intent', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': this.getCSRFToken()
-                }
+                },
+                body: JSON.stringify(requestBody)
             });
             
             this.debugLog('📡 Response status:', response.status);
@@ -101,13 +102,84 @@ class StripeCheckout {
         }
     }
     
-    async setupPaymentElement() {
+    async selectPaymentMethod(type) {
+        try {
+            this.selectedPaymentType = type;
+            this.debugLog(`Payment method selected: ${type}`);
+
+            // Show loading state
+            const selectionDiv = document.getElementById('payment-method-selection');
+            const formCard = document.getElementById('payment-form-card');
+            const methodTitle = document.getElementById('payment-method-title');
+
+            if (selectionDiv) selectionDiv.style.display = 'none';
+            if (formCard) formCard.style.display = 'block';
+
+            // Update title
+            if (methodTitle) {
+                methodTitle.textContent = type === 'sepa' ? 'SEPA-Lastschrift' : 'Kreditkarte';
+            }
+
+            // Show loading indicator
+            this.showLoading();
+
+            // Create PaymentIntent with selected payment type
+            await this.createPaymentIntent(type);
+
+            // Setup Payment Element with selected method
+            await this.setupPaymentElement(type);
+
+            // Hide loading
+            this.hideLoading();
+
+            // Setup submit button listener
+            this.setupEventListeners();
+
+        } catch (error) {
+            this.debugError('Error selecting payment method:', error);
+            this.showError('Fehler beim Laden der Zahlungsmethode. Bitte versuchen Sie es erneut.');
+            this.hideLoading();
+            // Reset on error
+            this.resetPaymentMethod();
+        }
+    }
+
+    resetPaymentMethod() {
+        // Unmount payment element if exists
+        if (this.paymentElement) {
+            this.paymentElement.unmount();
+            this.paymentElement = null;
+        }
+
+        // Reset elements
+        if (this.elements) {
+            this.elements = null;
+        }
+
+        // Reset client secret (will be recreated with new payment type)
+        this.clientSecret = null;
+
+        // Show selection, hide form
+        const selectionDiv = document.getElementById('payment-method-selection');
+        const formCard = document.getElementById('payment-form-card');
+
+        if (selectionDiv) selectionDiv.style.display = 'block';
+        if (formCard) formCard.style.display = 'none';
+
+        // Clear errors
+        this.clearError();
+
+        this.selectedPaymentType = null;
+        this.debugLog('Payment method selection reset');
+    }
+
+    async setupPaymentElement(paymentType) {
         try {
             if (!this.clientSecret) {
                 throw new Error('No client secret available');
             }
-            
-            // Create Elements instance with SEPA-focused configuration
+
+            // Create Elements instance
             this.elements = this.stripe.elements({
                 clientSecret: this.clientSecret,
                 appearance: {
@@ -122,15 +194,6 @@ class StripeCheckout {
                         borderRadius: '6px'
                     },
                     rules: {
-                        '.Tab': {
-                            padding: '12px 16px',
-                            border: '1px solid #dee2e6'
-                        },
-                        '.Tab--selected': {
-                            backgroundColor: '#007bff',
-                            color: '#ffffff',
-                            borderColor: '#007bff'
-                        },
                         '.Input': {
                             padding: '12px',
                             fontSize: '16px'
@@ -142,33 +205,12 @@ class StripeCheckout {
                     }
                 }
             });
-            
-            // Create Payment Element with SEPA preference
-            this.paymentElement = this.elements.create('payment', {
+
+            // Configure payment element based on selected type
+            const paymentConfig = {
                 defaultValues: {
                     billingDetails: this.config.donorData
                 },
-                
-                // Business information for SEPA mandate
-                business: {
-                    name: 'Peter-Schöffer-Stiftung'
-                },
-                
-                // Payment method configuration
-                paymentMethodOrder: ['sepa_debit', 'card', 'giropay'],
-                
-                // Terms display for SEPA
-                terms: {
-                    sepaDebit: 'always'
-                },
-                
-                // Wallets configuration
-                wallets: {
-                    applePay: 'never',
-                    googlePay: 'never'
-                },
-                
-                // Fields configuration
                 fields: {
                     billingDetails: {
                         name: 'auto',
@@ -179,29 +221,47 @@ class StripeCheckout {
                             city: 'auto',
                             postalCode: 'auto',
                             country: 'auto'
-                            // Removed state: 'never' to avoid confirmation error
                         }
                     }
+                },
+                // Disable all wallets
+                wallets: {
+                    applePay: 'never',
+                    googlePay: 'never'
                 }
-            });
-            
+            };
+
+            // Add payment type specific config
+            if (paymentType === 'sepa') {
+                paymentConfig.business = { name: 'Peter-Schöffer-Stiftung' };
+                paymentConfig.terms = { sepaDebit: 'always' };
+                // Only allow SEPA, no tabs
+                paymentConfig.paymentMethodOrder = ['sepa_debit'];
+            } else if (paymentType === 'card') {
+                // Only allow cards, no tabs
+                paymentConfig.paymentMethodOrder = ['card'];
+            }
+
+            // Create Payment Element
+            this.paymentElement = this.elements.create('payment', paymentConfig);
+
             // Mount the Payment Element
             await this.paymentElement.mount('#payment-element');
-            
+
             // Setup Payment Element event listeners
             this.paymentElement.on('ready', () => {
                 this.debugLog('Payment Element is ready');
                 this.enableSubmitButton();
             });
-            
+
             this.paymentElement.on('change', (event) => {
                 this.handlePaymentElementChange(event);
             });
-            
+
             this.paymentElement.on('focus', () => {
                 this.clearError();
             });
-            
+
         } catch (error) {
             this.debugError('Error setting up Payment Element:', error);
             throw new Error(`Zahlungsformular konnte nicht geladen werden: ${error.message}`);
@@ -527,3 +587,16 @@ window.stripeCheckout = new StripeCheckout();
 
 // Export for global access
 window.StripeCheckout = StripeCheckout;
+
+// Global functions for onclick handlers
+window.selectPaymentMethod = function(type) {
+    if (window.stripeCheckout) {
+        window.stripeCheckout.selectPaymentMethod(type);
+    }
+};
+
+window.resetPaymentMethod = function() {
+    if (window.stripeCheckout) {
+        window.stripeCheckout.resetPaymentMethod();
+    }
+};

@@ -74,10 +74,10 @@ class StripeService:
             payment_intent = stripe.PaymentIntent.create(
                 amount=total_amount,
                 currency='eur',
-                
+
                 # Payment methods with SEPA preference
                 payment_method_types=preferred_payment_methods,
-                
+
                 # Enhanced payment method options
                 payment_method_options={
                     'card': {
@@ -85,11 +85,11 @@ class StripeService:
                     }
                     # SEPA handled automatically by Stripe (2025 API)
                 },
-                
+
                 # Customer information
                 receipt_email=person.email,
                 description=f"NGÜ Bibelvers-Sponsoring: {donations[0].verse_count} Verse",
-                
+
                 # Metadata for webhook processing
                 metadata=metadata
             )

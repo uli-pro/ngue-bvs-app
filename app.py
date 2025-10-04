@@ -1218,17 +1218,30 @@ def create_payment_intent():
         # Get person data and create PaymentIntent
         if 'checkout_person_id' not in session:
             return jsonify({'error': 'Invalid person data'}), 400
-        
+
         person = Person.query.get(session['checkout_person_id'])
         if not person:
             return jsonify({'error': 'Invalid person data'}), 400
-        
+
+        # Get payment type from request (if provided)
+        data = request.get_json() or {}
+        payment_type = data.get('payment_type')
+
+        # Map frontend type to Stripe payment method types
+        preferred_payment_methods = None
+        if payment_type == 'sepa':
+            preferred_payment_methods = ['sepa_debit']
+        elif payment_type == 'card':
+            preferred_payment_methods = ['card']
+        # If no payment_type specified, StripeService will use default ['sepa_debit', 'card']
+
         # Create PaymentIntent with person object directly
         payment_data = StripeService.create_payment_intent(
             cart_items,
-            person=person
+            person=person,
+            preferred_payment_methods=preferred_payment_methods
         )
-        
+
         # Store PaymentIntent ID in session for later verification
         session['payment_intent_id'] = payment_data['payment_intent_id']
         session.modified = True
