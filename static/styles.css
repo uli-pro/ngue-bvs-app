@@ -8,56 +8,94 @@
 
 /* Root Variables */
 :root {
-    /* Farben */
+    /* ==========================================
+       HAUPTFARBEN (7-Farben-System NGÜ)
+       ========================================== */
+
+    /* Primärfarbe - NGÜ Rot */
     --color-primary: #dd3333;
+    --color-primary-hover: #c02a2a;
+    --color-primary-light: rgba(221, 51, 51, 0.1);
+    --color-primary-shadow: rgba(221, 51, 51, 0.25);
+
+    /* Erfolg - Grün */
+    --color-success: #28a745;
+    --color-success-hover: #1e7e34;
+    --color-success-light: rgba(40, 167, 69, 0.1);
+    --color-success-shadow: rgba(40, 167, 69, 0.25);
+    --color-success-tint: #f0fff4;
+
+    /* Akzent - Orange (für Info-Grafiken/Charts) */
+    --color-accent: #fd7e14;
+    --color-accent-hover: #e55a00;
+
+    /* Info - Blau */
+    --color-info: #007bff;
+    --color-info-hover: #0056b3;
+    --color-info-shadow: rgba(0, 123, 255, 0.25);
+
+    /* Hinweis - Rosé (für Alerts und Akkordeon) */
+    --color-notice: #d8c5ca;
+    --color-notice-border: #c48a96;
+    --color-notice-text: #7a4d56;
+    --color-notice-shadow: rgba(216, 197, 202, 0.25);
+
+    /* Sekundär - Dunkelgrau */
     --color-secondary: #100f0f;
+    --color-secondary-hover: #252627;
+
+    /* Neutral - Grau */
+    --color-neutral: #6c757d;
+    --color-neutral-light: #e0e0e0;
+    --color-neutral-lighter: #f5f5f5;
+
+    /* ==========================================
+       TEXT-FARBEN
+       ========================================== */
     --color-text-primary: #313131;
     --color-text-secondary: #232222;
     --color-text-inverse: #ffffff;
+
+    /* ==========================================
+       HINTERGRUND-FARBEN
+       ========================================== */
     --color-bg-primary: #ffffff;
     --color-bg-secondary: #f5f5f5;
-    --color-success: #dd3333;
-    --color-warning-bg: #d8c5ca;
-    
-    /* 7-Farben-System - Zentralisierte Farbvariablen */
-    --color-ngu-red: #dd3333;    /* NGÜ-Primary: Revision, Header, Buttons */
-    --color-green: #28a745;      /* Erstübersetzung, Einzelspende */
-    --color-orange: #fd7e14;     /* Supervision, Gruppenspende */
-    --color-blue: #007bff;       /* Qualitätssicherung, Geschenk */
-    --color-rose: #d8c5ca;       /* Alerts, Warnings, FAQ-Akkordeon */
-    --color-gray: #6c757d;       /* Bootstrap Secondary Gray: Headers, Box-Hintergründe */
-    --color-dark: #100f0f;       /* Dunkles Grau: Footer, Überschriften, Texte */
-    
-    /* Abgeleitete Farben für Rosé */
-    --color-rose-border: #c48a96;
-    --color-rose-text: #7a4d56;
-    
-    /* Legacy-Kompatibilität für bestehendes CSS */
-    --color-primary: var(--color-ngu-red);
-    --color-red: var(--color-ngu-red);
-    --color-secondary: var(--color-dark);
-    --color-warning-bg: var(--color-rose);
-    
-    /* Schriftarten */
+
+    /* ==========================================
+       FUNKTIONALE ALIASE (Bootstrap-Kompatibilität)
+       ========================================== */
+    --bs-primary: var(--color-primary);
+    --bs-success: var(--color-success);
+    --bs-danger: var(--color-primary);
+    --bs-secondary: var(--color-secondary);
+
+    /* ==========================================
+       SCHATTEN
+       ========================================== */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+
+    /* ==========================================
+       SCHRIFTARTEN
+       ========================================== */
     --font-family-primary: 'Poppins', sans-serif;
     --font-family-heading: 'Poppins', sans-serif;
     --font-family-secondary: 'Montserrat', sans-serif;
     --font-family-heading-secondary: 'Montserrat', sans-serif;
     --font-family-fallback: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-family-mono: 'Courier New', Courier, monospace;
-    
-    /* Abstände */
+
+    /* ==========================================
+       ABSTÄNDE
+       ========================================== */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
     --spacing-xxl: 3rem;
-    
-    /* Schatten */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
     
     /* Übergänge */
     --transition-base: all 0.3s ease;
@@ -224,8 +262,8 @@ a:hover {
 }
 
 .btn-primary:hover {
-    background-color: #c02a2a;
-    border-color: #c02a2a;
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
     text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
@@ -237,8 +275,8 @@ a:hover {
 }
 
 .btn-secondary:hover {
-    background-color: #252627;
-    border-color: #252627;
+    background-color: var(--color-secondary-hover);
+    border-color: var(--color-secondary-hover);
     text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
@@ -258,13 +296,13 @@ a:hover {
 
 .btn-outline-success {
     background-color: transparent;
-    border-color: #28a745;
-    color: #28a745;
+    border-color: var(--color-success);
+    color: var(--color-success);
 }
 
 .btn-outline-success:hover {
-    background-color: #28a745;
-    border-color: #28a745;
+    background-color: var(--color-success);
+    border-color: var(--color-success);
     color: white;
     text-decoration: underline;
 }
@@ -291,100 +329,100 @@ a:hover {
 
 /* Red/NGÜ Buttons */
 .btn-red {
-    background-color: var(--color-ngu-red);
-    border-color: var(--color-ngu-red);
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
     color: white;
 }
 .btn-red:hover {
-    background-color: #c02a2a;
-    border-color: #c02a2a;
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
     color: white;
     text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
 .btn-outline-red {
     background-color: transparent;
-    border-color: var(--color-ngu-red);
-    color: var(--color-ngu-red);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 .btn-outline-red:hover {
-    background-color: var(--color-ngu-red);
-    border-color: var(--color-ngu-red);
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
     color: white;
     text-decoration: underline;
 }
 
 /* Blue Buttons */
 .btn-blue {
-    background-color: var(--color-blue);
-    border-color: var(--color-blue);
+    background-color: var(--color-info);
+    border-color: var(--color-info);
     color: white;
 }
 .btn-blue:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
+    background-color: var(--color-info-hover);
+    border-color: var(--color-info-hover);
     color: white;
     text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
 .btn-outline-blue {
     background-color: transparent;
-    border-color: var(--color-blue);
-    color: var(--color-blue);
+    border-color: var(--color-info);
+    color: var(--color-info);
 }
 .btn-outline-blue:hover {
-    background-color: var(--color-blue);
-    border-color: var(--color-blue);
+    background-color: var(--color-info);
+    border-color: var(--color-info);
     color: white;
     text-decoration: underline;
 }
 
 /* Green Buttons */
 .btn-green {
-    background-color: var(--color-green);
-    border-color: var(--color-green);
+    background-color: var(--color-success);
+    border-color: var(--color-success);
     color: white;
 }
 .btn-green:hover {
-    background-color: #1e7e34;
-    border-color: #1e7e34;
+    background-color: var(--color-success-hover);
+    border-color: var(--color-success-hover);
     color: white;
     text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
 .btn-outline-green {
     background-color: transparent;
-    border-color: var(--color-green);
-    color: var(--color-green);
+    border-color: var(--color-success);
+    color: var(--color-success);
 }
 .btn-outline-green:hover {
-    background-color: var(--color-green);
-    border-color: var(--color-green);
+    background-color: var(--color-success);
+    border-color: var(--color-success);
     color: white;
     text-decoration: underline;
 }
 
 /* Orange Buttons */
 .btn-orange {
-    background-color: var(--color-orange);
-    border-color: var(--color-orange);
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
     color: white;
 }
 .btn-orange:hover {
-    background-color: #e55a00;
-    border-color: #e55a00;
+    background-color: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
     color: white;
     text-decoration: underline;
     box-shadow: var(--shadow-md);
 }
 .btn-outline-orange {
     background-color: transparent;
-    border-color: var(--color-orange);
-    color: var(--color-orange);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
 }
 .btn-outline-orange:hover {
-    background-color: var(--color-orange);
-    border-color: var(--color-orange);
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
     color: white;
     text-decoration: underline;
 }
@@ -435,7 +473,7 @@ a:hover {
 
 .card-header {
     background-color: var(--color-bg-secondary);
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--color-neutral-light);
     padding: var(--spacing-lg);
 }
 
@@ -472,7 +510,7 @@ a:hover {
 
 .form-control,
 .form-select {
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-neutral-light);
     border-radius: 6px;
     padding: var(--spacing-sm) var(--spacing-md);
     transition: var(--transition-base);
@@ -481,7 +519,7 @@ a:hover {
 .form-control:focus,
 .form-select:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 0.2rem rgba(221, 51, 51, 0.25);
+    box-shadow: 0 0 0 0.2rem var(--color-primary-shadow);
 }
 
 .form-label {
@@ -491,7 +529,7 @@ a:hover {
 }
 
 .invalid-feedback {
-    color: var(--color-success);
+    color: var(--bs-danger);
     font-size: 0.875rem;
     margin-top: var(--spacing-xs);
 }
@@ -507,18 +545,18 @@ a:hover {
 }
 
 .alert-primary {
-    background-color: rgba(221, 51, 51, 0.1);
+    background-color: var(--color-primary-light);
     color: var(--color-primary);
 }
 
 .alert-success {
-    background-color: rgba(198, 3, 56, 0.1);
+    background-color: var(--color-success-light);
     color: var(--color-success);
 }
 
 .alert-warning {
-    background-color: var(--color-warning-bg);
-    color: var(--color-text-primary);
+    background-color: var(--color-notice);
+    color: var(--color-notice-text);
 }
 
 /* ============================================
@@ -691,146 +729,232 @@ a:hover {
 
 /* Background-Klassen mit Text-Farbe */
 .bg-green {
-    background-color: var(--color-green) !important;
+    background-color: var(--color-success) !important;
     color: white !important;
 }
 
 .bg-red {
-    background-color: var(--color-ngu-red) !important;
+    background-color: var(--color-primary) !important;
     color: white !important;
 }
 
 .bg-ngu-red {
-    background-color: var(--color-ngu-red) !important;
+    background-color: var(--color-primary) !important;
     color: white !important;
 }
 
 .bg-orange {
-    background-color: var(--color-orange) !important;
+    background-color: var(--color-accent) !important;
     color: white !important;
 }
 
 .bg-blue {
-    background-color: var(--color-blue) !important;
+    background-color: var(--color-info) !important;
     color: white !important;
 }
 
 .bg-primary-header {
-    background-color: var(--color-ngu-red) !important;
+    background-color: var(--color-primary) !important;
     color: white !important;
 }
 
 .bg-rose {
-    background-color: var(--color-rose) !important;
-    color: var(--color-rose-text) !important;
+    background-color: var(--color-notice) !important;
+    color: var(--color-notice-text) !important;
 }
 
 .bg-gray {
-    background-color: var(--color-gray) !important;
+    background-color: var(--color-neutral) !important;
     color: white !important;
 }
 
 /* Border-Klassen */
 .border-green {
-    border-color: var(--color-green) !important;
+    border-color: var(--color-success) !important;
 }
 
 .border-red {
-    border-color: var(--color-ngu-red) !important;
+    border-color: var(--color-primary) !important;
 }
 
 .border-ngu-red {
-    border-color: var(--color-ngu-red) !important;
+    border-color: var(--color-primary) !important;
 }
 
 .border-rose {
-    border-color: var(--color-rose-border) !important;
+    border-color: var(--color-notice-border) !important;
 }
 
 .border-gray {
-    border-color: var(--color-gray) !important;
+    border-color: var(--color-neutral) !important;
 }
 
 .border-orange {
-    border-color: var(--color-orange) !important;
+    border-color: var(--color-accent) !important;
 }
 
 .border-blue {
-    border-color: var(--color-blue) !important;
+    border-color: var(--color-info) !important;
 }
 
 /* Text-Klassen für Icons und Text */
 .text-green {
-    color: var(--color-green) !important;
+    color: var(--color-success) !important;
 }
 
 .text-red {
-    color: var(--color-ngu-red) !important;
+    color: var(--color-primary) !important;
 }
 
 .text-ngu-red {
-    color: var(--color-ngu-red) !important;
+    color: var(--color-primary) !important;
 }
 
 .text-rose {
-    color: var(--color-rose-text) !important;
+    color: var(--color-notice-text) !important;
 }
 
 .text-gray {
-    color: var(--color-gray) !important;
+    color: var(--color-neutral) !important;
 }
 
 .text-orange {
-    color: var(--color-orange) !important;
+    color: var(--color-accent) !important;
 }
 
 .text-blue {
-    color: var(--color-blue) !important;
+    color: var(--color-info) !important;
 }
 
 /* Dark-Klassen für Footer, Überschriften und Texte */
 .bg-dark {
-    background-color: var(--color-dark) !important;
+    background-color: var(--color-secondary) !important;
     color: white !important;
 }
 
 .border-dark {
-    border-color: var(--color-dark) !important;
+    border-color: var(--color-secondary) !important;
 }
 
 .text-dark {
-    color: var(--color-dark) !important;
+    color: var(--color-secondary) !important;
 }
 
 
 /* ============================================
-   Alert-Farben vereinheitlichen
+   BOOTSTRAP-KLASSEN ÜBERSCHREIBUNGEN
+   (Selektive Anpassung genutzter Klassen)
    ============================================ */
 
-/* Alle Info-Alerts zur roseartigen Warning-Farbe */
+/* SUCCESS - Grün */
+.btn-success {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+    color: white;
+}
+.btn-success:hover {
+    background-color: var(--color-success-hover);
+    border-color: var(--color-success-hover);
+}
+.text-success {
+    color: var(--color-success) !important;
+}
+.bg-success {
+    background-color: var(--color-success) !important;
+    color: white !important;
+}
+.border-success {
+    border-color: var(--color-success) !important;
+}
+
+/* DANGER - Rot = Primary */
+.btn-danger {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+.btn-danger:hover {
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+}
+.text-danger {
+    color: var(--color-primary) !important;
+}
+.bg-danger {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+}
+.border-danger {
+    border-color: var(--color-primary) !important;
+}
+
+/* INFO - Blau */
+.btn-info {
+    background-color: var(--color-info);
+    border-color: var(--color-info);
+    color: white;
+}
+.btn-info:hover {
+    background-color: var(--color-info-hover);
+    border-color: var(--color-info-hover);
+}
+.text-info {
+    color: var(--color-info) !important;
+}
+.bg-info {
+    background-color: var(--color-info) !important;
+    color: white !important;
+}
+.border-info {
+    border-color: var(--color-info) !important;
+}
+
+/* MUTED - Dunkles Grau für besseren Kontrast */
+.text-muted {
+    color: var(--color-text-secondary) !important;
+}
+
+/* WARNING - Orange für Buttons, Rosé für Alerts */
+.btn-warning {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+}
+.btn-warning:hover {
+    background-color: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+}
+.text-warning {
+    color: var(--color-accent) !important;
+}
+.bg-warning {
+    background-color: var(--color-accent) !important;
+    color: white !important;
+}
+
+/* ALERTS - Info und Warning nutzen beide Rosé (vereinheitlicht) */
 .alert-info {
-    background-color: var(--color-rose) !important;
-    border-color: var(--color-rose-border) !important;
-    color: var(--color-rose-text) !important;
+    background-color: var(--color-notice) !important;
+    border-color: var(--color-notice-border) !important;
+    color: var(--color-notice-text) !important;
 }
 
-/* Warning-Alerts behalten die roseartige Farbe */
 .alert-warning {
-    background-color: var(--color-rose) !important;
-    border-color: var(--color-rose-border) !important;
-    color: var(--color-rose-text) !important;
+    background-color: var(--color-notice) !important;
+    border-color: var(--color-notice-border) !important;
+    color: var(--color-notice-text) !important;
 }
 
-/* FAQ-Akkordeon mit roseartiger Farbe */
+/* FAQ-Akkordeon mit Rosé-Farbe */
 .accordion-button:not(.collapsed) {
-    background-color: var(--color-rose) !important;
-    border-color: var(--color-rose-border) !important;
-    color: var(--color-rose-text) !important;
+    background-color: var(--color-notice) !important;
+    border-color: var(--color-notice-border) !important;
+    color: var(--color-notice-text) !important;
 }
 
 .accordion-button:focus {
-    border-color: var(--color-rose-border) !important;
-    box-shadow: 0 0 0 0.25rem rgba(216, 197, 202, 0.25) !important;
+    border-color: var(--color-notice-border) !important;
+    box-shadow: 0 0 0 0.25rem var(--color-notice-shadow) !important;
 }
 
 /* ============================================
@@ -840,18 +964,18 @@ a:hover {
 /* Progressive Disclosure Donation Cards */
 .donation-option {
     transition: all 0.3s ease;
-    border: 2px solid #e0e0e0;
+    border: 2px solid var(--color-neutral-light);
     cursor: pointer;
 }
 
 .donation-option:hover {
     border-color: var(--color-primary);
-    box-shadow: 0 4px 12px rgba(221, 51, 51, 0.15);
+    box-shadow: 0 4px 12px var(--color-primary-shadow);
 }
 
 .donation-option.expanded {
-    border-color: var(--color-green);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+    border-color: var(--color-success);
+    box-shadow: 0 4px 12px var(--color-success-shadow);
 }
 
 .expansion-content {
@@ -920,12 +1044,12 @@ a:hover {
 
 /* Checkout Form Enhancements */
 .form-check-input:checked {
-    background-color: var(--color-green);
-    border-color: var(--color-green);
+    background-color: var(--color-success);
+    border-color: var(--color-success);
 }
 
 .progress-bar {
-    background-color: var(--color-green);
+    background-color: var(--color-success);
 }
 
 /* ============================================
@@ -1124,7 +1248,7 @@ a:hover {
 .btn:focus,
 .form-control:focus,
 .form-select:focus {
-    box-shadow: 0 0 0 0.25rem rgba(221, 51, 51, 0.25);
+    box-shadow: 0 0 0 0.25rem var(--color-primary-shadow);
 }
 
 /* High contrast mode support */

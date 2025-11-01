@@ -8,20 +8,20 @@
 {% block main %}
 
 <!-- Alpha Version Warning -->
-<div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="margin: 0; border-radius: 0; border-left: 4px solid #dc3545;">
+<div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="margin: 0; border-radius: 0; border-left: 4px solid var(--color-primary);">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-1 text-center">
-                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                <i class="fas fa-exclamation-triangle fa-2x" style="color: var(--color-notice-text);"></i>
             </div>
             <div class="col-md-10">
-                <h5 class="alert-heading mb-2">
+                <h5 class="alert-heading mb-2" style="color: var(--color-notice-text);">
                     <strong>⚠️ Alpha-Version - Testphase</strong>
                 </h5>
-                <p class="mb-1">
+                <p class="mb-1" style="color: var(--color-notice-text);">
                     Diese Anwendung befindet sich noch in der Entwicklung und es können Bugs auftreten.
                 </p>
-                <small class="text-muted">
+                <small style="color: var(--color-notice-text); opacity: 0.8;">
                     Zahlungen sind noch nicht aktiv • Noch kein reales Vers-Sponsoring • Testversion für Feedback
                 </small>
             </div>
@@ -241,7 +241,7 @@
                 <p class="lead mb-4">
                     Für größere Sponsorings (ab 1.000€) bieten wir individuelle Lösungen und besondere Anerkennungen.
                 </p>
-                <a href="mailto:info@schoeffer.org?subject=Anfrage%20Kapitel-%2FBuch-Sponsoring&body=Sehr%20geehrte%20Damen%20und%20Herren%2C%0A%0Aich%20interessiere%20mich%20f%C3%BCr%20das%20Sponsoring%20eines%20ganzen%20Kapitels%20oder%20Buches%20der%20NG%C3%9C-%C3%9Cbersetzung.%0A%0ABitte%20nehmen%20Sie%20Kontakt%20mit%20mir%20auf%20f%C3%BCr%20ein%20pers%C3%B6nliches%20Beratungsgespr%C3%A4ch.%0A%0AVielen%20Dank!" class="btn btn-secondary btn-lg">
+                <a href="mailto:info@schoeffer.org?subject=Anfrage%20Kapitel-%2FBuch-Sponsoring&body=Sehr%20geehrte%20Damen%20und%20Herren%2C%0A%0Aich%20interessiere%20mich%20f%C3%BCr%20das%20Sponsoring%20eines%20ganzen%20Kapitels%20oder%20Buches%20der%20NG%C3%9C-%C3%9Cbersetzung.%0A%0ABitte%20nehmen%20Sie%20Kontakt%20mit%20mir%20auf%20f%C3%BCr%20ein%20pers%C3%B6nliches%20Beratungsgespr%C3%A4ch.%0A%0AVielen%20Dank!" class="btn btn-primary btn-lg">
                     Jetzt persönlich beraten lassen
                 </a>
             </div>
@@ -352,10 +352,10 @@ const bibleProgressData = {
 document.addEventListener('DOMContentLoaded', function() {
     // CSS-Farben lesen
     const rootStyles = getComputedStyle(document.documentElement);
-    const colorGreen = rootStyles.getPropertyValue('--color-green').trim();
-    const colorNguRed = rootStyles.getPropertyValue('--color-ngu-red').trim();
-    const colorOrange = rootStyles.getPropertyValue('--color-orange').trim();
-    const colorBlue = rootStyles.getPropertyValue('--color-blue').trim();
+    const colorSuccess = rootStyles.getPropertyValue('--color-success').trim();
+    const colorPrimary = rootStyles.getPropertyValue('--color-primary').trim();
+    const colorAccent = rootStyles.getPropertyValue('--color-accent').trim();
+    const colorInfo = rootStyles.getPropertyValue('--color-info').trim();
     
     // Gesamtfortschritt-Kreisdiagramm
     const gesamtfortschrittCtx = document.getElementById('gesamtfortschrittChart');
@@ -369,8 +369,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 data: [bibleProgressData.translatedPercentage, bibleProgressData.remainingPercentage],
                 backgroundColor: [
-                    colorGreen,   // Green for translated
-                    colorNguRed   // NGÜ-Red for remaining
+                    colorSuccess,   // Green for translated
+                    colorPrimary   // NGÜ-Red for remaining
                 ],
                 borderWidth: 2,
                 borderColor: '#ffffff',
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
-                    borderColor: colorNguRed,
+                    borderColor: colorPrimary,
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {
@@ -421,10 +421,10 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 data: [45, 35, 10, 10],
                 backgroundColor: [
-                    colorGreen,   // Green for Erstübersetzung
-                    colorNguRed,  // NGÜ-Primary Red for Revision
-                    colorBlue,    // Blue for Supervision
-                    colorOrange   // Orange for Qualitätssicherung
+                    colorSuccess,   // Green for Erstübersetzung
+                    colorPrimary,  // NGÜ-Primary Red for Revision
+                    colorInfo,    // Blue for Supervision
+                    colorAccent   // Orange for Qualitätssicherung
                 ],
                 borderWidth: 2,
                 borderColor: '#ffffff',
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
-                    borderColor: colorNguRed,
+                    borderColor: colorPrimary,
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {

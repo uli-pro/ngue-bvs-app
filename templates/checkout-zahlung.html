@@ -379,16 +379,16 @@
 }
 
 #sepa-option-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+    background: linear-gradient(135deg, #ffffff 0%, var(--color-success-tint) 100%);
 }
 
 #sepa-option-card:hover {
-    border-color: #28a745 !important;
-    box-shadow: 0 0.5rem 1rem rgba(40, 167, 69, 0.25);
+    border-color: var(--color-success) !important;
+    box-shadow: 0 0.5rem 1rem var(--color-success-shadow);
 }
 
 #card-option-card:hover {
-    border-color: #6c757d !important;
+    border-color: var(--color-neutral) !important;
 }
 
 .payment-icons {
@@ -416,21 +416,21 @@
 }
 
 .StripeElement:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: var(--color-info);
+    box-shadow: 0 0 0 0.2rem var(--color-info-shadow);
 }
 
 .StripeElement--invalid {
-    border-color: #dc3545;
+    border-color: var(--color-primary);
 }
 
 .StripeElement--complete {
-    border-color: #28a745;
+    border-color: var(--color-success);
 }
 
 /* SEPA specific styling */
 .p-TabsPaymentElement-tab--selected {
-    background-color: #007bff !important;
+    background-color: var(--color-info) !important;
 }
 
 /* Responsive adjustments */
