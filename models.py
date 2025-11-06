@@ -607,9 +607,15 @@ class PaymentTransaction(db.Model):
     
     def update_stripe_data(self, payment_intent):
         """Update transaction with Stripe PaymentIntent data"""
-        self.stripe_payment_intent_id = payment_intent.id
-        self.stripe_status = payment_intent.status
-        self.provider_transaction_id = payment_intent.id
+        # Handle both Stripe objects and webhook dictionaries
+        if isinstance(payment_intent, dict):
+            self.stripe_payment_intent_id = payment_intent.get('id')
+            self.stripe_status = payment_intent.get('status')
+            self.provider_transaction_id = payment_intent.get('id')
+        else:
+            self.stripe_payment_intent_id = payment_intent.id
+            self.stripe_status = payment_intent.status
+            self.provider_transaction_id = payment_intent.id
     
     def mark_failed(self, error_message=None):
         """Mark payment transaction as failed"""
