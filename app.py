@@ -48,6 +48,7 @@ from models import db, Person, Verse, Donation, VerseReservation, Certificate, M
 from sqlalchemy import text
 from stripe_service import StripeService, StripeError
 from pdf_service import PDFGeneratorService, PDFGenerationError
+from hubspot_service import HubSpotService
 import stripe
 db.init_app(app)
 
@@ -1377,6 +1378,17 @@ def checkout_erfolg():
                     if donation:
                         donation.mark_completed()
                         app.logger.info(f"Successfully marked donation {donation_id} as completed from success page")
+
+                        # Sync to HubSpot after successful completion
+                        try:
+                            sync_result = HubSpotService.sync_donation(donation)
+                            if sync_result['success']:
+                                app.logger.info(f"HubSpot sync successful for donation {donation_id}: Contact {sync_result.get('contact_id')}, Deal {sync_result.get('deal_id')}")
+                            else:
+                                app.logger.warning(f"HubSpot sync failed for donation {donation_id}: {sync_result.get('error')}")
+                        except Exception as e:
+                            # Log error but don't fail the payment success page
+                            app.logger.error(f"HubSpot sync error for donation {donation_id}: {str(e)}")
                     else:
                         app.logger.error(f"Donation {donation_id} not found for PaymentIntent {payment_intent_id}")
                 else:
