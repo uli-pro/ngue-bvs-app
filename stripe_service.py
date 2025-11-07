@@ -93,9 +93,16 @@ class StripeService:
                 # Metadata for webhook processing
                 metadata=metadata
             )
-            
+
             logger.info(f"PaymentIntent created: {payment_intent.id} for amount: €{total_amount/100:.2f}")
-            
+
+            # Store Payment Intent ID immediately in database
+            if donations[0].payment:
+                donations[0].payment.stripe_payment_intent_id = payment_intent.id
+                donations[0].payment.provider_transaction_id = payment_intent.id
+                db.session.commit()
+                logger.info(f"Stored Payment Intent ID for donation {donations[0].id}")
+
             return {
                 'client_secret': payment_intent.client_secret,
                 'payment_intent_id': payment_intent.id,
