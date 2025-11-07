@@ -1235,21 +1235,35 @@ def create_payment_intent():
             preferred_payment_methods = ['card']
         # If no payment_type specified, StripeService will use default ['sepa_debit', 'card']
 
-        # Create PaymentIntent with person object directly
+        # Get existing payment intent and donation from session (if any)
+        existing_payment_intent_id = session.get('payment_intent_id')
+        existing_donation_id = session.get('current_donation_id')
+
+        # Create or update PaymentIntent with person object directly
         payment_data = StripeService.create_payment_intent(
             cart_items,
             person=person,
-            preferred_payment_methods=preferred_payment_methods
+            preferred_payment_methods=preferred_payment_methods,
+            existing_donation_id=existing_donation_id,
+            existing_payment_intent_id=existing_payment_intent_id
         )
 
-        # Store PaymentIntent ID in session for later verification
+        # Store PaymentIntent ID and Donation ID in session for later verification
         session['payment_intent_id'] = payment_data['payment_intent_id']
+        session['current_donation_id'] = payment_data['donation_id']
         session.modified = True
-        
+
+        # Log whether we reused or created new
+        if payment_data.get('reused'):
+            app.logger.info(f"Reused existing PaymentIntent {payment_data['payment_intent_id']} and donation {payment_data['donation_id']}")
+        else:
+            app.logger.info(f"Created new PaymentIntent {payment_data['payment_intent_id']} and donation {payment_data['donation_id']}")
+
         return jsonify({
             'success': True,
             'client_secret': payment_data['client_secret'],
-            'amount': payment_data['amount']
+            'amount': payment_data['amount'],
+            'reused': payment_data.get('reused', False)
         })
         
     except StripeError as e:
@@ -1375,10 +1389,12 @@ def checkout_erfolg():
         except Exception as e:
             app.logger.error(f"Error processing donation completion on success page: {e}")
     
-    # Clear cart after successful payment (will be cleared by webhook anyway)
+    # Clear cart and checkout data after successful payment (will be cleared by webhook anyway)
     session.pop('cart', None)
     session.pop('shared_donor_data', None)
     session.pop('payment_intent_id', None)
+    session.pop('current_donation_id', None)  # Clear current donation ID
+    session.pop('checkout_person_id', None)  # Clear checkout person ID
     session.modified = True
     
     # Prepare template context with PDF generation

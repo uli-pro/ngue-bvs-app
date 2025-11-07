@@ -32,44 +32,104 @@ class StripeService:
     """Service class for Stripe payment operations"""
     
     @staticmethod
-    def create_payment_intent(cart_items, person, preferred_payment_methods=None):
+    def create_payment_intent(cart_items, person, preferred_payment_methods=None, existing_donation_id=None, existing_payment_intent_id=None):
         """
-        Create Stripe PaymentIntent with SEPA preference and 3D Secure support
-        
+        Create or update Stripe PaymentIntent with SEPA preference and 3D Secure support
+
         Args:
             cart_items: List of cart items with verse and donation data
             person: Person object with donor information
             preferred_payment_methods: List of preferred payment methods
-            
+            existing_donation_id: Optional existing donation ID to reuse
+            existing_payment_intent_id: Optional existing payment intent ID to update
+
         Returns:
             dict: PaymentIntent data and related information
         """
         try:
-            # First, create donation records
-            donations = StripeService.create_donations_from_cart(cart_items, person.id)
-            
-            if not donations:
-                raise StripeError("No valid donations could be created")
-            
-            # Calculate total amount from the consolidated donation
-            total_amount = int(donations[0].total_amount * 100)  # Convert to cents for Stripe
-            
-            if total_amount <= 0:
-                raise StripeError("Invalid donation amount")
-            
             # Default payment methods with SEPA first
             if not preferred_payment_methods:
                 preferred_payment_methods = ['sepa_debit', 'card']
-            
+
+            # Check if we should reuse existing donation and payment intent
+            if existing_donation_id and existing_payment_intent_id:
+                donation = Donation.query.get(existing_donation_id)
+
+                # Only reuse if donation is still pending (not completed/failed)
+                if donation and donation.payment_status == 'pending':
+                    try:
+                        # Try to retrieve existing PaymentIntent
+                        payment_intent = stripe.PaymentIntent.retrieve(existing_payment_intent_id)
+
+                        # Only update if PaymentIntent is not already succeeded/processing
+                        if payment_intent.status in ['requires_payment_method', 'requires_confirmation', 'requires_action']:
+                            logger.info(f"Reusing existing PaymentIntent {existing_payment_intent_id} and donation {existing_donation_id}")
+
+                            # Update payment methods if changed
+                            if set(payment_intent.payment_method_types) != set(preferred_payment_methods):
+                                payment_intent = stripe.PaymentIntent.modify(
+                                    existing_payment_intent_id,
+                                    payment_method_types=preferred_payment_methods
+                                )
+                                logger.info(f"Updated PaymentIntent {existing_payment_intent_id} payment methods to {preferred_payment_methods}")
+
+                            return {
+                                'client_secret': payment_intent.client_secret,
+                                'payment_intent_id': payment_intent.id,
+                                'amount': payment_intent.amount,
+                                'currency': 'eur',
+                                'metadata': payment_intent.metadata,
+                                'donation_id': donation.id,
+                                'reused': True
+                            }
+                    except stripe.error.InvalidRequestError:
+                        # PaymentIntent no longer valid, create new one
+                        logger.warning(f"Could not retrieve PaymentIntent {existing_payment_intent_id}, creating new one")
+                        pass
+
+            # If we had an existing payment intent but couldn't reuse it, cancel the old one
+            if existing_payment_intent_id:
+                try:
+                    old_payment_intent = stripe.PaymentIntent.retrieve(existing_payment_intent_id)
+                    # Cancel if it's still cancelable (not already succeeded/canceled)
+                    if old_payment_intent.status in ['requires_payment_method', 'requires_confirmation', 'requires_action']:
+                        stripe.PaymentIntent.cancel(existing_payment_intent_id)
+                        logger.info(f"Canceled superseded PaymentIntent {existing_payment_intent_id}")
+
+                        # Also mark the old donation as canceled if it exists
+                        if existing_donation_id:
+                            old_donation = Donation.query.get(existing_donation_id)
+                            if old_donation and old_donation.payment_status == 'pending':
+                                old_donation.mark_failed("Superseded by new payment attempt")
+                                db.session.commit()
+                                logger.info(f"Marked superseded donation {existing_donation_id} as failed")
+                except stripe.error.InvalidRequestError:
+                    # PaymentIntent already gone, that's fine
+                    pass
+                except Exception as e:
+                    logger.warning(f"Could not cancel old PaymentIntent {existing_payment_intent_id}: {e}")
+
+            # Create new donation if needed
+            donations = StripeService.create_donations_from_cart(cart_items, person.id)
+
+            if not donations:
+                raise StripeError("No valid donations could be created")
+
+            # Calculate total amount from the consolidated donation
+            total_amount = int(donations[0].total_amount * 100)  # Convert to cents for Stripe
+
+            if total_amount <= 0:
+                raise StripeError("Invalid donation amount")
+
             # Prepare billing details using Person object
             billing_details = StripeService._prepare_billing_details_from_person(person)
-            
+
             # Simplified metadata for single donation
             metadata = {
                 'donation_id': str(donations[0].id),
                 'verse_count': str(donations[0].verse_count)
             }
-            
+
             # Create PaymentIntent
             payment_intent = stripe.PaymentIntent.create(
                 amount=total_amount,
@@ -108,9 +168,11 @@ class StripeService:
                 'payment_intent_id': payment_intent.id,
                 'amount': total_amount,
                 'currency': 'eur',
-                'metadata': metadata
+                'metadata': metadata,
+                'donation_id': donations[0].id,
+                'reused': False
             }
-            
+
         except stripe.error.StripeError as e:
             logger.error(f"Stripe error creating PaymentIntent: {e}")
             raise StripeError(f"Payment initialization failed: {e.user_message or str(e)}")
