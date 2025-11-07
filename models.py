@@ -541,9 +541,9 @@ class Donation(db.Model):
         from decimal import Decimal
         dv = DonationVerse(donation=self, verse=verse, amount=Decimal(str(amount)))
         self.verse_associations.append(dv)
-        self.verse_count = len(self.verse_associations)
+        # Note: verse_count is set during donation creation and should not be recalculated here
+        # to avoid double-counting issues
         # Don't recalculate total_amount here - it's already set correctly in stripe_service.py
-        # Removing: self.total_amount = sum(Decimal(str(va.amount)) for va in self.verse_associations)
         return dv
         
     def get_verses_sorted(self):
