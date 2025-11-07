@@ -23,6 +23,9 @@ Werkzeug==3.0.1
 # Payment processing
 stripe==12.4.0
 
+# CRM Integration
+hubspot-api-client==12.0.0
+
 # PDF generation
 WeasyPrint==62.3
 reportlab==4.0.7
