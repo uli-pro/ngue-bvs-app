@@ -193,6 +193,10 @@ app-deployment/traefik/letsencrypt/acme.json
 !models.py
 !pdf_service.py
 !stripe_service.py
+!hubspot_service.py
+!email_service.py
+!admin.py
+!book_names.py
 !setup_db_v2.py
 !vectorize_v2.py
 !generate_pdfs_direct.py
