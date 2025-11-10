@@ -1,206 +1,135 @@
 # =============================================================================
-# .dockerignore for NGÜ Bibelvers-Sponsoring App
-# Excludes files that shouldn't be copied into Docker containers
+# .dockerignore for NGÜ BVS App
+# =============================================================================
+# This file prevents unnecessary files from being copied into Docker images,
+# reducing build time and image size.
 # =============================================================================
 
-# Development and documentation files
+# -----------------------------------------------------------------------------
+# Development & Documentation
+# -----------------------------------------------------------------------------
 do_not_deploy/
-docs/
-archive/
-tests/
-todos/
-prompts/
-backups/
-db-backups/
+README.md
+CLAUDE.md
+*.md
+!app-deployment/README.md
 
-# Git files and version control
+# -----------------------------------------------------------------------------
+# Version Control
+# -----------------------------------------------------------------------------
 .git/
 .gitignore
 .gitattributes
-*.git*
 
-# Python artifacts
+# -----------------------------------------------------------------------------
+# Python Development
+# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
+*.pyc
 venv/
-ENV/
 env/
 .venv/
-.ENV/
-.env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+*.egg
 
-# Local environment and configuration files
-.env.local
-.env.development
-.env.test
-*.local
-config.local.*
-secrets.json
-
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.project
-.settings/
-*.sublime-*
-.atom/
-
-# Operating system files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-Desktop.ini
-
-# Logs and temporary files
-*.log
-logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.tmp
-*.temp
-temp/
-tmp/
-
-# Node.js (if any frontend build tools)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-.npm
-.yarn-integrity
-
-# Flask session files
-flask_session/
-instance/
-.webassets-cache
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Database files (should use external DB in production)
-*.db
-*.sqlite
-*.sqlite3
-
-# Backup files
-*.bak
-*.backup
-*.old
-*~
-
-# Certificate files (should be managed externally)
+# -----------------------------------------------------------------------------
+# Environment & Secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
 *.pem
 *.key
 *.crt
 *.cert
 
-# Large files that shouldn't be in container
-*.iso
-*.tar
-*.tar.gz
-*.zip
-*.rar
-
-# README and documentation files
-README*.md
-*.md
-!app-deployment/README.md
-
-# Workspace files
-*.code-workspace
+# -----------------------------------------------------------------------------
+# IDE & Editor Files
+# -----------------------------------------------------------------------------
 .vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
 
-# Test coverage reports
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+# -----------------------------------------------------------------------------
+# OS Files
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
 
-# Translations (if any)
-*.mo
-*.pot
+# -----------------------------------------------------------------------------
+# Runtime & Generated Files
+# -----------------------------------------------------------------------------
+flask_session/
+logs/
+*.log
+uploads/
+certificates/*.pdf
+certificates/*.png
 
-# Scrapy (if used)
-.scrapy
+# -----------------------------------------------------------------------------
+# Database Files
+# -----------------------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+*.sql.gz
+*.dump
 
-# Sphinx documentation (if any)
-docs/_build/
+# -----------------------------------------------------------------------------
+# Backup Files
+# -----------------------------------------------------------------------------
+*.backup
+*.bak
+*.old
+backups/
+db-backups/
 
-# PyBuilder
-target/
+# -----------------------------------------------------------------------------
+# Docker-specific Files (shouldn't be in build context)
+# -----------------------------------------------------------------------------
+Dockerfile
+docker-compose*.yml
+.dockerignore
+app-deployment/postgres-data/
+app-deployment/certbot/
+app-deployment/logs/
+app-deployment/.env
+app-deployment/nginx/ssl/
 
-# Celery (if used)
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath (if used)
-*.sage.py
-
-# Spyder project settings (if used)
-.spyderproject
-.spyproject
-
-# Rope project settings (if used)
-.ropeproject
-
-# mkdocs documentation (if any)
-/site
-
-# mypy (if used)
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# letsencrypt
-app-deployment/traefik/letsencrypt/
-app-deployment/traefik/letsencrypt/acme.json
-
-# Keep important files that ARE needed in container
-!requirements.txt
-!app-deployment/requirements.txt
+# -----------------------------------------------------------------------------
+# IMPORTANT: Files needed in container
+# -----------------------------------------------------------------------------
+# ⚠️ ACHTUNG: Neue Python-Dateien müssen hier explizit hinzugefügt werden!
+# Wenn du eine neue .py Datei erstellst, füge sie unten mit !dateiname.py hinzu
+# -----------------------------------------------------------------------------
+# Python application files
 !app.py
 !models.py
-!pdf_service.py
 !stripe_service.py
-!hubspot_service.py
+!pdf_service.py
 !email_service.py
-!admin.py
+!hubspot_service.py
+!certificate_manager.py
 !book_names.py
-!setup_db_v2.py
-!vectorize_v2.py
-!generate_pdfs_direct.py
-!static/
-!templates/
-!data/
-!app-deployment/
+!vectorize.py
+!setup_db.py
+!requirements.txt
+
+# Static and template files
+!static/**
+!templates/**
+
+# Data files
+!verses.json
+
+# Routes (if exists)
+!routes/**

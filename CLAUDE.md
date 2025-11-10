@@ -92,6 +92,12 @@ ngue-bvs-app/
 
 ## Development Guidelines
 
+### **⚠️ Docker Build - WICHTIGER HINWEIS**
+**Die `.dockerignore` nutzt eine Whitelist für Python-Dateien!**
+- Neue `.py` Dateien müssen explizit in `.dockerignore` (Zeile ~115-122) hinzugefügt werden
+- Format: `!neue_datei.py` in der Whitelist-Sektion
+- Ohne diesen Eintrag werden neue Python-Dateien NICHT ins Docker-Image kopiert
+
 ### **Working with the Codebase**
 - **Ignore `/archive`**: Contains outdated files from previous iterations
 - **Focus on root level**: Main application files are in project root

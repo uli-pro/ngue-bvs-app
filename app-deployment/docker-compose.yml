@@ -1,171 +1,199 @@
-version: '3.8'
+# =============================================================================
+# NGÜ BVS App - Docker Compose Production Configuration
+# =============================================================================
+# 3-Container Setup: PostgreSQL + Flask App + Nginx
+# Nginx handles SSL termination, static files, and reverse proxy
+# =============================================================================
 
 services:
-  # Traefik Reverse Proxy
-  traefik:
-    image: traefik:v3.0
-    container_name: traefik-ngue
-    restart: unless-stopped
-    command:
-      - --api.dashboard=true
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=ngue-network
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
-      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
-      - --log.level=INFO
-      - --accesslog=true
-    environment:
-      - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
-    ports:
-      - "8090:80"
-      - "8091:443"
-      - "8081:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/letsencrypt:/letsencrypt
-      - ./traefik:/etc/traefik:ro
-    networks:
-      - ngue-network
-    healthcheck:
-      test: ["CMD", "traefik", "healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # PostgreSQL mit pgvector
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database with pgvector
+  # ---------------------------------------------------------------------------
   postgres:
-    image: pgvector/pgvector:pg15
+    image: pgvector/pgvector:pg16
     container_name: ngue-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      POSTGRES_DB: ${POSTGRES_DB:-ngue_db}
+      POSTGRES_USER: ${POSTGRES_USER:-ngueapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+      # German locale for proper text search
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=de_DE.UTF-8"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
+      # Named volume for data persistence
+      - postgres-data:/var/lib/postgresql/data
+      # Custom PostgreSQL configuration if needed
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     networks:
       - ngue-network
+    ports:
+      # Only expose for debugging, remove in production
+      - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ngueapp} -d ${POSTGRES_DB:-ngue_db}"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 60s
-    expose:
-      - "5432"
+      start_period: 30s
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
 
-  # NGÜ Flask Application
-  ngue-app:
+  # ---------------------------------------------------------------------------
+  # Flask Application
+  # ---------------------------------------------------------------------------
+  app:
     build:
       context: ..
       dockerfile: app-deployment/Dockerfile
-      target: production
-    container_name: ngue-flask-app
+    container_name: ngue-app
     restart: unless-stopped
-    environment:
-      # Docker flag
-      - DOCKER_DEPLOYMENT=1
-      
-      # Flask
-      - FLASK_ENV=production
-      - FLASK_APP=app.py
-      - SECRET_KEY=${SECRET_KEY}
-      
-      # Database
-      - SQLALCHEMY_DATABASE_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      
-      # Stripe
-      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      
-      # OpenAI
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      
-      # Email
-      - EMAIL_PROVIDER=${EMAIL_PROVIDER}
-      - MAILGUN_API_KEY=${MAILGUN_API_KEY}
-      - MAILGUN_DOMAIN=${MAILGUN_DOMAIN}
-      - MAILGUN_FROM_EMAIL=${MAILGUN_FROM_EMAIL}
-      - GMAIL_USERNAME=${GMAIL_USERNAME}
-      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
-      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
-      - EMAIL_REPLY_TO=${EMAIL_REPLY_TO}
-      
-      # Admin
-      - ADMIN_EMAILS=${ADMIN_EMAILS}
-      
-      # App Config
-      - DOMAIN_NAME=${DOMAIN_NAME}
-      - VERSES_PER_PAGE=20
-      - DONATION_AMOUNT=100
-      - CURRENCY=EUR
-    volumes:
-      - ../certificates:/app/certificates
-      - ../flask_session:/app/flask_session
-      - ./logs:/app/logs
-    networks:
-      - ngue-network
     depends_on:
       postgres:
         condition: service_healthy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ngue-http.rule=Host(`${DOMAIN_NAME}`)"
-      - "traefik.http.routers.ngue-http.entrypoints=web"
-      - "traefik.http.routers.ngue-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
-      - "traefik.http.routers.ngue-https.rule=Host(`${DOMAIN_NAME}`)"
-      - "traefik.http.routers.ngue-https.entrypoints=websecure"
-      - "traefik.http.routers.ngue-https.tls=true"
-      - "traefik.http.routers.ngue-https.tls.certresolver=letsencrypt"
-      - "traefik.http.services.ngue-service.loadbalancer.server.port=5000"
-      - "traefik.http.services.ngue-service.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.services.ngue-service.loadbalancer.healthcheck.interval=30s"
+    environment:
+      # Flask Configuration
+      FLASK_ENV: production
+      SECRET_KEY: ${SECRET_KEY:?Secret key required}
+
+      # Database
+      SQLALCHEMY_DATABASE_URI: postgresql://${POSTGRES_USER:-ngueapp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ngue_db}
+
+      # Stripe Configuration
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY:?Stripe public key required}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?Stripe secret key required}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?Stripe webhook secret required}
+
+      # OpenAI for Semantic Search
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+      # Email Configuration - IONOS SMTP
+      EMAIL_PROVIDER: smtp
+      SMTP_SERVER: ${SMTP_SERVER:-smtp.ionos.de}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-info@ngue-bvs.schoeffer.org}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP password required}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      EMAIL_FROM: ${EMAIL_FROM:-info@ngue-bvs.schoeffer.org}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-NGÜ Bibelvers-Sponsoring}
+
+      # HubSpot CRM (Optional)
+      HUBSPOT_ACCESS_TOKEN: ${HUBSPOT_ACCESS_TOKEN:-}
+
+      # Application Configuration
+      DOMAIN_NAME: ${DOMAIN_NAME:-ngue-bvs.schoeffer.org}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    volumes:
+      # Session storage (persistent)
+      - flask-session:/app/flask_session
+      # Application logs
+      - ./logs:/app/logs
+      # Generated certificates (if local generation)
+      - ./certificates:/app/certificates
+    networks:
+      - ngue-network
+    # No port exposure - nginx handles external access
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
 
-  # Nginx für statische Dateien
+  # ---------------------------------------------------------------------------
+  # Nginx - Reverse Proxy, SSL, Static Files
+  # ---------------------------------------------------------------------------
   nginx:
     image: nginx:alpine
     container_name: ngue-nginx
     restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Nginx configuration
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # Static files served directly by nginx
       - ../static:/usr/share/nginx/html/static:ro
+      # SSL certificates from certbot
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      # Nginx cache directory
+      - nginx-cache:/var/cache/nginx
     networks:
       - ngue-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ngue-static.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/static/`)"
-      - "traefik.http.routers.ngue-static.entrypoints=websecure"
-      - "traefik.http.routers.ngue-static.tls=true"
-      - "traefik.http.routers.ngue-static.tls.certresolver=letsencrypt"
-      - "traefik.http.services.ngue-static.loadbalancer.server.port=80"
+    # Reload nginx configuration every 6 hours for cert renewal
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    expose:
-      - "80"
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
 
-volumes:
-  postgres_data:
-    driver: local
+  # ---------------------------------------------------------------------------
+  # Certbot - SSL Certificate Management
+  # ---------------------------------------------------------------------------
+  certbot:
+    image: certbot/certbot:latest
+    container_name: ngue-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    networks:
+      - ngue-network
+    # Check for renewal twice daily
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done'"
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
 
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
 networks:
   ngue-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
+volumes:
+  # PostgreSQL data - critical, needs backup
+  postgres-data:
+    driver: local
+
+  # Flask sessions - can be recreated
+  flask-session:
+    driver: local
+
+  # Nginx cache - temporary
+  nginx-cache:
+    driver: local

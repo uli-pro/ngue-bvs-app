@@ -1,157 +1,106 @@
-# Python
+# =============================================================================
+# NGÜ BVS App - Git Ignore File
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Python & Flask Runtime
+# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+*.pyc
 .Python
 venv/
 env/
-ENV/
 .venv
-
-# Flask
-instance/
-.webassets-cache
 flask_session/
+instance/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+*.egg
 
-# Database
+# -----------------------------------------------------------------------------
+# Environment Variables & Secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.cert
+
+# -----------------------------------------------------------------------------
+# Database Files
+# -----------------------------------------------------------------------------
 *.db
 *.sqlite
 *.sqlite3
 *.sql
+*.sql.gz
+*.dump
+*.backup
+*.bak
 
-# Environment variables
-.env
-.env.local
-.env.*.local
+# -----------------------------------------------------------------------------
+# Docker & Deployment
+# -----------------------------------------------------------------------------
+# Docker runtime directories
+app-deployment/postgres-data/
+app-deployment/certbot/
+app-deployment/logs/
+app-deployment/.env
+!app-deployment/.env.example
 
-# IDE
+# Docker build cache
+app-deployment/nginx/ssl/
+
+# -----------------------------------------------------------------------------
+# IDE & OS Files
+# -----------------------------------------------------------------------------
+# VS Code
 .vscode/
+*.code-workspace
+
+# IntelliJ/PyCharm
 .idea/
+
+# Vim
 *.swp
 *.swo
 *~
+
+# macOS
 .DS_Store
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.hypothesis/
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Logs
-*.log
-logs/
-
-# Secret keys
-secrets/
-*.pem
-*.key
-
-# Uploaded files (if any)
-uploads/
-media/
-
-# Temporary files
-tmp/
-temp/
-
-# Bible data files
-/data/schlachter-1951/
-/data/search-data/
-/data/vectors/
-
-# Keep directory structure
-!/data/
-!/data/vectors/.gitkeep
-
-# Certificates
-certificates/
-
-# =============================================================================
-# NGÜ App Deployment Exclusions
-# =============================================================================
-
-# Complete directory exclusions - non-production files
-do_not_deploy/            # All non-production files (docs, tests, archive, etc.)
-/do_not_deploy/           # Alternative syntax (leading slash)
-do_not_deploy             # Without trailing slash
-/db-backups/             # Database backup files  
-/backups/                # General backup files
-
-# App-deployment specific files that should not be in Git
-/app-deployment/.env              # Environment variables
-/app-deployment/.env.*            # All environment variations (.env.local, .env.prod, etc.)
-/app-deployment/secrets/          # Secret files and keys
-/app-deployment/backups/          # Deployment-specific backups
-/app-deployment/logs/             # Application logs
-/app-deployment/traefik/letsencrypt/  # SSL certificates from Let's Encrypt
-
-# Additional SQL and database exclusions
-*.sql.gz                  # Compressed SQL files
-*.dump                    # Database dump files
-*backup*.sql              # Any backup SQL files
-
-# Workspace and IDE files
-*.code-workspace          # VS Code workspace files
-ngue-bvs-app.code-workspace  # Specific workspace file
-
-# Additional certificates and keys  
-*.crt                     # Certificate files
-*.cert                    # Certificate files
-
-# Backup files
-*.backup                  # All backup files (.backup extension)
-*.bak                     # Alternative backup extension
-*.old                     # Old file backups
-
-# Runtime directories
-certificates/
-flask_session/
-uploads/
-logs/
-
-# Python
-*.pyc
-__pycache__/
-.pytest_cache/
-.coverage
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
+# Windows
 Thumbs.db
 
-# Backup files
-*.backup
-*.bak
-*.old
+# -----------------------------------------------------------------------------
+# Logs & Temporary Files
+# -----------------------------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+uploads/
 
-# Directory exclusions (must be at end to work properly)
+# -----------------------------------------------------------------------------
+# Project Specific
+# -----------------------------------------------------------------------------
+# Non-deployment files
 do_not_deploy/
-/do_not_deploy/
-do_not_deploy
+
+# Runtime generated certificates
+certificates/*.pdf
+certificates/*.png
+!certificates/.gitkeep
+
+# Backup directories
+backups/
+db-backups/
+
+# Old/archived files
+*.old
