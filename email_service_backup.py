@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
-# NGÜ BVS App - SMTP Email Service with Automatic Fallback
-# Versucht primär IONOS, fällt automatisch auf Gmail zurück
+# This file was developed with assistance from Claude Code (Anthropic)
+# for implementation, debugging, and code optimization.
+# Core design decisions and project architecture are original work.
+# All code is understood and can be explained by the author.
 
 """
 E-Mail Service für NGÜ Bibelvers-Sponsoring App
-Intelligentes Fallback-System: IONOS → Gmail
+Unterstützt Gmail (SMTP) und Mailgun (REST API) Provider
 """
 
 import os
 import secrets
 import smtplib
 import ssl
-from datetime import datetime
+import requests
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-from email.utils import formatdate, make_msgid
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any, Union
+from abc import ABC, abstractmethod
 from flask import current_app, render_template
+from flask_mail import Mail, Message
 import logging
 
 # Custom Exceptions
@@ -25,199 +29,218 @@ class EmailServiceError(Exception):
     """Base exception for email service errors"""
     pass
 
-class EmailConfigurationError(EmailServiceError):
-    """Configuration error"""
+class EmailProviderError(EmailServiceError):
+    """Provider-specific error"""
     pass
 
 class EmailTemplateError(EmailServiceError):
     """Template rendering error"""
     pass
 
-# SMTP Provider Implementation
-class SMTPProvider:
-    """SMTP Provider with automatic IONOS/Gmail fallback"""
+class EmailConfigurationError(EmailServiceError):
+    """Configuration error"""
+    pass
 
+# Abstract Base Provider
+class BaseEmailProvider(ABC):
+    """Abstract base class for email providers"""
+    
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+    
+    @abstractmethod
+    def send_email(self, to_email: str, subject: str, html_body: str, 
+                   text_body: str, attachments: List[Dict] = None) -> bool:
+        """Send email with optional attachments"""
+        pass
+    
+    @abstractmethod
+    def test_connection(self) -> bool:
+        """Test provider connection"""
+        pass
 
-        # Store both configurations
-        self.configs = []
-
-        # Priority 1: IONOS Configuration (if configured)
-        if os.environ.get('SMTP_PASSWORD'):
-            ionos_config = {
-                'name': 'IONOS',
-                'smtp_server': os.environ.get('SMTP_SERVER', 'smtp.ionos.de'),
-                'smtp_port': int(os.environ.get('SMTP_PORT', 587)),
-                'smtp_username': os.environ.get('SMTP_USERNAME', 'info@ngue-bvs.schoeffer.org'),
-                'smtp_password': os.environ.get('SMTP_PASSWORD'),
-                'smtp_use_tls': os.environ.get('SMTP_USE_TLS', 'true').lower() == 'true',
-                'from_email': os.environ.get('EMAIL_FROM', 'info@ngue-bvs.schoeffer.org'),
-                'from_name': os.environ.get('EMAIL_FROM_NAME', 'NGÜ Bibelvers-Sponsoring')
-            }
-            self.configs.append(ionos_config)
-            self.logger.info("IONOS configuration loaded (primary)")
-
-        # Priority 2: Gmail Configuration (fallback)
-        if os.environ.get('GMAIL_APP_PASSWORD'):
-            gmail_config = {
-                'name': 'Gmail',
-                'smtp_server': 'smtp.gmail.com',
-                'smtp_port': 587,
-                'smtp_username': os.environ.get('GMAIL_USERNAME', 'ngueteam@gmail.com'),
-                'smtp_password': os.environ.get('GMAIL_APP_PASSWORD'),
-                'smtp_use_tls': True,
-                'from_email': os.environ.get('GMAIL_USERNAME', 'ngueteam@gmail.com'),
-                'from_name': 'NGÜ Bibelvers-Sponsoring'
-            }
-            self.configs.append(gmail_config)
-            self.logger.info("Gmail configuration loaded (fallback)")
-
-        # Check if we should prefer Gmail (for local development)
-        if os.environ.get('USE_GMAIL_FALLBACK', 'false').lower() == 'true':
-            # Reverse order to prefer Gmail
-            self.configs.reverse()
-            self.logger.info("Gmail set as preferred provider for local development")
-
-        if not self.configs:
-            raise EmailConfigurationError("No email provider configured! Set either SMTP_PASSWORD or GMAIL_APP_PASSWORD")
-
-        # Set active configuration to the first one
-        self.active_config = self.configs[0]
-        self.logger.info(f"Active email provider: {self.active_config['name']}")
-
-    def _send_with_config(self, config: Dict, to_email: str, subject: str,
-                         html_body: str, text_body: str, attachments: List[Dict] = None) -> Tuple[bool, Optional[str]]:
-        """Try to send email with specific configuration"""
+# Gmail Provider Implementation
+class GmailProvider(BaseEmailProvider):
+    """Gmail SMTP Provider using Flask-Mail"""
+    
+    def __init__(self, mail_instance: Mail):
+        super().__init__()
+        self.mail = mail_instance
+        self.from_email = os.environ.get('GMAIL_USERNAME')
+        self.from_name = os.environ.get('EMAIL_FROM_NAME', 'NGÜ Sponsoring')
+    
+    def send_email(self, to_email: str, subject: str, html_body: str, 
+                   text_body: str, attachments: List[Dict] = None) -> bool:
+        """Send email via Gmail SMTP"""
         try:
-            # Create message with full RFC-compliant headers
-            msg = MIMEMultipart('alternative')
-
-            # Required headers
-            msg['From'] = f"{config['from_name']} <{config['from_email']}>"
-            msg['To'] = to_email
-            msg['Subject'] = subject
-            msg['Date'] = formatdate(localtime=True)
-
-            # Additional RFC-compliant headers
-            domain = config['from_email'].split('@')[1]
-            msg['Message-ID'] = make_msgid(domain=domain)
-            msg['MIME-Version'] = '1.0'
-            msg['X-Mailer'] = 'NGÜ BVS App/1.0'
-            msg['Reply-To'] = config['from_email']
-            msg['Return-Path'] = config['from_email']
-
-            # Prevent auto-replies
-            msg['X-Auto-Response-Suppress'] = 'All'
-            msg['Auto-Submitted'] = 'auto-generated'
-
-            # Add text and HTML parts
-            text_part = MIMEText(text_body, 'plain', 'utf-8')
-            html_part = MIMEText(html_body, 'html', 'utf-8')
-            msg.attach(text_part)
-            msg.attach(html_part)
-
+            msg = Message(
+                subject=subject,
+                sender=(self.from_name, self.from_email),
+                recipients=[to_email]
+            )
+            
+            msg.body = text_body
+            msg.html = html_body
+            
             # Add attachments if provided
             if attachments:
                 for attachment in attachments:
                     with open(attachment['path'], 'rb') as f:
-                        part = MIMEApplication(f.read(), Name=attachment['filename'])
-                        part['Content-Disposition'] = f'attachment; filename="{attachment["filename"]}"'
-                        msg.attach(part)
-
-            # Send email
-            context = ssl.create_default_context()
-
-            with smtplib.SMTP(config['smtp_server'], config['smtp_port'], timeout=30) as server:
-                if config['smtp_use_tls']:
-                    server.starttls(context=context)
-                server.login(config['smtp_username'], config['smtp_password'])
-                server.send_message(msg)
-
-            self.logger.info(f"Email sent successfully via {config['name']} to {to_email}")
-            return True, None
-
+                        msg.attach(
+                            attachment['filename'],
+                            attachment['mimetype'],
+                            f.read()
+                        )
+            
+            self.mail.send(msg)
+            self.logger.info(f"Gmail: Email sent successfully to {to_email}")
+            return True
+            
         except Exception as e:
-            error_msg = f"{config['name']} failed: {str(e)}"
-            self.logger.warning(error_msg)
-            return False, error_msg
+            self.logger.error(f"Gmail send error: {e}")
+            raise EmailProviderError(f"Gmail send failed: {e}")
+    
+    def test_connection(self) -> bool:
+        """Test Gmail SMTP connection"""
+        try:
+            # Simple connection test via smtplib
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                server.starttls(context=context)
+                server.login(self.from_email, os.environ.get('GMAIL_APP_PASSWORD'))
+                self.logger.info("Gmail connection test successful")
+                return True
+        except Exception as e:
+            self.logger.error(f"Gmail connection test failed: {e}")
+            return False
 
-    def send_email(self, to_email: str, subject: str, html_body: str,
+# Mailgun Provider Implementation  
+class MailgunProvider(BaseEmailProvider):
+    """Mailgun REST API Provider"""
+    
+    def __init__(self):
+        super().__init__()
+        self.api_key = os.environ.get('MAILGUN_API_KEY')
+        self.domain = os.environ.get('MAILGUN_DOMAIN')
+        self.from_email = os.environ.get('MAILGUN_FROM_EMAIL')
+        self.from_name = os.environ.get('EMAIL_FROM_NAME', 'NGÜ Sponsoring')
+        # Use EU API for European domains
+        self.api_url = f"https://api.eu.mailgun.net/v3/{self.domain}/messages"
+    
+    def send_email(self, to_email: str, subject: str, html_body: str, 
                    text_body: str, attachments: List[Dict] = None) -> bool:
-        """Send email with automatic fallback"""
-        errors = []
-
-        # Try each configuration in order
-        for config in self.configs:
-            self.logger.info(f"Attempting to send via {config['name']}...")
-            success, error = self._send_with_config(config, to_email, subject,
-                                                   html_body, text_body, attachments)
-            if success:
-                # Update active config for future sends
-                self.active_config = config
+        """Send email via Mailgun API"""
+        try:
+            data = {
+                "from": f"{self.from_name} <{self.from_email}>",
+                "to": to_email,
+                "subject": subject,
+                "text": text_body,
+                "html": html_body
+            }
+            
+            files = []
+            if attachments:
+                for attachment in attachments:
+                    files.append(
+                        ("attachment", (attachment['filename'], 
+                         open(attachment['path'], 'rb'),
+                         attachment['mimetype']))
+                    )
+            
+            response = requests.post(
+                self.api_url,
+                auth=("api", self.api_key),
+                data=data,
+                files=files,
+                timeout=30
+            )
+            
+            # Close file handles
+            for _, file_tuple in files:
+                if hasattr(file_tuple[1], 'close'):
+                    file_tuple[1].close()
+            
+            if response.status_code == 200:
+                self.logger.info(f"Mailgun: Email sent successfully to {to_email}")
                 return True
             else:
-                errors.append(error)
-
-        # All providers failed
-        error_summary = " | ".join(errors)
-        self.logger.error(f"All email providers failed: {error_summary}")
-        raise EmailServiceError(f"Email delivery failed. Tried all providers: {error_summary}")
-
+                self.logger.error(f"Mailgun API error: {response.status_code} - {response.text}")
+                raise EmailProviderError(f"Mailgun send failed: {response.text}")
+                
+        except Exception as e:
+            self.logger.error(f"Mailgun send error: {e}")
+            raise EmailProviderError(f"Mailgun send failed: {e}")
+    
     def test_connection(self) -> bool:
-        """Test SMTP connection for all configured providers"""
-        results = []
-
-        for config in self.configs:
-            try:
-                context = ssl.create_default_context()
-                with smtplib.SMTP(config['smtp_server'], config['smtp_port'], timeout=10) as server:
-                    if config['smtp_use_tls']:
-                        server.starttls(context=context)
-                    server.login(config['smtp_username'], config['smtp_password'])
-                    self.logger.info(f"{config['name']} connection test successful")
-                    results.append(True)
-            except Exception as e:
-                self.logger.warning(f"{config['name']} connection test failed: {e}")
-                results.append(False)
-
-        # Return True if at least one provider works
-        return any(results)
+        """Test Mailgun API connection"""
+        try:
+            domain_url = f"https://api.eu.mailgun.net/v3/domains/{self.domain}"
+            response = requests.get(
+                domain_url,
+                auth=("api", self.api_key),
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                self.logger.info("Mailgun connection test successful")
+                return True
+            else:
+                self.logger.error(f"Mailgun connection test failed: {response.status_code}")
+                return False
+        except Exception as e:
+            self.logger.error(f"Mailgun connection test failed: {e}")
+            return False
 
 # Main Email Service Class
 class EmailService:
-    """Main email service with automatic fallback"""
-
+    """Main email service with provider abstraction"""
+    
     def __init__(self, app=None):
         self.app = app
         self.provider = None
+        self.mail = None
         self.logger = logging.getLogger(__name__)
-
+        
         if app is not None:
             self.init_app(app)
-
+    
     def init_app(self, app):
         """Initialize with Flask app"""
         self.app = app
-
-        # Initialize SMTP provider with fallback support
-        self.provider = SMTPProvider()
-        self.logger.info("Email service initialized with fallback support")
-
+        
+        # Initialize Flask-Mail for Gmail
+        self.mail = Mail(app)
+        
+        # Select and initialize provider
+        provider_name = os.environ.get('EMAIL_PROVIDER', 'gmail').lower()
+        
+        if provider_name == 'gmail':
+            self.provider = GmailProvider(self.mail)
+        elif provider_name == 'mailgun':
+            self.provider = MailgunProvider()
+        else:
+            raise EmailConfigurationError(f"Unknown email provider: {provider_name}")
+        
+        self.logger.info(f"Email service initialized with {provider_name} provider")
+    
     def test_connection(self) -> bool:
         """Test email provider connection"""
         if not self.provider:
             raise EmailConfigurationError("Email service not initialized")
         return self.provider.test_connection()
-
+    
     def _render_template(self, template_name: str, **kwargs) -> tuple:
         """Render email template (HTML and text versions)"""
         try:
             html_template = f"email/{template_name}.html"
             text_template = f"email/{template_name}.txt"
-
+            
             html_body = render_template(html_template, **kwargs)
-
+            
             # Try to render text version, fallback to HTML conversion
             try:
                 text_body = render_template(text_template, **kwargs)
@@ -226,14 +249,14 @@ class EmailService:
                 import re
                 text_body = re.sub('<[^<]+?>', '', html_body)
                 text_body = re.sub(r'\n\s*\n', '\n\n', text_body.strip())
-
+            
             return html_body, text_body
-
+            
         except Exception as e:
             self.logger.error(f"Template rendering error: {e}")
             raise EmailTemplateError(f"Failed to render template {template_name}: {e}")
-
-    def send_certificate_email(self, donation_data: Dict[str, Any],
+    
+    def send_certificate_email(self, donation_data: Dict[str, Any], 
                              pdf_path: str) -> bool:
         """Send certificate email with PDF attachment"""
         try:
@@ -242,13 +265,13 @@ class EmailService:
                 donation=donation_data,
                 timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
             )
-
+            
             attachments = [{
                 'path': pdf_path,
                 'filename': f"NGÜ_Zertifikat_{donation_data['id']}.pdf",
                 'mimetype': 'application/pdf'
             }]
-
+            
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
                 subject=f"Ihr NGÜ Zertifikat - Spende #{donation_data['id']}",
@@ -256,12 +279,12 @@ class EmailService:
                 text_body=text_body,
                 attachments=attachments
             )
-
+            
         except Exception as e:
             self.logger.error(f"Certificate email failed: {e}")
             raise EmailServiceError(f"Failed to send certificate email: {e}")
-
-    def send_tax_receipt_email(self, donation_data: Dict[str, Any],
+    
+    def send_tax_receipt_email(self, donation_data: Dict[str, Any], 
                              pdf_path: str) -> bool:
         """Send tax receipt email with PDF attachment"""
         try:
@@ -270,13 +293,13 @@ class EmailService:
                 donation=donation_data,
                 timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
             )
-
+            
             attachments = [{
                 'path': pdf_path,
                 'filename': f"NGÜ_Spendenbescheinigung_{donation_data['id']}.pdf",
                 'mimetype': 'application/pdf'
             }]
-
+            
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
                 subject=f"Ihre NGÜ Spendenbescheinigung - Spende #{donation_data['id']}",
@@ -284,12 +307,12 @@ class EmailService:
                 text_body=text_body,
                 attachments=attachments
             )
-
+            
         except Exception as e:
             self.logger.error(f"Tax receipt email failed: {e}")
             return False
-
-    def send_certificate_email_with_attachments(self, donation_data: Dict[str, Any],
+    
+    def send_certificate_email_with_attachments(self, donation_data: Dict[str, Any], 
                                               pdf_attachments: List[Dict[str, str]]) -> bool:
         """Send certificate email with multiple PDF attachments"""
         try:
@@ -298,7 +321,7 @@ class EmailService:
                 donation=donation_data,
                 timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
             )
-
+            
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
                 subject=f"Ihre NGÜ Dokumente - Spende #{donation_data['id']}",
@@ -306,11 +329,11 @@ class EmailService:
                 text_body=text_body,
                 attachments=pdf_attachments
             )
-
+            
         except Exception as e:
             self.logger.error(f"Certificate email with attachments failed: {e}")
             raise EmailServiceError(f"Failed to send certificate email with attachments: {e}")
-
+    
     def send_donation_confirmation(self, donation_data: Dict[str, Any]) -> bool:
         """Send donation confirmation email"""
         try:
@@ -319,33 +342,33 @@ class EmailService:
                 donation=donation_data,
                 timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
             )
-
+            
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
                 subject=f"Spendenbestätigung - NGÜ Bibelvers #{donation_data['id']}",
                 html_body=html_body,
                 text_body=text_body
             )
-
+            
         except Exception as e:
             self.logger.error(f"Confirmation email failed: {e}")
             raise EmailServiceError(f"Failed to send confirmation email: {e}")
-
+    
     def generate_magic_link_token(self, email: str, expiry_minutes: int = 15) -> str:
         """Generate secure token for magic link authentication"""
         token = secrets.token_urlsafe(32)
         self.logger.info(f"Generated magic link token for {email} (expires in {expiry_minutes}min)")
         return token
-
+    
     def send_admin_magic_link(self, to_email, magic_link):
         """Send magic link for admin login"""
         subject = "NGÜ Admin - Ihr Login-Link"
-
+        
         html_content = f"""
         <h2>Admin Login</h2>
         <p>Sie haben einen Login-Link für den NGÜ Admin-Bereich angefordert.</p>
         <p>
-            <a href="{magic_link}" style="display: inline-block; padding: 10px 20px;
+            <a href="{magic_link}" style="display: inline-block; padding: 10px 20px; 
                background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px;">
                 Jetzt anmelden
             </a>
@@ -355,49 +378,46 @@ class EmailService:
         <p><strong>Dieser Link ist 15 Minuten gültig.</strong></p>
         <p>Falls Sie diesen Link nicht angefordert haben, ignorieren Sie diese E-Mail.</p>
         """
-
+        
         text_content = f"""
         Admin Login
-
+        
         Sie haben einen Login-Link für den NGÜ Admin-Bereich angefordert.
-
+        
         Klicken Sie hier zum Anmelden:
         {magic_link}
-
+        
         Dieser Link ist 15 Minuten gültig.
-
+        
         Falls Sie diesen Link nicht angefordert haben, ignorieren Sie diese E-Mail.
         """
-
+        
         return self.send_email(to_email, subject, text_content, html_content)
-
+    
     def send_email(self, to_email: str, subject: str, text_body: str, html_body: str = None) -> bool:
-        """Direct email send method with automatic fallback"""
+        """Direct email send method"""
         if not self.provider:
             raise EmailConfigurationError("Email service not initialized")
-
+        
         html_body = html_body or text_body
         return self.provider.send_email(to_email, subject, html_body, text_body)
 
     def send_test_email(self, to_email: str) -> bool:
         """Send test email for verification"""
         try:
-            # Get current provider name
-            provider_name = self.provider.active_config['name'] if self.provider else 'Unknown'
-
             html_body, text_body = self._render_template(
                 'test',
                 timestamp=datetime.now().strftime('%d.%m.%Y %H:%M'),
-                provider=provider_name
+                provider=self.provider.__class__.__name__
             )
-
+            
             return self.provider.send_email(
                 to_email=to_email,
                 subject=f"NGÜ E-Mail Test - {datetime.now().strftime('%H:%M:%S')}",
                 html_body=html_body,
                 text_body=text_body
             )
-
+            
         except Exception as e:
             self.logger.error(f"Test email failed: {e}")
             raise EmailServiceError(f"Failed to send test email: {e}")
