@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # WeasyPrint dependencies
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-xlib-2.0-0 \
     libffi-dev \
     shared-mime-info \
     # Clean up
@@ -64,7 +64,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # WeasyPrint runtime dependencies
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-xlib-2.0-0 \
     libcairo2 \
     libglib2.0-0 \
     shared-mime-info \
