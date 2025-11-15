@@ -91,10 +91,11 @@ class SMTPProvider:
         """Try to send email with specific configuration"""
         try:
             # Create message with full RFC-compliant headers
-            msg = MIMEMultipart('alternative')
+            msg = MIMEMultipart('alternative')  # Auto-sets MIME-Version: 1.0
 
             # Required headers
-            msg['From'] = f"{config['from_name']} <{config['from_email']}>"
+            # Use email address only (no display name) to avoid IONOS UTF-8 bug with umlauts
+            msg['From'] = config['from_email']
             msg['To'] = to_email
             msg['Subject'] = subject
             msg['Date'] = formatdate(localtime=True)
@@ -102,10 +103,10 @@ class SMTPProvider:
             # Additional RFC-compliant headers
             domain = config['from_email'].split('@')[1]
             msg['Message-ID'] = make_msgid(domain=domain)
-            msg['MIME-Version'] = '1.0'
+            # REMOVED: msg['MIME-Version'] = '1.0' - Already set by MIMEMultipart (RFC 5322)
             msg['X-Mailer'] = 'NGÜ BVS App/1.0'
             msg['Reply-To'] = config['from_email']
-            msg['Return-Path'] = config['from_email']
+            # REMOVED: msg['Return-Path'] = config['from_email'] - MTA-only header (RFC 5321)
 
             # Prevent auto-replies
             msg['X-Auto-Response-Suppress'] = 'All'
@@ -251,7 +252,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
-                subject=f"Ihr NGÜ Zertifikat - Spende #{donation_data['id']}",
+                subject=f"NGÜ Bibelvers-Sponsoring: Ihr Zertifikat (Spende #{donation_data['id']})",
                 html_body=html_body,
                 text_body=text_body,
                 attachments=attachments
@@ -279,7 +280,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
-                subject=f"Ihre NGÜ Spendenbescheinigung - Spende #{donation_data['id']}",
+                subject=f"NGÜ Bibelvers-Sponsoring: Ihre Spendenbescheinigung (Spende #{donation_data['id']})",
                 html_body=html_body,
                 text_body=text_body,
                 attachments=attachments
@@ -301,7 +302,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
-                subject=f"Ihre NGÜ Dokumente - Spende #{donation_data['id']}",
+                subject=f"NGÜ Bibelvers-Sponsoring: Ihre Zertifikate und Bescheinigungen (Spende #{donation_data['id']})",
                 html_body=html_body,
                 text_body=text_body,
                 attachments=pdf_attachments
@@ -339,7 +340,7 @@ class EmailService:
 
     def send_admin_magic_link(self, to_email, magic_link):
         """Send magic link for admin login"""
-        subject = "NGÜ Admin - Ihr Login-Link"
+        subject = "NGÜ Bibelvers-Sponsoring: Magic-Link zum Einloggen ins Admin-Portal"
 
         html_content = f"""
         <h2>Admin Login</h2>
