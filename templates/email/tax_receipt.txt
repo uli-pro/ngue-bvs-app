@@ -1,0 +1,43 @@
+{# TEMPORARY FIX (2025-01-17): Plain-text email template #}
+{# REASON: Debug email rendering issues and provide fallback for non-HTML clients #}
+{# TODO: Investigate currency filter availability in email_service.py context #}
+{# ROLLBACK: Delete this file - email_service.py has HTML-to-text fallback #}
+
+Ihre NGÜ Spendenbescheinigung
+
+Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},
+
+vielen Dank für Ihre Spende für die NGÜ Bibelübersetzung!
+
+Im Anhang finden Sie Ihre offizielle Spendenbescheinigung für das Finanzamt.
+
+===========================================
+SPENDEN-DETAILS
+===========================================
+
+Spenden-ID: {{ donation.id }}
+Datum: {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}
+Spendenbetrag: {{ donation.total_amount }} €
+Verwendungszweck: NGÜ Bibelvers-Sponsoring
+
+===========================================
+STEUERLICHE ABSETZBARKEIT
+===========================================
+
+Die Peter-Schöffer-Stiftung ist als gemeinnützig anerkannt.
+Ihre Spende ist steuerlich absetzbar.
+
+Bitte bewahren Sie die Spendenbescheinigung im Anhang für Ihre Steuererklärung auf.
+
+===========================================
+
+Vielen Dank für Ihre Unterstützung der NGÜ Bibelübersetzung!
+
+Mit herzlichen Grüßen
+
+Ihr NGÜ-Team
+Peter-Schöffer-Stiftung
+
+---
+Dies ist eine automatisch generierte E-Mail.
+Weitere Informationen: https://ngue-bvs.schoeffer.org

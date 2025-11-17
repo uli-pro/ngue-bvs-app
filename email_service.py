@@ -53,7 +53,7 @@ class SMTPProvider:
                 'smtp_password': os.environ.get('SMTP_PASSWORD'),
                 'smtp_use_tls': os.environ.get('SMTP_USE_TLS', 'true').lower() == 'true',
                 'from_email': os.environ.get('EMAIL_FROM', 'info@ngue-bvs.schoeffer.org'),
-                'from_name': os.environ.get('EMAIL_FROM_NAME', 'NGÜ Bibelvers-Sponsoring')
+                'from_name': os.environ.get('EMAIL_FROM_NAME', 'NGUE Bibelvers-Sponsoring')
             }
             self.configs.append(ionos_config)
             self.logger.info("IONOS configuration loaded (primary)")
@@ -68,7 +68,7 @@ class SMTPProvider:
                 'smtp_password': os.environ.get('GMAIL_APP_PASSWORD'),
                 'smtp_use_tls': True,
                 'from_email': os.environ.get('GMAIL_USERNAME', 'ngueteam@gmail.com'),
-                'from_name': 'NGÜ Bibelvers-Sponsoring'
+                'from_name': 'NGUE Bibelvers-Sponsoring'
             }
             self.configs.append(gmail_config)
             self.logger.info("Gmail configuration loaded (fallback)")
@@ -90,8 +90,20 @@ class SMTPProvider:
                          html_body: str, text_body: str, attachments: List[Dict] = None) -> Tuple[bool, Optional[str]]:
         """Try to send email with specific configuration"""
         try:
-            # Create message with full RFC-compliant headers
-            msg = MIMEMultipart('alternative')
+            # FIX (2025-01-17): MIME structure for emails with attachments
+            # BEFORE: Always used 'alternative' (caused IONOS policy 554 errors + missing PDFs)
+            # AFTER: Use 'mixed' for attachments (RFC 2046 compliant)
+            # RFC 2046: 'alternative' = "choose one", 'mixed' = "show all parts"
+            # ROLLBACK: If IONOS rejects, change back to 'alternative' and investigate policy
+
+            if attachments:
+                # Structure: mixed [ alternative[text, html], pdf1, pdf2, ... ]
+                msg = MIMEMultipart('mixed')
+                self.logger.info(f"Creating email with {len(attachments)} attachments: "
+                               f"{[a['filename'] for a in attachments]}")
+            else:
+                # No attachments: simple alternative (text vs html)
+                msg = MIMEMultipart('alternative')
 
             # Required headers
             msg['From'] = f"{config['from_name']} <{config['from_email']}>"
@@ -99,31 +111,52 @@ class SMTPProvider:
             msg['Subject'] = subject
             msg['Date'] = formatdate(localtime=True)
 
-            # Additional RFC-compliant headers
+            # Additional headers
             domain = config['from_email'].split('@')[1]
             msg['Message-ID'] = make_msgid(domain=domain)
-            msg['MIME-Version'] = '1.0'
-            msg['X-Mailer'] = 'NGÜ BVS App/1.0'
+            # MIME-Version is auto-added by MIMEMultipart - manual setting can cause duplicates
+            msg['X-Mailer'] = 'NGUE BVS App/1.0'
             msg['Reply-To'] = config['from_email']
-            msg['Return-Path'] = config['from_email']
+            # Return-Path must be set by MTA, not sender - IONOS rejects if manually set
 
             # Prevent auto-replies
             msg['X-Auto-Response-Suppress'] = 'All'
             msg['Auto-Submitted'] = 'auto-generated'
 
             # Add text and HTML parts
-            text_part = MIMEText(text_body, 'plain', 'utf-8')
-            html_part = MIMEText(html_body, 'html', 'utf-8')
-            msg.attach(text_part)
-            msg.attach(html_part)
-
-            # Add attachments if provided
             if attachments:
-                for attachment in attachments:
-                    with open(attachment['path'], 'rb') as f:
-                        part = MIMEApplication(f.read(), Name=attachment['filename'])
-                        part['Content-Disposition'] = f'attachment; filename="{attachment["filename"]}"'
-                        msg.attach(part)
+                # Nested structure for proper MIME compliance
+                alt_part = MIMEMultipart('alternative')
+                alt_part.attach(MIMEText(text_body, 'plain', 'utf-8'))
+                alt_part.attach(MIMEText(html_body, 'html', 'utf-8'))
+                msg.attach(alt_part)
+            else:
+                # No attachments: simple structure
+                msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+                msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+            # Add attachments if provided (with improved error handling)
+            if attachments:
+                for i, attachment in enumerate(attachments, 1):
+                    try:
+                        self.logger.debug(f"Attaching {i}/{len(attachments)}: {attachment['filename']} "
+                                        f"from {attachment['path']}")
+                        with open(attachment['path'], 'rb') as f:
+                            # Explicit _subtype='pdf' sets Content-Type: application/pdf
+                            # (instead of generic application/octet-stream)
+                            part = MIMEApplication(f.read(), _subtype='pdf',
+                                                 Name=attachment['filename'])
+                            part['Content-Disposition'] = f'attachment; filename="{attachment["filename"]}"'
+                            msg.attach(part)
+                        self.logger.debug(f"Successfully attached: {attachment['filename']}")
+                    except FileNotFoundError:
+                        error_msg = f"Attachment file not found: {attachment['path']}"
+                        self.logger.error(error_msg)
+                        raise FileNotFoundError(error_msg)
+                    except Exception as e:
+                        error_msg = f"Failed to attach {attachment['filename']}: {str(e)}"
+                        self.logger.error(error_msg)
+                        raise
 
             # Send email
             context = ssl.create_default_context()
@@ -211,27 +244,51 @@ class EmailService:
         return self.provider.test_connection()
 
     def _render_template(self, template_name: str, **kwargs) -> tuple:
-        """Render email template (HTML and text versions)"""
+        """Render email template (HTML and text versions)
+
+        FIX (2025-01-17): Improved logging and error handling
+        - Added debug logging for template rendering
+        - Better exception handling for missing text templates
+        - Clear error messages for debugging
+        """
         try:
             html_template = f"email/{template_name}.html"
             text_template = f"email/{template_name}.txt"
 
-            html_body = render_template(html_template, **kwargs)
+            # Render HTML version
+            try:
+                html_body = render_template(html_template, **kwargs)
+                self.logger.debug(f"HTML template '{template_name}.html' rendered: {len(html_body)} chars")
+            except Exception as e:
+                self.logger.error(f"HTML template rendering failed for '{template_name}.html': {e}")
+                self.logger.error(f"Template kwargs: {list(kwargs.keys())}")
+                raise EmailTemplateError(f"HTML template '{template_name}.html' failed: {e}")
 
             # Try to render text version, fallback to HTML conversion
             try:
                 text_body = render_template(text_template, **kwargs)
-            except:
-                # Simple HTML to text conversion
+                self.logger.debug(f"Text template '{template_name}.txt' rendered: {len(text_body)} chars")
+            except Exception as e:
+                # Text template doesn't exist or failed - use HTML to text conversion
+                self.logger.debug(f"Text template '{template_name}.txt' not found, using HTML fallback: {e}")
                 import re
                 text_body = re.sub('<[^<]+?>', '', html_body)
                 text_body = re.sub(r'\n\s*\n', '\n\n', text_body.strip())
+                self.logger.debug(f"Fallback text generated: {len(text_body)} chars")
+
+            if not html_body:
+                raise EmailTemplateError(f"HTML template '{template_name}.html' rendered empty content")
+            if not text_body:
+                self.logger.warning(f"Text body is empty for template '{template_name}'")
 
             return html_body, text_body
 
+        except EmailTemplateError:
+            # Re-raise EmailTemplateError as-is
+            raise
         except Exception as e:
-            self.logger.error(f"Template rendering error: {e}")
-            raise EmailTemplateError(f"Failed to render template {template_name}: {e}")
+            self.logger.error(f"Unexpected error rendering template '{template_name}': {e}", exc_info=True)
+            raise EmailTemplateError(f"Failed to render template '{template_name}': {e}")
 
     def send_certificate_email(self, donation_data: Dict[str, Any],
                              pdf_path: str) -> bool:
@@ -251,7 +308,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
-                subject=f"Ihr NGÜ Zertifikat - Spende #{donation_data['id']}",
+                subject=f"Ihr NGUE Zertifikat - Spende #{donation_data['id']}",
                 html_body=html_body,
                 text_body=text_body,
                 attachments=attachments
@@ -279,7 +336,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
-                subject=f"Ihre NGÜ Spendenbescheinigung - Spende #{donation_data['id']}",
+                subject=f"Ihre NGUE Spendenbescheinigung - Spende #{donation_data['id']}",
                 html_body=html_body,
                 text_body=text_body,
                 attachments=attachments
@@ -301,7 +358,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
-                subject=f"Ihre NGÜ Dokumente - Spende #{donation_data['id']}",
+                subject=f"Ihre NGUE Dokumente - Spende #{donation_data['id']}",
                 html_body=html_body,
                 text_body=text_body,
                 attachments=pdf_attachments
@@ -322,7 +379,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=donation_data['person']['email'],
-                subject=f"Spendenbestätigung - NGÜ Bibelvers #{donation_data['id']}",
+                subject=f"Spendenbestätigung - NGUE Bibelvers #{donation_data['id']}",
                 html_body=html_body,
                 text_body=text_body
             )
@@ -339,7 +396,7 @@ class EmailService:
 
     def send_admin_magic_link(self, to_email, magic_link):
         """Send magic link for admin login"""
-        subject = "NGÜ Admin - Ihr Login-Link"
+        subject = "NGUE Admin - Ihr Login-Link"
 
         html_content = f"""
         <h2>Admin Login</h2>
@@ -393,7 +450,7 @@ class EmailService:
 
             return self.provider.send_email(
                 to_email=to_email,
-                subject=f"NGÜ E-Mail Test - {datetime.now().strftime('%H:%M:%S')}",
+                subject=f"NGUE E-Mail Test - {datetime.now().strftime('%H:%M:%S')}",
                 html_body=html_body,
                 text_body=text_body
             )
