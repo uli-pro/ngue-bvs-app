@@ -82,7 +82,7 @@ services:
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-NGÜ Bibelvers-Sponsoring}
 
       # HubSpot CRM (Optional)
-      HUBSPOT_ACCESS_TOKEN: ${HUBSPOT_ACCESS_TOKEN:-}
+      HUBSPOT_API_KEY: ${HUBSPOT_API_KEY:-}
 
       # Application Configuration
       DOMAIN_NAME: ${DOMAIN_NAME:-ngue-bvs.schoeffer.org}
