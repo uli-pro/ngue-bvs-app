@@ -1,0 +1,23 @@
+================================================================================
+NGÜ BIBELVERS-SPONSORING - Neue Kontaktanfrage
+================================================================================
+
+Absender-Informationen:
+-----------------------
+Name:    {{ name }}
+E-Mail:  {{ email }}
+Betreff: {{ subject }}
+Datum:   {{ timestamp }}
+
+Nachricht:
+----------
+{{ message }}
+
+================================================================================
+Diese E-Mail wurde automatisch über das Kontaktformular auf
+ngue-bvs.schoeffer.org versendet.
+
+Peter-Schöffer-Stiftung
+NGÜ Bibelvers-Sponsoring
+https://ngue-bvs.schoeffer.org
+================================================================================

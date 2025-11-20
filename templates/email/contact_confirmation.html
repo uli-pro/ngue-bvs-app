@@ -1,0 +1,33 @@
+{% extends "email/base.html" %}
+
+{% block title %}Ihre Nachricht wurde versendet{% endblock %}
+{% block header %}Nachricht erhalten{% endblock %}
+
+{% block content %}
+<h2>Vielen Dank für Ihre Nachricht!</h2>
+
+<p>Liebe/r {{ name }},</p>
+
+<p>wir haben Ihre Nachricht erfolgreich erhalten und werden uns schnellstmöglich bei Ihnen melden.</p>
+
+<div class="highlight">
+    <h3>📬 Ihre Nachricht:</h3>
+    <p><strong>Betreff:</strong> {{ subject }}<br>
+    <strong>Gesendet am:</strong> {{ timestamp }}</p>
+
+    <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #c3ddf5;"><strong>Nachricht:</strong></p>
+    <p style="white-space: pre-wrap; font-size: 14px; color: #555;">{{ message }}</p>
+</div>
+
+<p>In der Regel antworten wir innerhalb von 1-2 Werktagen. Bei dringenden Anliegen bitten wir um Verständnis, wenn es etwas länger dauert.</p>
+
+<p>Herzliche Grüße<br>
+Ihr NGÜ-Team<br>
+Peter-Schöffer-Stiftung</p>
+
+<p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; color: #666; font-size: 14px;">
+    <strong>Hinweis:</strong> Dies ist eine automatische Bestätigung. Bitte antworten Sie nicht auf diese E-Mail. Wir melden uns über Ihre angegebene E-Mail-Adresse bei Ihnen.
+</p>
+{% endblock %}
+
+{% block footer_text %}Automatische Eingangsbestätigung{% endblock %}

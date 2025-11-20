@@ -388,6 +388,87 @@ class EmailService:
             self.logger.error(f"Confirmation email failed: {e}")
             raise EmailServiceError(f"Failed to send confirmation email: {e}")
 
+    def send_contact_form_email(self, name: str, email: str, subject: str,
+                                message: str, send_confirmation: bool = True) -> bool:
+        """Send contact form submission to NGÜ team and optional auto-reply to sender
+
+        Args:
+            name: Sender's name
+            email: Sender's email address
+            subject: Message subject
+            message: Message content
+            send_confirmation: Whether to send auto-reply to sender (default: True)
+
+        Returns:
+            bool: True if email(s) sent successfully
+
+        Raises:
+            EmailServiceError: If email sending fails
+        """
+        try:
+            timestamp = datetime.now().strftime('%d.%m.%Y %H:%M')
+
+            # 1. Send notification to NGÜ team
+            html_body, text_body = self._render_template(
+                'contact',
+                name=name,
+                email=email,
+                subject=subject,
+                message=message,
+                timestamp=timestamp
+            )
+
+            # Send to info@ngue-bvs.schoeffer.org (IONOS config)
+            recipient_email = self.provider.active_config['from_email']
+
+            success = self.provider.send_email(
+                to_email=recipient_email,
+                subject=f"Kontaktformular: {subject}",
+                html_body=html_body,
+                text_body=text_body
+            )
+
+            if not success:
+                raise EmailServiceError("Failed to send contact form notification to team")
+
+            self.logger.info(f"Contact form submission sent to {recipient_email} from {email}")
+
+            # 2. Send confirmation to sender (optional)
+            if send_confirmation:
+                try:
+                    confirm_html, confirm_text = self._render_template(
+                        'contact_confirmation',
+                        name=name,
+                        subject=subject,
+                        message=message,
+                        timestamp=timestamp
+                    )
+
+                    confirmation_success = self.provider.send_email(
+                        to_email=email,
+                        subject=f"Ihre Nachricht an NGÜ Bibelvers-Sponsoring",
+                        html_body=confirm_html,
+                        text_body=confirm_text
+                    )
+
+                    if confirmation_success:
+                        self.logger.info(f"Confirmation email sent to {email}")
+                    else:
+                        self.logger.warning(f"Confirmation email to {email} failed (notification sent)")
+
+                except Exception as e:
+                    # Log but don't fail the whole operation if confirmation fails
+                    self.logger.warning(f"Failed to send confirmation to {email}: {e}")
+
+            return True
+
+        except EmailTemplateError as e:
+            self.logger.error(f"Contact form template error: {e}")
+            raise EmailServiceError(f"Template rendering failed: {e}")
+        except Exception as e:
+            self.logger.error(f"Contact form email failed: {e}")
+            raise EmailServiceError(f"Failed to send contact form email: {e}")
+
     def generate_magic_link_token(self, email: str, expiry_minutes: int = 15) -> str:
         """Generate secure token for magic link authentication"""
         token = secrets.token_urlsafe(32)

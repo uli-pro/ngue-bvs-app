@@ -24,6 +24,13 @@
                     <div class="card-body p-4">
                         <form method="POST" action="/kontakt" class="needs-validation" novalidate>
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                            <!-- Honeypot field - hidden from users, catches bots -->
+                            <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                                <label for="website">Website (do not fill)</label>
+                                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                            </div>
+
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="name" class="form-label">Name *</label>
@@ -76,8 +83,8 @@
                         <div class="card h-100">
                             <div class="card-body text-center">
                                 <i class="fas fa-envelope fa-3x text-primary mb-3"></i>
-                                <h5>E-Mail</h5>
-                                <p><a href="mailto:info@schoeffer.org">info@schoeffer.org</a></p>
+                                <h5>Schnelle Antwort</h5>
+                                <p class="text-secondary mb-0">Nutzen Sie das obige Formular für direkten Kontakt</p>
                             </div>
                         </div>
                     </div>

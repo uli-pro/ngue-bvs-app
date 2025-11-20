@@ -127,7 +127,8 @@ class StripeService:
             # Simplified metadata for single donation
             metadata = {
                 'donation_id': str(donations[0].id),
-                'verse_count': str(donations[0].verse_count)
+                'verse_count': str(donations[0].verse_count),
+                'source': 'ngue-bvs-app'  # Identifiziert Zahlungen von dieser App
             }
 
             # Create PaymentIntent

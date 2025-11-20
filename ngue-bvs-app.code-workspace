@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../../../../../../Library/CloudStorage/MountainDuck-213.165.95.155–SFTP"
 		}
 	],
 	"settings": {}

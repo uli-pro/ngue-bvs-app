@@ -952,18 +952,51 @@ def cleanup_reservations():
 # ==========================================
 
 @app.route("/kontakt", methods=["GET", "POST"])
+@limiter.limit("3 per minute")
 def kontakt():
-    """Contact page"""
+    """Contact page with spam protection (rate limit, honeypot, email notification)"""
     if request.method == "POST":
-        # Handle contact form submission
-        name = request.form.get("name")
-        email = request.form.get("email")
-        message = request.form.get("message")
-        
-        # Here you would normally send an email or save to database
-        flash(f"Vielen Dank für Ihre Nachricht, {name}! Wir werden uns in Kürze bei Ihnen melden.", "success")
-        return redirect(url_for("index"))
-    
+        try:
+            # Honeypot check - if filled, it's a bot
+            if request.form.get("website"):
+                app.logger.warning(f"Honeypot triggered from IP {request.remote_addr}")
+                # Show success to bot (don't reveal we detected them)
+                flash("Vielen Dank für Ihre Nachricht! Wir werden uns in Kürze bei Ihnen melden.", "success")
+                return redirect(url_for("index"))
+
+            # Validate required fields
+            name = request.form.get("name", "").strip()
+            email = request.form.get("email", "").strip()
+            subject = request.form.get("subject", "Allgemeine Anfrage").strip()
+            message = request.form.get("message", "").strip()
+
+            if not name or not email or not message:
+                flash("Bitte füllen Sie alle Pflichtfelder aus.", "error")
+                return render_template("kontakt.html")
+
+            # Basic email validation
+            if "@" not in email or "." not in email.split("@")[1]:
+                flash("Bitte geben Sie eine gültige E-Mail-Adresse ein.", "error")
+                return render_template("kontakt.html")
+
+            # Send email via email service
+            email_service.send_contact_form_email(
+                name=name,
+                email=email,
+                subject=subject,
+                message=message,
+                send_confirmation=True
+            )
+
+            app.logger.info(f"Contact form submitted by {name} ({email})")
+            flash(f"Vielen Dank für Ihre Nachricht, {name}! Wir haben Ihnen eine Bestätigung per E-Mail gesendet und werden uns in Kürze bei Ihnen melden.", "success")
+            return redirect(url_for("index"))
+
+        except Exception as e:
+            app.logger.error(f"Contact form error: {e}")
+            flash("Es gab ein Problem beim Versenden Ihrer Nachricht. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns direkt per E-Mail.", "error")
+            return render_template("kontakt.html")
+
     return render_template("kontakt.html")
 
 # ==========================================

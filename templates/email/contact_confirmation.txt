@@ -1,0 +1,33 @@
+================================================================================
+NGÜ BIBELVERS-SPONSORING - Nachricht erhalten
+================================================================================
+
+Liebe/r {{ name }},
+
+vielen Dank für Ihre Nachricht! Wir haben sie erfolgreich erhalten und werden
+uns schnellstmöglich bei Ihnen melden.
+
+Ihre Nachricht:
+--------------
+Betreff:     {{ subject }}
+Gesendet am: {{ timestamp }}
+
+{{ message }}
+
+--------------------------------------------------------------------------------
+
+In der Regel antworten wir innerhalb von 1-2 Werktagen. Bei dringenden
+Anliegen bitten wir um Verständnis, wenn es etwas länger dauert.
+
+Herzliche Grüße
+Ihr NGÜ-Team
+Peter-Schöffer-Stiftung
+
+================================================================================
+HINWEIS: Dies ist eine automatische Bestätigung. Bitte antworten Sie nicht
+auf diese E-Mail. Wir melden uns über Ihre angegebene E-Mail-Adresse bei Ihnen.
+
+Peter-Schöffer-Stiftung
+NGÜ Bibelvers-Sponsoring
+https://ngue-bvs.schoeffer.org
+================================================================================

@@ -1,0 +1,27 @@
+{% extends "email/base.html" %}
+
+{% block title %}Neue Kontaktanfrage{% endblock %}
+{% block header %}Neue Kontaktanfrage{% endblock %}
+
+{% block content %}
+<h2>Neue Nachricht über das Kontaktformular</h2>
+
+<div class="highlight">
+    <h3>📧 Absender-Informationen:</h3>
+    <p><strong>Name:</strong> {{ name }}<br>
+    <strong>E-Mail:</strong> <a href="mailto:{{ email }}" style="color: #2c5aa0;">{{ email }}</a><br>
+    <strong>Betreff:</strong> {{ subject }}<br>
+    <strong>Datum:</strong> {{ timestamp }}</p>
+</div>
+
+<h3>Nachricht:</h3>
+<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p style="white-space: pre-wrap; margin: 0;">{{ message }}</p>
+</div>
+
+<p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; color: #666; font-size: 14px;">
+    <strong>Hinweis:</strong> Diese E-Mail wurde automatisch über das Kontaktformular auf ngue-bvs.schoeffer.org versendet.
+</p>
+{% endblock %}
+
+{% block footer_text %}Automatisch generierte Kontaktformular-Nachricht{% endblock %}
