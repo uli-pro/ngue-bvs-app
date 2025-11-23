@@ -93,10 +93,12 @@ uploads/
 # Non-deployment files
 do_not_deploy/
 
-# Runtime generated certificates
-certificates/*.pdf
-certificates/*.png
+# Runtime generated certificates (alle Unterverzeichnisse)
+certificates/
 !certificates/.gitkeep
+
+# Legacy certificate location (should be empty after migration)
+app-deployment/certificates/
 
 # Backup directories
 backups/

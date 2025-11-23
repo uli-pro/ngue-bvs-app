@@ -92,8 +92,8 @@ services:
       - flask-session:/app/flask_session
       # Application logs
       - ./logs:/app/logs
-      # Generated certificates (if local generation)
-      - ./certificates:/app/certificates
+      # Generated certificates (mapped to project root)
+      - ../certificates:/app/certificates
     networks:
       - ngue-network
     # No port exposure - nginx handles external access
