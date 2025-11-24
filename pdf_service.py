@@ -225,47 +225,6 @@ class PDFGeneratorService:
                 os.remove(file_path)
             raise PDFGenerationError(f"Certificate generation failed: {str(e)}")
 
-    def generate_tax_receipt(self, donation_id: int, 
-                            session_id: Optional[str] = None) -> Certificate:
-        """Generiert Spendenbescheinigung für Steuer"""
-        
-        donation = Donation.query.get(donation_id)
-        if not donation or donation.payment_status != 'completed':
-            raise ValidationError(f"Invalid donation {donation_id}")
-        
-        try:
-            # Pfad generieren
-            filename, file_path = self._generate_certificate_paths(
-                donation, 'tax_receipt', session_id
-            )
-            
-            # Context für Spendenbescheinigung
-            context = self._prepare_tax_receipt_context(donation)
-            
-            # HTML rendern
-            html_content = render_template('certificates/tax_receipt.html', **context)
-            
-            # PDF generieren
-            self._generate_pdf_from_html(html_content, file_path)
-            
-            # Certificate-Record
-            certificate = Certificate(
-                donation_id=donation.id,
-                certificate_type='tax_receipt',
-                filename=filename,
-                file_path=file_path
-            )
-            
-            db.session.add(certificate)
-            db.session.commit()
-            
-            return certificate
-            
-        except Exception as e:
-            db.session.rollback()
-            if 'file_path' in locals() and os.path.exists(file_path):
-                os.remove(file_path)
-            raise PDFGenerationError(f"Tax receipt generation failed: {str(e)}")
 
     def generate_certificate_atomic(self, donation_id: int, certificate_type: str, 
                                    session_id: Optional[str] = None) -> Certificate:
@@ -309,25 +268,38 @@ class PDFGeneratorService:
             
             return certificate
     
-    def generate_tax_receipt_atomic(self, donation_id: int, 
+    def generate_tax_receipt_atomic(self, donation_id: int,
                                    session_id: Optional[str] = None) -> Certificate:
         """Atomische Spendenbescheinigung-Generierung"""
-        
+
         with self._atomic_operation() as created_files:
             # Parameter validieren
             donation = self._validate_donation(donation_id)
-            
+
             # Prüfen ob Receipt bereits existiert
             existing = Certificate.find_by_donation_and_type(donation_id, 'tax_receipt')
             if existing and existing.exists_on_disk:
                 return existing
-            
+
+            # Generate receipt number if not already assigned
+            if not donation.receipt_number:
+                try:
+                    from models import ReceiptCounter
+                    receipt_number = ReceiptCounter.get_next_receipt_number(auto_commit=False)
+                    donation.receipt_number = receipt_number
+                    donation.receipt_issued_at = datetime.utcnow()
+                    db.session.flush()  # Flush but don't commit yet (atomic operation handles commit)
+                    logging.info(f"Assigned receipt number {receipt_number} to donation {donation_id}")
+                except Exception as e:
+                    logging.error(f"Failed to generate receipt number: {e}")
+                    raise  # Re-raise to trigger rollback
+
             # Pfade generieren
             filename, file_path = self._generate_certificate_paths(
                 donation, 'tax_receipt', session_id
             )
             created_files.append(file_path)
-            
+
             # PDF generieren
             context = self._prepare_tax_receipt_context(donation)
             html_content = render_template('certificates/tax_receipt.html', **context)
@@ -564,7 +536,11 @@ class PDFGeneratorService:
             'formatted_date': donation.completed_at.strftime('%d. %B %Y') if donation.completed_at else '',
             'issue_date': datetime.now().strftime('%d. %B %Y'),
             'background_image_path': f'file://{background_image_path}',
-            
+
+            # Receipt numbering (legally required per §50 Abs. 1 EStDV)
+            'receipt_number': donation.receipt_number or 'AUSSTEHEND',
+            'receipt_issued_date': donation.receipt_issued_at.strftime('%d.%m.%Y') if donation.receipt_issued_at else (donation.completed_at.strftime('%d.%m.%Y') if donation.completed_at else ''),
+
             # Stiftungsdaten (konstant - basierend auf offiziellem Text)
             'foundation': {
                 'name': 'Peter-Schöffer-Stiftung',
@@ -642,39 +618,6 @@ class PDFGeneratorService:
         except Exception as e:
             raise PDFGenerationError(f"WeasyPrint failed: {str(e)}")
 
-    def generate_certificate_batch(self, donation_ids: List[int], 
-                                  session_id: str) -> List[Certificate]:
-        """Batch-Generierung für mehrere Zertifikate einer Session"""
-        
-        certificates = []
-        
-        try:
-            for donation_id in donation_ids:
-                donation = Donation.query.get(donation_id)
-                if not donation:
-                    continue
-                    
-                # Verwende personal_certificate für alle Donations
-                cert_type = 'personal_certificate'
-                
-                # Zertifikat generieren
-                cert = self.generate_certificate(donation_id, cert_type, session_id)
-                certificates.append(cert)
-                
-                # Tax Receipt wenn gewünscht
-                if donation.wants_receipt:
-                    tax_cert = self.generate_tax_receipt(donation_id, session_id)
-                    certificates.append(tax_cert)
-            
-            return certificates
-            
-        except Exception as e:
-            # Bei Fehler alle erstellten Dateien löschen
-            for cert in certificates:
-                if cert.file_path and os.path.exists(cert.file_path):
-                    os.remove(cert.file_path)
-            raise PDFGenerationError(f"Batch generation failed: {str(e)}")
-    
     def get_statistics(self) -> Dict[str, Any]:
         """Gibt Performance-Statistiken zurück"""
         return {

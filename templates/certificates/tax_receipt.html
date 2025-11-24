@@ -29,21 +29,20 @@
             margin: 0;
             padding: 0;
         }
-        
-        /* Donor name and address fields */
-        .donor-name {
+
+        /* Receipt Number */
+        .receipt-number {
             position: absolute;
-            top: 46mm;
-            left: 20mm;
+            top: 17.5mm;   
+            right: 20.5mm;
+            font-family: Arial, sans-serif;
             font-size: 11pt;
             font-weight: normal;
-            font-family: Arial, sans-serif;
             color: #000;
+            text-align: left;
             line-height: 1.2;
-            text-transform: none;
-            letter-spacing: normal;
         }
-        
+
         /* Amount in digits */
         .amount-digits {
             position: absolute;
@@ -74,6 +73,20 @@
             color: #000;
         }
         
+        /* Donor name and address fields */
+        .donor-name {
+            position: absolute;
+            top: 46mm;
+            left: 20mm;
+            font-size: 11pt;
+            font-weight: normal;
+            font-family: Arial, sans-serif;
+            color: #000;
+            line-height: 1.2;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
         /* Signature date */
         .signature-date {
             position: absolute;
@@ -86,7 +99,10 @@
 </head>
 <body>
     <div class="tax-receipt-container">
-        
+
+        <!-- Receipt Number (Header "Bescheinigung Nr." is in PNG background) -->
+        <div class="receipt-number">{{ receipt_number }}</div>
+
         <!-- Donor name and address -->
         <div class="donor-name">
             {{ person_snapshot.first_name }} {{ person_snapshot.last_name }}, {{ person_snapshot.street }} {{ person_snapshot.house_number }}, {{ person_snapshot.postal_code }} {{ person_snapshot.city }}

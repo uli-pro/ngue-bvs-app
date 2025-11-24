@@ -33,6 +33,7 @@
                     <th>Verse</th>
                     <th>Betrag</th>
                     <th>Status</th>
+                    <th>Bescheinigung-Nr.</th>
                     <th>Datum</th>
                     <th>Aktionen</th>
                 </tr>
@@ -55,9 +56,16 @@
                             {{ donation.payment_status }}
                         </span>
                     </td>
+                    <td>
+                        {% if donation.receipt_number %}
+                            <code class="small">{{ donation.receipt_number }}</code>
+                        {% else %}
+                            <span class="text-muted small">-</span>
+                        {% endif %}
+                    </td>
                     <td>{{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td>
-                        <a href="{{ url_for('admin.donation_detail', donation_id=donation.id) }}" 
+                        <a href="{{ url_for('admin.donation_detail', donation_id=donation.id) }}"
                            class="btn btn-sm btn-outline-primary">Details</a>
                     </td>
                 </tr>

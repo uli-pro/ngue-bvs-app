@@ -32,6 +32,16 @@
                     <dd class="col-sm-9">{{ donation.completed_at.strftime('%d.%m.%Y %H:%M:%S') }}</dd>
                     {% endif %}
 
+                    <dt class="col-sm-3">Bescheinigung-Nr.</dt>
+                    <dd class="col-sm-9">
+                        {% if donation.receipt_number %}
+                            <code>{{ donation.receipt_number }}</code>
+                            <br><small class="text-muted">Ausgestellt: {{ donation.receipt_issued_at.strftime('%d.%m.%Y %H:%M') if donation.receipt_issued_at else 'Unbekannt' }}</small>
+                        {% else %}
+                            <span class="text-muted">Noch nicht erstellt</span>
+                        {% endif %}
+                    </dd>
+
                     <dt class="col-sm-3">Stripe Payment Intent</dt>
                     <dd class="col-sm-9">
                         {% if donation.payment and donation.payment.stripe_payment_intent_id %}

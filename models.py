@@ -466,6 +466,10 @@ class Donation(db.Model):
     payment_status = db.Column(db.String(20), default='pending', nullable=False)
     certificate_generated = db.Column(db.Boolean, default=False, nullable=False)
     receipt_generated = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Receipt numbering (legally required per §50 Abs. 1 EStDV)
+    receipt_number = db.Column(db.String(30), unique=True, nullable=True, index=True)
+    receipt_issued_at = db.Column(db.DateTime, nullable=True)
     
     # Email tracking
     email_sent = db.Column(db.Boolean, default=False, nullable=False)
@@ -719,6 +723,84 @@ class Certificate(db.Model):
     
     def __repr__(self):
         return f'<Certificate {self.id}: {self.certificate_type} for Donation {self.donation_id}>'
+
+
+class ReceiptCounter(db.Model):
+    """
+    Tracks receipt numbers per year for tax receipts (Spendenbescheinigungen).
+
+    Format: ngue-bvs-{year}-{number:04d}
+    Example: ngue-bvs-2025-0001
+
+    Counter resets to 1 at the beginning of each year.
+    """
+    __tablename__ = 'receipt_counters'
+
+    year = db.Column(db.Integer, primary_key=True, nullable=False)
+    last_number = db.Column(db.Integer, default=0, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ReceiptCounter year={self.year} last_number={self.last_number}>'
+
+    @staticmethod
+    def get_next_receipt_number(auto_commit=True):
+        """
+        Generates the next receipt number in format: ngue-bvs-YYYY-NNNN
+
+        Thread-safe implementation using database-level locking.
+
+        Args:
+            auto_commit: If True, commits the transaction. If False, only flushes
+                        (for use within atomic operations).
+
+        Returns:
+            str: Receipt number (e.g., 'ngue-bvs-2025-0001')
+
+        Raises:
+            Exception: If database transaction fails
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        current_year = datetime.utcnow().year
+
+        try:
+            # Use SELECT FOR UPDATE to prevent race conditions
+            counter = db.session.query(ReceiptCounter).filter_by(
+                year=current_year
+            ).with_for_update().first()
+
+            if not counter:
+                # Create new counter for this year
+                counter = ReceiptCounter(year=current_year, last_number=1)
+                db.session.add(counter)
+                db.session.flush()  # Get the ID before commit
+                next_number = 1
+            else:
+                # Increment existing counter
+                counter.last_number += 1
+                counter.updated_at = datetime.utcnow()
+                next_number = counter.last_number
+
+            # Commit or flush depending on context
+            if auto_commit:
+                db.session.commit()
+            else:
+                db.session.flush()
+
+            # Format: ngue-bvs-YYYY-NNNN
+            receipt_number = f"ngue-bvs-{current_year}-{next_number:04d}"
+
+            logger.info(f"Generated receipt number: {receipt_number}")
+            return receipt_number
+
+        except Exception as e:
+            if auto_commit:
+                db.session.rollback()
+            logger.error(f"Error generating receipt number: {e}")
+            raise
+
 
 class TranslationNotification(db.Model):
     """Notifications for translated verses - granular per verse"""
