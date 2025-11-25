@@ -17,11 +17,11 @@
                     <span class="text-primary">Finanzieren Sie die Übersetzung eines Bibelverses</span>
                 </h1>
                 <p class="hero-subtitle fade-in">
-                    Mit Ihrer Spende von 100€ ermöglichen Sie die Übersetzung eines Bibelverses in die zeitgemäße und zuverlässige Neue Genfer Übersetzung - ein Beitrag, der weit über Ihre eigene Lebenszeit hinaus Menschen erreichen wird.
+                    Mit Ihrer Spende von {{ 100|currency }} ermöglichen Sie die Übersetzung eines Bibelverses in die zeitgemäße und zuverlässige Neue Genfer Übersetzung - ein Beitrag, der weit über Ihre eigene Lebenszeit hinaus Menschen erreichen wird.
                 </p>
                 <div class="mt-4 fade-in">
                     <a href="/vers-auswaehlen" class="btn btn-primary btn-lg me-3 mb-3">
-                        JETZT VERS SPONSERN - 100€
+                        JETZT VERS SPONSERN - {{ 100|currency }}
                     </a>
                 </div>
             </div>
@@ -162,7 +162,7 @@
             <div class="col-lg-4 mb-4">
                 <div class="card h-100">
                     <div class="card-header">
-                        <h4>So kommen die 100€ pro Vers zustande</h4>
+                        <h4>So kommen die {{ 100|currency }} pro Vers zustande</h4>
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
@@ -174,25 +174,25 @@
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
                                     <div class="me-2 bg-green" style="width: 12px; height: 12px; border-radius: 2px;"></div>
-                                    <span>Erstübersetzung (45€)</span>
+                                    <span>Erstübersetzung ({{ 45|currency }})</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
                                     <div class="me-2 bg-red" style="width: 12px; height: 12px; border-radius: 2px;"></div>
-                                    <span>Revision (35€)</span>
+                                    <span>Revision ({{ 35|currency }})</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
                                     <div class="me-2 bg-blue" style="width: 12px; height: 12px; border-radius: 2px;"></div>
-                                    <span>Fachliche Begleitung (10€)</span>
+                                    <span>Fachliche Begleitung ({{ 10|currency }})</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-2">
                                 <div class="d-flex align-items-center justify-content-start">
                                     <div class="me-2 bg-orange" style="width: 12px; height: 12px; border-radius: 2px;"></div>
-                                    <span>Qualitäts-sicherung (10€)</span>
+                                    <span>Qualitäts-sicherung ({{ 10|currency }})</span>
                                 </div>
                             </div>
                         </div>
@@ -214,7 +214,7 @@
             <div class="card-body text-center py-5">
                 <h2 class="mb-4">Möchten Sie ein ganzes Kapitel oder Buch sponsern?</h2>
                 <p class="lead mb-4">
-                    Für größere Sponsorings (ab 1.000€) bieten wir individuelle Lösungen und besondere Anerkennungen.
+                    Für größere Sponsorings (ab {{ 1000|currency }}) bieten wir individuelle Lösungen und besondere Anerkennungen.
                 </p>
                 <a href="/kontakt" class="btn btn-primary btn-lg">
                     Jetzt persönlich beraten lassen
@@ -241,7 +241,7 @@
                             Wie funktioniert das Vers-Sponsoring?
                         </h5>
                         <p class="card-text">
-                            Sie wählen einen der noch zu übersetzenden {{ "{:,}".format(stats.available_verses).replace(",", ".") }} Verse aus dem Alten Testament aus und sponsern ihn mit einer Spende von 100€. Nach der Zahlung erhalten Sie automatisch ein personalisiertes Zertifikat sowie eine offizielle Spendenbescheinigung per E-Mail.
+                            Sie wählen einen der noch zu übersetzenden {{ "{:,}".format(stats.available_verses).replace(",", ".") }} Verse aus dem Alten Testament aus und sponsern ihn mit einer Spende von {{ 100|currency }}. Nach der Zahlung erhalten Sie automatisch ein personalisiertes Zertifikat sowie eine offizielle Spendenbescheinigung per E-Mail.
                         </p>
                     </div>
                 </div>
@@ -252,10 +252,10 @@
                     <div class="card-body">
                         <h5 class="card-title">
                             <i class="fas fa-euro-sign text-primary me-2"></i>
-                            Warum kostet jeder Vers genau 100€?
+                            Warum kostet jeder Vers genau {{ 100|currency }}?
                         </h5>
                         <p class="card-text">
-                            Der einheitliche Preis von 100€ pro Vers basiert auf den durchschnittlichen Kosten für Übersetzung, Lektorat, Korrektur und Qualitätssicherung eines Verses. Dieses einfache Preismodell macht das Sponsoring transparent und für alle Spender gleich zugänglich.
+                            Der einheitliche Preis von {{ 100|currency }} pro Vers basiert auf den durchschnittlichen Kosten für Übersetzung, Lektorat, Korrektur und Qualitätssicherung eines Verses. Dieses einfache Preismodell macht das Sponsoring transparent und für alle Spender gleich zugänglich.
                         </p>
                     </div>
                 </div>

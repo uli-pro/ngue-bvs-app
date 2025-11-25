@@ -1,13 +1,12 @@
 {# TEMPORARY FIX (2025-01-17): Plain-text email template #}
 {# REASON: Debug email rendering issues and provide fallback for non-HTML clients #}
-{# TODO: Investigate currency filter availability in email_service.py context #}
 {# ROLLBACK: Delete this file - email_service.py has HTML-to-text fallback #}
 
 Herzlichen Dank für Ihre Spende!
 
 Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},
 
-vielen Dank für Ihre großzügige Spende von {{ donation.total_amount }} € für die NGÜ Bibelübersetzung!
+vielen Dank für Ihre großzügige Spende von {{ donation.total_amount|currency }} für die NGÜ Bibelübersetzung!
 
 Mit Ihrer Unterstützung helfen Sie, Gottes Wort in zeitgemäßer und verständlicher Sprache zugänglich zu machen.
 
@@ -25,7 +24,7 @@ SPENDEN-DETAILS
 
 Spenden-ID: {{ donation.id }}
 Datum: {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}
-Betrag: {{ donation.total_amount }} €
+Betrag: {{ donation.total_amount|currency }}
 Anzahl Verse: {{ donation.verses|length }}
 
 ===========================================

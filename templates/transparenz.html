@@ -22,35 +22,35 @@
             <div class="col-lg-10">
                 <div class="card border-primary mb-5">
                     <div class="text-center mb-5">
-                        <h2>Mittelverwendung pro 100€ Spende</h2>
+                        <h2>Mittelverwendung pro {{ 100|currency }} Spende</h2>
                     </div>
                     <div class="card-body p-5">
                         <div class="row text-center mb-4">
                             <div class="col-md-3">
                                 <div class="p-4 rounded mb-3" style="background-color: #28a745; color: white;">
                                     <h3 class="mb-2">45%</h3>
-                                    <h4>45,00€</h4>
+                                    <h4>{{ 45|currency }}</h4>
                                     <p class="mb-0">Erstübersetzung</p>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="p-4 rounded mb-3" style="background-color: var(--color-primary); color: white;">
                                     <h3 class="mb-2">35%</h3>
-                                    <h4>35,00€</h4>
+                                    <h4>{{ 35|currency }}</h4>
                                     <p class="mb-0">Revision</p>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="p-4 rounded mb-3" style="background-color: #007bff; color: white;">
                                     <h3 class="mb-2">10%</h3>
-                                    <h4>10,00€</h4>
+                                    <h4>{{ 10|currency }}</h4>
                                     <p class="mb-0">Fachliche Begleitung</p>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="p-4 rounded mb-3" style="background-color: #fd7e14; color: white;">
                                     <h3 class="mb-2">10%</h3>
-                                    <h4>10,00€</h4>
+                                    <h4>{{ 10|currency }}</h4>
                                     <p class="mb-0">Qualitätssicherung</p>
                                 </div>
                             </div>
@@ -95,7 +95,7 @@
                     <div class="card-header text-white" style="background-color: #28a745;">
                         <h5 class="mb-0">
                             <i class="fas fa-language me-2"></i>
-                            Erstübersetzung (45,00€)
+                            Erstübersetzung ({{ 45|currency }})
                         </h5>
                     </div>
                     <div class="card-body">
@@ -126,7 +126,7 @@
                     <div class="card-header text-white" style="background-color: var(--color-primary);">
                         <h5 class="mb-0">
                             <i class="fas fa-edit me-2"></i>
-                            Revision (35,00€)
+                            Revision ({{ 35|currency }})
                         </h5>
                     </div>
                     <div class="card-body">
@@ -157,7 +157,7 @@
                     <div class="card-header text-white" style="background-color: #007bff;">
                         <h5 class="mb-0">
                             <i class="fas fa-user-graduate me-2"></i>
-                            Fachliche Begleitung (10,00€)
+                            Fachliche Begleitung ({{ 10|currency }})
                         </h5>
                     </div>
                     <div class="card-body">
@@ -188,7 +188,7 @@
                     <div class="card-header text-white" style="background-color: #fd7e14;">
                         <h5 class="mb-0">
                             <i class="fas fa-shield-alt me-2"></i>
-                            Qualitätssicherung (10,00€)
+                            Qualitätssicherung ({{ 10|currency }})
                         </h5>
                     </div>
                     <div class="card-body">
@@ -247,7 +247,7 @@
                     <div class="card-body p-4">
                         <h3 class="mb-4 text-center">Was bewirkt Ihre Spende konkret?</h3>
                         
-                        <h4>Mit 100€ ermöglichen Sie:</h4>
+                        <h4>Mit {{ 100|currency }} ermöglichen Sie:</h4>
                         <ul class="list-unstyled">
                             <li class="mb-2">
                                 <i class="fas fa-check-circle me-2"></i>
@@ -311,7 +311,7 @@
                                 </div>
                             </div>
                             <p class="lead">
-                                <strong>{{ "{:,}".format(stats.total_amount).replace(",", ".") }}€</strong> von <strong>{{ "{:,}".format(stats.total_goal).replace(",", ".") }}€</strong> finanziert
+                                <strong>{{ stats.total_amount|currency }}</strong> von <strong>{{ stats.total_goal|currency }}</strong> finanziert
                             </p>
                         </div>
                         
