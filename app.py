@@ -27,6 +27,9 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Admin notification configuration
+app.config["ADMIN_EMAIL"] = os.environ.get("ADMIN_EMAIL")
+
 # Certificate storage configuration
 app.config['CERTIFICATE_STORAGE_PATH'] = os.path.join(os.getcwd(), 'certificates')
 app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'

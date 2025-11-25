@@ -540,5 +540,100 @@ class EmailService:
             self.logger.error(f"Test email failed: {e}")
             raise EmailServiceError(f"Failed to send test email: {e}")
 
+    def send_admin_alert(self, subject: str, message: str,
+                        error_details: str = None, context: Dict[str, Any] = None) -> bool:
+        """Send alert email to admin for critical errors or notifications
+
+        Args:
+            subject: Alert subject (will be prefixed with [NGUE Alert])
+            message: Main alert message
+            error_details: Optional technical error details
+            context: Optional dictionary with additional context (donation_id, user_email, etc.)
+
+        Returns:
+            bool: True if email sent successfully, False otherwise
+        """
+        try:
+            admin_email = current_app.config.get('ADMIN_EMAIL')
+
+            if not admin_email:
+                self.logger.warning("ADMIN_EMAIL not configured - cannot send admin alert")
+                return False
+
+            timestamp = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+
+            # Build context details string
+            context_html = ""
+            context_text = ""
+            if context:
+                context_html = "<h3>Kontext:</h3><ul>"
+                context_text = "\nKontext:\n"
+                for key, value in context.items():
+                    context_html += f"<li><strong>{key}:</strong> {value}</li>"
+                    context_text += f"  - {key}: {value}\n"
+                context_html += "</ul>"
+
+            # Build error details section
+            error_html = ""
+            error_text = ""
+            if error_details:
+                error_html = f"""
+                <h3>Technische Details:</h3>
+                <pre style="background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto;">{error_details}</pre>
+                """
+                error_text = f"\nTechnische Details:\n{error_details}\n"
+
+            html_body = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: #dc3545; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
+                    <h2 style="margin: 0;">⚠️ NGÜ Admin Alert</h2>
+                </div>
+                <div style="border: 1px solid #ddd; border-top: none; padding: 20px; border-radius: 0 0 5px 5px;">
+                    <p><strong>Zeitpunkt:</strong> {timestamp}</p>
+                    <h3>Nachricht:</h3>
+                    <p>{message}</p>
+                    {context_html}
+                    {error_html}
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="color: #666; font-size: 12px;">
+                        Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert.
+                    </p>
+                </div>
+            </div>
+            """
+
+            text_body = f"""
+NGÜ Admin Alert
+===============
+
+Zeitpunkt: {timestamp}
+
+Nachricht:
+{message}
+{context_text}{error_text}
+---
+Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert.
+            """
+
+            full_subject = f"[NGUE Alert] {subject}"
+
+            success = self.provider.send_email(
+                to_email=admin_email,
+                subject=full_subject,
+                html_body=html_body,
+                text_body=text_body
+            )
+
+            if success:
+                self.logger.info(f"Admin alert sent to {admin_email}: {subject}")
+            else:
+                self.logger.error(f"Failed to send admin alert to {admin_email}: {subject}")
+
+            return success
+
+        except Exception as e:
+            self.logger.error(f"Admin alert failed: {e}")
+            return False
+
 # Global instance
 email_service = EmailService()
