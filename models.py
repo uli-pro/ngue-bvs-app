@@ -595,7 +595,7 @@ class MagicLinkToken(db.Model):
 class PaymentTransaction(db.Model):
     """Payment transaction details"""
     __tablename__ = 'payment_transactions'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     donation_id = db.Column(db.Integer, db.ForeignKey('donations.id'), nullable=False)
     provider = db.Column(db.String(20), default='stripe', nullable=False)

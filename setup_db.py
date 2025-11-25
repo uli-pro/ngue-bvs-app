@@ -117,6 +117,8 @@ def create_database():
             CREATE INDEX IF NOT EXISTS idx_donations_person ON donations(person_id);
             CREATE INDEX IF NOT EXISTS idx_donations_status ON donations(payment_status);
             CREATE INDEX IF NOT EXISTS idx_donations_email_sent ON donations(email_sent);
+            CREATE INDEX IF NOT EXISTS idx_donations_receipt_number ON donations(receipt_number);
+            CREATE INDEX IF NOT EXISTS idx_donations_receipt_issued_at ON donations(receipt_issued_at);
             
             -- Donation-Verse junction indexes
             CREATE INDEX IF NOT EXISTS idx_donation_verses_donation ON donation_verses(donation_id);
@@ -136,6 +138,9 @@ def create_database():
             -- Admin token indexes
             CREATE INDEX IF NOT EXISTS idx_admin_token ON admin_tokens(token);
             CREATE INDEX IF NOT EXISTS idx_admin_token_expires ON admin_tokens(expires_at);
+
+            -- Receipt counter indexes
+            CREATE INDEX IF NOT EXISTS idx_receipt_counters_year ON receipt_counters(year);
             """
             
             for statement in create_indexes_sql.split(';'):
@@ -164,6 +169,29 @@ def create_database():
             db.session.execute(text(create_trigger_sql))
             db.session.commit()
             logger.info("✓ Triggers created successfully")
+
+            # Add receipt number format constraint
+            constraint_sql = """
+            ALTER TABLE donations
+            DROP CONSTRAINT IF EXISTS check_receipt_number_format;
+
+            ALTER TABLE donations
+            ADD CONSTRAINT check_receipt_number_format
+            CHECK (receipt_number IS NULL OR receipt_number ~ '^ngue-bvs-\\d{4}-\\d{4}$');
+            """
+            db.session.execute(text(constraint_sql))
+            db.session.commit()
+            logger.info("✓ Receipt number format constraint created")
+
+            # Initialize receipt counter for current year
+            init_counter_sql = """
+            INSERT INTO receipt_counters (year, last_number, updated_at)
+            VALUES (EXTRACT(YEAR FROM CURRENT_TIMESTAMP)::INTEGER, 0, CURRENT_TIMESTAMP)
+            ON CONFLICT (year) DO NOTHING;
+            """
+            db.session.execute(text(init_counter_sql))
+            db.session.commit()
+            logger.info("✓ Receipt counter initialized for current year")
             
         except Exception as e:
             logger.error(f"Error creating database: {e}")

@@ -92,6 +92,7 @@ uploads/
 # -----------------------------------------------------------------------------
 # Non-deployment files
 do_not_deploy/
+do-not-deploy/
 
 # Runtime generated certificates (alle Unterverzeichnisse)
 certificates/
