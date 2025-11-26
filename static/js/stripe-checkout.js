@@ -361,20 +361,29 @@ class StripeCheckout {
     
     handlePaymentConfirmed(paymentIntent) {
         this.debugLog('Payment confirmed:', paymentIntent.id, 'Status:', paymentIntent.status);
-        
+
+        // 2025-11-26: Simplified to always go to processing page
+        // All payments wait for webhook to set certificate_sent_at
+        // This ensures consistent flow for both card and SEPA payments
+
+        this.debugLog('🔄 Redirecting to processing page, waiting for webhook...');
+        this.isIntentionalRedirect = true;
+        window.location.href = '/checkout/verarbeitung';
+
+        /* COMMENTED OUT 2025-11-26: Old logic that bypassed webhook for instant card payments
         // Check if this is a SEPA payment or if payment is still processing
         const isSepaPayment = this.selectedPaymentMethodType === 'sepa_debit';
         const isProcessing = paymentIntent.status === 'processing';
         const isRequiresAction = paymentIntent.status === 'requires_action';
-        
+
         if (isSepaPayment || isProcessing || isRequiresAction) {
             // Redirect to processing page for SEPA or processing payments
             this.debugLog('🏦 SEPA or processing payment detected, redirecting to processing page');
             this.showProcessingMessage();
-            
+
             // Mark as intentional redirect to prevent browser warning
             this.isIntentionalRedirect = true;
-            
+
             setTimeout(() => {
                 window.location.href = `/checkout/verarbeitung?payment_intent=${paymentIntent.id}`;
             }, 1000);
@@ -384,14 +393,15 @@ class StripeCheckout {
         } else {
             // Unknown status - redirect to processing page to be safe
             this.debugLog('⚠️ Unknown payment status, redirecting to processing page');
-            
+
             // Mark as intentional redirect to prevent browser warning
             this.isIntentionalRedirect = true;
-            
+
             setTimeout(() => {
                 window.location.href = `/checkout/verarbeitung?payment_intent=${paymentIntent.id}`;
             }, 1000);
         }
+        END COMMENTED OUT */
     }
     
     showProcessingMessage() {
