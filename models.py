@@ -474,7 +474,13 @@ class Donation(db.Model):
     # Email tracking
     email_sent = db.Column(db.Boolean, default=False, nullable=False)
     email_sent_at = db.Column(db.DateTime, nullable=True)
-    
+
+    # SEPA/Webhook tracking (for idempotency and storno handling)
+    certificate_sent_at = db.Column(db.DateTime, nullable=True)  # When certificate email was sent (idempotency)
+    storno_generated = db.Column(db.Boolean, default=False, nullable=False)  # Storno PDF generated
+    storno_sent_at = db.Column(db.DateTime, nullable=True)  # When storno email was sent
+    failure_reason = db.Column(db.String(255), nullable=True)  # Stripe error message
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
@@ -525,18 +531,35 @@ class Donation(db.Model):
         # Check if already failed to avoid duplicate processing
         if self.payment_status == 'failed':
             return
-            
+
         self.payment_status = 'failed'
         # Mark all verses as available again
         for verse_assoc in self.verse_associations:
             verse_assoc.verse.is_sponsored = False
             verse_assoc.verse.sponsored_at = None
-        
-        # Store error message in person_snapshot if provided
-        if error_message and self.person_snapshot:
-            if isinstance(self.person_snapshot, dict):
-                self.person_snapshot['last_error'] = error_message
-        
+
+        # Store error message in dedicated field
+        if error_message:
+            self.failure_reason = error_message[:255]  # Truncate to field length
+
+        db.session.commit()
+
+    def mark_disputed(self, reason=None):
+        """Mark donation as disputed (chargeback) and release verses"""
+        # Check if already disputed to avoid duplicate processing
+        if self.payment_status == 'disputed':
+            return
+
+        self.payment_status = 'disputed'
+        # Mark all verses as available again
+        for verse_assoc in self.verse_associations:
+            verse_assoc.verse.is_sponsored = False
+            verse_assoc.verse.sponsored_at = None
+
+        # Store dispute reason
+        if reason:
+            self.failure_reason = f"Dispute: {reason}"[:255]
+
         db.session.commit()
     
     # Helper Methods for Many-to-Many verses

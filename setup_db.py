@@ -119,6 +119,12 @@ def create_database():
             CREATE INDEX IF NOT EXISTS idx_donations_email_sent ON donations(email_sent);
             CREATE INDEX IF NOT EXISTS idx_donations_receipt_number ON donations(receipt_number);
             CREATE INDEX IF NOT EXISTS idx_donations_receipt_issued_at ON donations(receipt_issued_at);
+
+            -- SEPA/Webhook tracking indexes (for idempotency and storno handling)
+            CREATE INDEX IF NOT EXISTS idx_donations_certificate_sent ON donations(certificate_sent_at)
+                WHERE certificate_sent_at IS NOT NULL;
+            CREATE INDEX IF NOT EXISTS idx_donations_storno ON donations(storno_generated)
+                WHERE storno_generated = true;
             
             -- Donation-Verse junction indexes
             CREATE INDEX IF NOT EXISTS idx_donation_verses_donation ON donation_verses(donation_id);
