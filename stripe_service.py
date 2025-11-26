@@ -948,39 +948,226 @@ class StripeService:
     @staticmethod
     def handle_chargeback(charge):
         """
-        Handle chargeback/dispute (mainly for SEPA)
-        
+        Handle chargeback/dispute (mainly for SEPA).
+
+        Chargebacks occur when a donor disputes a completed payment with their bank.
+        Since the payment was previously successful, a certificate was already sent,
+        so we ALWAYS need to:
+        1. Release verses (mark as available)
+        2. Mark donation as 'disputed'
+        3. Generate Storno-PDF
+        4. Send Storno-Email
+        5. Notify admin
+
         Args:
-            charge: Stripe Charge object with dispute
+            charge: Stripe Charge object with dispute (dict from webhook)
+
+        Returns:
+            bool: True if processing successful
         """
         try:
             payment_intent_id = charge.get('payment_intent')
             if not payment_intent_id:
+                logger.error("No payment_intent in charge object for chargeback")
                 return False
-            
-            # Find payment transaction
+
+            # Extract dispute details for logging and notification
+            dispute = charge.get('dispute', {})
+            dispute_reason = dispute.get('reason', 'unknown') if dispute else 'unknown'
+            dispute_amount = charge.get('amount_refunded', charge.get('amount', 0))
+
+            # Find payment transaction via PaymentIntent ID
             payment = PaymentTransaction.query.filter_by(
                 stripe_payment_intent_id=payment_intent_id
             ).first()
-            
-            if payment and payment.donation:
-                # Mark all verses as available again
-                for verse_assoc in payment.donation.verse_associations:
-                    verse_assoc.verse.is_sponsored = False
-                payment.donation.payment_status = 'disputed'
-                
-                # Log the dispute
-                logger.warning(f"Chargeback for donation {payment.donation.id}, verses: {', '.join([va.verse.reference for va in payment.donation.verse_associations])}")
-                
-                db.session.commit()
+
+            if not payment or not payment.donation:
+                logger.error(f"No donation found for chargeback PaymentIntent {payment_intent_id}")
+                return False
+
+            donation = payment.donation
+
+            # Idempotency: Already disputed? Just return success
+            if donation.payment_status == 'disputed':
+                logger.info(f"Donation {donation.id} already disputed, skipping")
                 return True
-            
-            return False
-            
+
+            # Log verse references before releasing
+            verse_refs = [
+                va.verse.german_reference if va.verse else 'unknown'
+                for va in donation.verse_associations
+            ]
+
+            try:
+                # 1. Release all verses (mark as available again)
+                for verse_assoc in donation.verse_associations:
+                    if verse_assoc.verse:
+                        verse_assoc.verse.is_sponsored = False
+                        verse_assoc.verse.sponsored_at = None
+
+                # 2. Mark donation as disputed
+                donation.payment_status = 'disputed'
+                donation.failure_reason = f"Chargeback: {dispute_reason}"
+
+                db.session.commit()
+                logger.warning(
+                    f"Chargeback processed for donation {donation.id}: "
+                    f"verses {', '.join(verse_refs)} released, reason: {dispute_reason}"
+                )
+
+                # 3. Generate Storno-PDF and send Storno-Email (outside main transaction)
+                try:
+                    StripeService._handle_chargeback_notification(donation, dispute_reason)
+                except Exception as e:
+                    logger.error(f"Error sending chargeback notification for donation {donation.id}: {e}")
+                    # Continue - donation is already marked as disputed
+
+                # 4. Send admin alert with dispute details
+                try:
+                    StripeService._send_admin_alert_for_chargeback(
+                        donation, dispute_reason, dispute_amount, verse_refs
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending admin alert for chargeback {donation.id}: {e}")
+
+                return True
+
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Database error processing chargeback: {e}")
+                raise
+
         except Exception as e:
-            db.session.rollback()
             logger.error(f"Error handling chargeback: {e}")
             return False
+
+    @staticmethod
+    def _handle_chargeback_notification(donation: Donation, dispute_reason: str):
+        """
+        Generate Storno-PDF and send Storno-Email for chargebacks.
+
+        Chargebacks always occur after successful payment, so a certificate
+        was definitely sent. Storno is mandatory.
+
+        Args:
+            donation: Donation object (already marked as disputed)
+            dispute_reason: Reason for dispute from Stripe
+        """
+        from pdf_service import PDFGeneratorService
+        from email_service import email_service
+
+        try:
+            # Translate dispute reason to German
+            cancellation_reason = StripeService._translate_chargeback_reason(dispute_reason)
+
+            # 1. Generate Storno-PDF
+            pdf_service = PDFGeneratorService(current_app._get_current_object())
+            storno_pdf_path = pdf_service.generate_storno_certificate(
+                donation.id,
+                cancellation_reason=cancellation_reason
+            )
+
+            if not storno_pdf_path:
+                logger.error(f"Failed to generate storno PDF for chargeback donation {donation.id}")
+                return
+
+            # 2. Get storno context for email
+            storno_context = pdf_service._prepare_storno_context(donation, cancellation_reason)
+
+            # 3. Send Storno-Email with PDF attachment
+            donation_data = StripeService._prepare_donation_data(donation)
+
+            email_sent = email_service.send_storno_email(
+                donation_data,
+                storno_pdf_path,
+                storno_context
+            )
+
+            if email_sent:
+                donation.storno_sent_at = datetime.utcnow()
+                db.session.commit()
+                logger.info(f"Storno email sent for chargeback donation {donation.id}")
+            else:
+                logger.error(f"Failed to send storno email for chargeback donation {donation.id}")
+
+        except Exception as e:
+            logger.error(f"Error in _handle_chargeback_notification for donation {donation.id}: {e}")
+            raise
+
+    @staticmethod
+    def _send_admin_alert_for_chargeback(donation: Donation, dispute_reason: str,
+                                          dispute_amount: int, verse_refs: list):
+        """Send admin alert for chargeback/dispute."""
+        from email_service import email_service
+
+        # Convert amount from cents to EUR
+        amount_eur = dispute_amount / 100 if dispute_amount else float(donation.total_amount)
+
+        try:
+            email_service.send_admin_alert(
+                subject=f"⚠️ CHARGEBACK: Donation #{donation.id} - €{amount_eur:.2f}",
+                message=(
+                    f"Ein Kunde hat eine Rückbuchung (Chargeback) für Donation #{donation.id} "
+                    f"veranlasst. Die betroffenen Verse wurden freigegeben."
+                ),
+                error_details=f"Dispute Reason: {dispute_reason}",
+                context={
+                    'donation_id': donation.id,
+                    'payment_status': donation.payment_status,
+                    'dispute_reason': dispute_reason,
+                    'dispute_amount_eur': f"€{amount_eur:.2f}",
+                    'user_email': donation.person.email if donation.person else 'unbekannt',
+                    'user_name': (
+                        f"{donation.person.first_name} {donation.person.last_name}"
+                        if donation.person else 'unbekannt'
+                    ),
+                    'affected_verses': ', '.join(verse_refs),
+                    'verse_count': len(verse_refs),
+                    'original_certificate_date': (
+                        donation.certificate_sent_at.strftime('%d.%m.%Y %H:%M')
+                        if donation.certificate_sent_at else 'unbekannt'
+                    ),
+                    'action_required': 'Storno-PDF wurde generiert und an Spender gesendet.'
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to send admin alert for chargeback {donation.id}: {e}")
+
+    @staticmethod
+    def _translate_chargeback_reason(reason: str) -> str:
+        """
+        Translate Stripe chargeback/dispute reasons to German.
+
+        Args:
+            reason: Stripe dispute reason code
+
+        Returns:
+            str: German user-friendly message
+        """
+        # Stripe dispute reason codes
+        # https://stripe.com/docs/api/disputes/object#dispute_object-reason
+        translations = {
+            'bank_cannot_process': 'Die Bank konnte die Zahlung nicht verarbeiten.',
+            'check_returned': 'Der Scheck wurde zurückgegeben.',
+            'credit_not_processed': 'Eine erwartete Gutschrift wurde nicht verarbeitet.',
+            'customer_initiated': 'Die Rückbuchung wurde vom Kontoinhaber veranlasst.',
+            'debit_not_authorized': 'Die Lastschrift wurde nicht autorisiert.',
+            'duplicate': 'Es wurde eine doppelte Zahlung gemeldet.',
+            'fraudulent': 'Die Zahlung wurde als betrügerisch gemeldet.',
+            'general': 'Allgemeine Rückbuchung ohne spezifischen Grund.',
+            'incorrect_account_details': 'Falsche Kontodaten wurden verwendet.',
+            'insufficient_funds': 'Nicht ausreichende Deckung auf dem Konto.',
+            'product_not_received': 'Das Produkt/die Leistung wurde nicht erhalten.',
+            'product_unacceptable': 'Das Produkt/die Leistung war nicht akzeptabel.',
+            'subscription_canceled': 'Ein Abonnement wurde gekündigt.',
+            'unrecognized': 'Die Zahlung wurde nicht erkannt.'
+        }
+
+        if reason in translations:
+            return translations[reason]
+
+        # Default: Return with German prefix
+        return f"Rückbuchung durch Bank oder Kontoinhaber: {reason}"
     
     @staticmethod
     def handle_requires_action_payment(payment_intent):
