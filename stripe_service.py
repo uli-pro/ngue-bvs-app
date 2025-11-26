@@ -324,66 +324,91 @@ class StripeService:
     @staticmethod
     def handle_successful_payment(payment_intent):
         """
-        Handle successful payment from webhook
-        
+        Handle successful payment from webhook.
+
+        Two scenarios:
+        1. Card payment (immediate): certificate_sent_at is NULL
+           → Mark completed, generate PDFs, send email
+
+        2. SEPA payment (delayed, after processing): certificate_sent_at is set
+           → Just update status to 'completed', no email (already sent at processing)
+
         Args:
-            payment_intent: Stripe PaymentIntent object
+            payment_intent: Stripe PaymentIntent object (dict from webhook)
+
+        Returns:
+            bool: True if processing successful
         """
-        payment_intent_id = payment_intent.id
-        
+        payment_intent_id = payment_intent.get('id')
+
         try:
             # Get donation ID from metadata
-            donation_id = payment_intent.metadata.get('donation_id')
-            if not donation_id or not donation_id.isdigit():
-                logger.error(f"No valid donation ID in PaymentIntent {payment_intent.id}")
+            donation_id = payment_intent.get('metadata', {}).get('donation_id')
+            if not donation_id or not str(donation_id).isdigit():
+                logger.error(f"No valid donation ID in PaymentIntent {payment_intent_id}")
                 return False
-            
+
             donation_id = int(donation_id)
-            
-            # Find donation by ID
+
+            # Find donation by ID (allow pending, processing, or already completed for idempotency)
             donation = Donation.query.filter(
-                Donation.id == donation_id,
-                Donation.payment_status.in_(['pending', 'processing'])
+                Donation.id == donation_id
             ).first()
-            
+
             if not donation:
-                logger.error(f"No pending donation found for PaymentIntent {payment_intent.id}")
+                logger.error(f"Donation {donation_id} not found for PaymentIntent {payment_intent_id}")
                 return False
-            
-            # Track verses before completion
-            verse_ids_before = [va.verse_id for va in donation.verse_associations]
-            
-            # Start database transaction
-            try:
-                # Mark donation as completed
-                donation.mark_completed()
-                
-                # Update payment transaction
-                if donation.payment:
-                    donation.payment.update_stripe_data(payment_intent)
-                    donation.payment.mark_confirmed()
-                
-                # Track verse sponsorship changes
-                verses_sponsored = []
-                for verse_assoc in donation.verse_associations:
-                    verse = verse_assoc.verse
-                    if verse.is_sponsored:
-                        verses_sponsored.append({
-                            'verse_id': verse.id,
-                            'reference': verse.reference,
-                            'sponsored_at': verse.sponsored_at.isoformat() if verse.sponsored_at else None
-                        })
-                
-                db.session.commit()
-                
-                logger.info(f"Successfully processed payment for donation {donation.id}")
+
+            # Idempotency: Already completed? Just return success
+            if donation.payment_status == 'completed':
+                logger.info(f"Donation {donation.id} already completed, skipping")
                 return True
-                
+
+            # Check if this was already fulfilled during 'processing' (SEPA Optimistic Completion)
+            already_fulfilled = donation.certificate_sent_at is not None
+
+            try:
+                if already_fulfilled:
+                    # SEPA: Certificate was already sent at 'processing'
+                    # Just finalize the status
+                    donation.payment_status = 'completed'
+                    donation.completed_at = datetime.utcnow()
+
+                    if donation.payment:
+                        donation.payment.update_stripe_data(payment_intent)
+                        donation.payment.mark_confirmed()
+
+                    db.session.commit()
+                    logger.info(
+                        f"Donation {donation.id} finalized (SEPA): status → completed "
+                        f"(certificate was sent at {donation.certificate_sent_at})"
+                    )
+                else:
+                    # Card payment (or SEPA that somehow missed processing event)
+                    # Full flow: mark completed, generate PDFs, send email
+                    donation.mark_completed()
+
+                    if donation.payment:
+                        donation.payment.update_stripe_data(payment_intent)
+                        # mark_confirmed() already called by mark_completed()
+
+                    db.session.commit()
+                    logger.info(f"Donation {donation.id} marked as completed (card payment)")
+
+                    # Generate PDFs and send email
+                    try:
+                        StripeService._fulfill_donation(donation)
+                    except Exception as e:
+                        logger.error(f"Error fulfilling donation {donation.id}: {e}")
+                        StripeService._send_admin_alert_for_fulfillment_error(donation, str(e))
+
+                return True
+
             except Exception as e:
                 db.session.rollback()
                 logger.error(f"Database error processing successful payment: {e}")
                 raise
-                
+
         except Exception as e:
             logger.error(f"Error handling successful payment: {e}")
             return False
