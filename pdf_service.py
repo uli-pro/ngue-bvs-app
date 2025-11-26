@@ -268,6 +268,204 @@ class PDFGeneratorService:
             
             return certificate
     
+    def generate_storno_certificate(self, donation_id: int,
+                                    cancellation_reason: Optional[str] = None) -> Optional[str]:
+        """
+        Generiert Storno-PDF für fehlgeschlagene/stornierte Spenden.
+
+        Diese Methode generiert KEIN Certificate-Record, da Stornos keine
+        gültigen Zertifikate sind. Sie markiert jedoch donation.storno_generated = True.
+
+        Args:
+            donation_id: ID der Spende
+            cancellation_reason: Grund für die Stornierung (z.B. "SEPA-Lastschrift fehlgeschlagen")
+
+        Returns:
+            str: Pfad zur generierten PDF-Datei oder None bei Fehler
+
+        Note:
+            Wird nur für Donations generiert, die:
+            - Bereits ein Zertifikat erhalten haben (certificate_sent_at IS NOT NULL)
+            - Status 'failed' oder 'disputed' haben
+        """
+        try:
+            donation = Donation.query.get(donation_id)
+            if not donation:
+                self.logger.error(f"Storno: Donation {donation_id} not found")
+                return None
+
+            # Nur für fehlgeschlagene/stornierte Spenden
+            if donation.payment_status not in ('failed', 'disputed'):
+                self.logger.warning(
+                    f"Storno: Donation {donation_id} has status {donation.payment_status}, "
+                    f"expected 'failed' or 'disputed'"
+                )
+                return None
+
+            # Idempotenz: Nur einmal generieren
+            if donation.storno_generated:
+                self.logger.info(f"Storno already generated for donation {donation_id}")
+                # Versuche existierende Datei zu finden
+                existing_path = self._find_existing_storno(donation_id)
+                return existing_path
+
+            # Pfad generieren
+            filename, file_path = self._generate_storno_paths(donation)
+
+            # Context für Template vorbereiten
+            context = self._prepare_storno_context(donation, cancellation_reason)
+
+            # HTML rendern
+            html_content = render_template('certificates/storno_bescheinigung.html', **context)
+
+            # PDF generieren (nutzt eingebettetes CSS aus Template)
+            self._generate_storno_pdf_from_html(html_content, file_path)
+
+            # Donation als storno_generated markieren
+            donation.storno_generated = True
+            db.session.commit()
+
+            self.logger.info(f"Storno PDF generated for donation {donation_id}: {file_path}")
+            return file_path
+
+        except Exception as e:
+            db.session.rollback()
+            self.logger.error(f"Failed to generate storno PDF for donation {donation_id}: {e}")
+            return None
+
+    def _generate_storno_paths(self, donation: Donation) -> Tuple[str, str]:
+        """Generiert Pfade für Storno-PDF"""
+        base_dir = current_app.config['CERTIFICATE_STORAGE_PATH']
+
+        now = datetime.now()
+        year_month = f"{now.year}/{now.month:02d}"
+
+        # Storno-Dateien in separatem Unterordner
+        directory = os.path.join(base_dir, year_month, "storno")
+
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
+        filename = f"storno_donation_{donation.id:03d}_{timestamp}.pdf"
+
+        file_path = os.path.join(directory, filename)
+
+        os.makedirs(directory, exist_ok=True)
+
+        # Sicherheitsprüfung
+        if not os.path.abspath(file_path).startswith(os.path.abspath(base_dir)):
+            raise FileSystemError("Invalid file path detected")
+
+        return filename, file_path
+
+    def _find_existing_storno(self, donation_id: int) -> Optional[str]:
+        """Sucht nach bereits generierter Storno-PDF"""
+        base_dir = current_app.config.get('CERTIFICATE_STORAGE_PATH', '/tmp/certificates')
+
+        # Durchsuche alle storno-Verzeichnisse
+        for root, dirs, files in os.walk(base_dir):
+            if 'storno' in root:
+                for file in files:
+                    if file.startswith(f"storno_donation_{donation_id:03d}_"):
+                        return os.path.join(root, file)
+        return None
+
+    def _prepare_storno_context(self, donation: Donation,
+                                cancellation_reason: Optional[str] = None) -> Dict[str, Any]:
+        """Bereitet Context für Storno-Template vor"""
+
+        # Person-Daten aus Snapshot (konsistent mit anderen Methoden)
+        person_data = donation.person_snapshot or {}
+        if not person_data and donation.person:
+            person_data = {
+                'first_name': donation.person.first_name,
+                'last_name': donation.person.last_name,
+                'street': donation.person.street,
+                'house_number': donation.person.house_number,
+                'postal_code': donation.person.postal_code,
+                'city': donation.person.city,
+                'country': donation.person.country or 'Deutschland'
+            }
+
+        # Donor name zusammensetzen (Template erwartet donor_name als String)
+        donor_name = f"{person_data.get('first_name', '')} {person_data.get('last_name', '')}".strip()
+        if not donor_name:
+            donor_name = "Spender/in"
+
+        # Adresse aufbereiten (Template erwartet donor_address dict)
+        street = person_data.get('street', '')
+        house_number = person_data.get('house_number', '')
+        full_street = f"{street} {house_number}".strip() if street else ''
+
+        donor_address = {
+            'street': full_street,
+            'postal_code': person_data.get('postal_code', ''),
+            'city': person_data.get('city', ''),
+            'country': person_data.get('country', 'Deutschland')
+        }
+
+        # Verse-Referenzen für die Storno-Bescheinigung
+        verse_references = []
+        for assoc in donation.verse_associations:
+            if assoc.verse:
+                verse_ref = f"{assoc.verse.book} {assoc.verse.chapter},{assoc.verse.verse}"
+                verse_references.append(verse_ref)
+
+        # Stornierungsgrund bestimmen
+        if not cancellation_reason:
+            if donation.payment_status == 'disputed':
+                cancellation_reason = "Lastschrift wurde vom Kontoinhaber widerrufen (Chargeback)"
+            else:
+                cancellation_reason = donation.failure_reason or "Zahlung fehlgeschlagen"
+
+        # Original-Quittungsnummer (falls vorhanden)
+        original_receipt_number = donation.receipt_number or f"SPE-{donation.id:06d}"
+
+        # Original-Datum (Priorität: certificate_sent_at > completed_at > created_at)
+        if donation.certificate_sent_at:
+            original_date = donation.certificate_sent_at.strftime('%d.%m.%Y')
+        elif donation.completed_at:
+            original_date = donation.completed_at.strftime('%d.%m.%Y')
+        else:
+            original_date = donation.created_at.strftime('%d.%m.%Y') if donation.created_at else "unbekannt"
+
+        # Absoluter Pfad für Hintergrundbild (konsistent mit anderen Methoden)
+        static_dir = os.path.join(os.path.dirname(__file__), 'static')
+        background_image_path = os.path.join(static_dir, 'certificates', 'storno-background.png')
+
+        context = {
+            # Template-Variablen (passend zu storno_bescheinigung.html)
+            'donor_name': donor_name,
+            'donor_address': donor_address,
+            'original_receipt_number': original_receipt_number,
+            'original_date': original_date,
+            'amount': donation.total_amount,  # Template nutzt |currency Filter
+            'cancellation_reason': cancellation_reason,
+            'cancellation_date': datetime.now().strftime('%d.%m.%Y'),
+            'verse_references': verse_references,
+            'background_image_path': f'file://{background_image_path}',
+            # Zusätzlich donation für eventuelle Template-Erweiterungen
+            'donation': donation
+        }
+
+        return context
+
+    def _generate_storno_pdf_from_html(self, html_content: str, output_path: str):
+        """Generiert Storno-PDF aus HTML-Content"""
+        try:
+            # Storno verwendet das eingebettete CSS aus dem Template
+            # (anders als Zertifikate, die externe CSS nutzen)
+            html_doc = weasyprint.HTML(string=html_content, base_url=current_app.static_folder)
+
+            html_doc.write_pdf(
+                target=output_path,
+                font_config=None,
+                presentational_hints=True
+            )
+
+            os.chmod(output_path, 0o644)
+
+        except Exception as e:
+            raise PDFGenerationError(f"Storno PDF generation failed: {str(e)}")
+
     def generate_tax_receipt_atomic(self, donation_id: int,
                                    session_id: Optional[str] = None) -> Certificate:
         """Atomische Spendenbescheinigung-Generierung"""
