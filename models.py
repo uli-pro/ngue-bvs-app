@@ -513,7 +513,7 @@ class Donation(db.Model):
         # Check if already completed to avoid duplicate processing
         if self.payment_status == 'completed':
             return
-            
+
         self.payment_status = 'completed'
         self.completed_at = datetime.utcnow()
         # Mark all verses as sponsored
@@ -525,7 +525,28 @@ class Donation(db.Model):
         if self.payment:
             self.payment.mark_confirmed()
         db.session.commit()
-    
+
+    def mark_verses_sponsored(self):
+        """Mark verses as sponsored without changing payment status.
+
+        Used for SEPA "Optimistic Completion" pattern where we want to
+        sponsor verses immediately at 'processing' status, before the
+        payment is fully confirmed (which happens 5-6 days later).
+
+        Unlike mark_completed(), this does NOT:
+        - Change payment_status to 'completed'
+        - Set completed_at timestamp
+        - Call payment.mark_confirmed()
+        """
+        now = datetime.utcnow()
+        for verse_assoc in self.verse_associations:
+            if not verse_assoc.verse.is_sponsored:
+                verse_assoc.verse.is_sponsored = True
+                verse_assoc.verse.sponsored_at = now
+        # Update person's last donation date
+        if self.person:
+            self.person.last_donation_at = now
+
     def mark_failed(self, error_message=None):
         """Mark donation as failed and release verses"""
         # Check if already failed to avoid duplicate processing

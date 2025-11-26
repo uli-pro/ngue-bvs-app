@@ -15,6 +15,7 @@ from decimal import Decimal
 from models import db, Person, Donation, PaymentTransaction, Verse
 from datetime import datetime
 import logging
+from typing import Optional, Dict, Any
 
 
 # Configure Stripe
@@ -434,41 +435,206 @@ class StripeService:
     @staticmethod
     def handle_processing_payment(payment_intent):
         """
-        Handle payment in processing state (typically SEPA)
-        
+        Handle payment in processing state (typically SEPA) - Optimistic Completion
+
+        For SEPA payments, we implement "Optimistic Completion" as recommended by Stripe:
+        - Mark verses as sponsored immediately
+        - Generate PDF certificates
+        - Send confirmation email
+        - Set certificate_sent_at for idempotency
+
+        If payment fails later (5-6 days), handle_failed_payment() will:
+        - Release the verses
+        - Send storno email with cancellation PDF
+
         Args:
-            payment_intent: Stripe PaymentIntent object
+            payment_intent: Stripe PaymentIntent object (dict from webhook)
+
+        Returns:
+            bool: True if processing successful
         """
         try:
             # Get donation ID from metadata
-            donation_id = payment_intent.metadata.get('donation_id')
-            if not donation_id or not donation_id.isdigit():
-                logger.error(f"No valid donation ID in processing PaymentIntent {payment_intent.id}")
+            donation_id = payment_intent.get('metadata', {}).get('donation_id')
+            if not donation_id or not str(donation_id).isdigit():
+                logger.error(f"No valid donation ID in processing PaymentIntent {payment_intent.get('id')}")
                 return False
             donation_id = int(donation_id)
-            
+
             donation = Donation.query.filter(
                 Donation.id == donation_id,
                 Donation.payment_status == 'pending'
             ).first()
-            
+
             if not donation:
-                logger.error(f"No pending donation found for processing PaymentIntent {payment_intent.id}")
+                logger.error(f"No pending donation found for processing PaymentIntent {payment_intent.get('id')}")
                 return False
-            
+
+            # Idempotency check: If already processed, skip
+            if donation.certificate_sent_at:
+                logger.info(f"Donation {donation.id} already processed (certificate_sent_at set), skipping")
+                return True
+
+            # 1. Update payment status to 'processing'
             donation.payment_status = 'processing'
-            
+
             if donation.payment:
                 donation.payment.update_stripe_data(payment_intent)
-            
+
+            # 2. Mark verses as sponsored (Optimistic Completion)
+            donation.mark_verses_sponsored()
+
             db.session.commit()
-            logger.info(f"Marked donation {donation.id} as processing (SEPA)")
+            logger.info(f"Marked donation {donation.id} as processing (SEPA) with verses sponsored")
+
+            # 3. Generate PDFs and send email (outside main transaction for resilience)
+            try:
+                StripeService._fulfill_donation(donation)
+            except Exception as e:
+                # Log error but don't fail the webhook - donation is already marked
+                logger.error(f"Error fulfilling donation {donation.id} during processing: {e}")
+                # Send admin alert about fulfillment failure
+                StripeService._send_admin_alert_for_fulfillment_error(donation, str(e))
+
             return True
-            
+
         except Exception as e:
             db.session.rollback()
             logger.error(f"Error handling processing payment: {e}")
             return False
+
+    @staticmethod
+    def _fulfill_donation(donation: Donation) -> bool:
+        """
+        Generate PDFs and send certificate email for a donation.
+
+        This is called from:
+        - handle_processing_payment() for SEPA (Optimistic Completion)
+        - handle_successful_payment() for card payments (if not already fulfilled)
+
+        Args:
+            donation: Donation object with verses already sponsored
+
+        Returns:
+            bool: True if fulfillment successful
+        """
+        from pdf_service import PDFGeneratorService
+        from email_service import email_service
+
+        try:
+            # Generate PDFs
+            pdf_service = PDFGeneratorService(current_app._get_current_object())
+            pdf_attachments = []
+
+            # Personal certificate
+            try:
+                cert = pdf_service.generate_certificate_atomic(
+                    donation.id,
+                    'personal_certificate',
+                    session_id=None  # No session in webhook context
+                )
+                if cert and cert.file_path:
+                    pdf_attachments.append({
+                        'path': cert.file_path,
+                        'filename': f"NGÜ_Zertifikat_{donation.id}.pdf",
+                        'mimetype': 'application/pdf'
+                    })
+                    logger.info(f"Generated certificate for donation {donation.id}")
+            except Exception as e:
+                logger.error(f"Failed to generate certificate for donation {donation.id}: {e}")
+
+            # Tax receipt if wanted
+            if donation.wants_receipt:
+                try:
+                    receipt = pdf_service.generate_tax_receipt_atomic(
+                        donation.id,
+                        session_id=None
+                    )
+                    if receipt and receipt.file_path:
+                        pdf_attachments.append({
+                            'path': receipt.file_path,
+                            'filename': f"NGÜ_Spendenbescheinigung_{donation.id}.pdf",
+                            'mimetype': 'application/pdf'
+                        })
+                        logger.info(f"Generated tax receipt for donation {donation.id}")
+                except Exception as e:
+                    logger.error(f"Failed to generate tax receipt for donation {donation.id}: {e}")
+
+            # Send email with PDFs
+            if pdf_attachments:
+                donation_data = StripeService._prepare_donation_data(donation)
+
+                email_sent = email_service.send_certificate_email_with_attachments(
+                    donation_data,
+                    pdf_attachments
+                )
+
+                if email_sent:
+                    # Mark as fulfilled (idempotency marker)
+                    donation.certificate_sent_at = datetime.utcnow()
+                    donation.email_sent = True
+                    donation.email_sent_at = datetime.utcnow()
+                    db.session.commit()
+                    logger.info(f"Certificate email sent for donation {donation.id}")
+                    return True
+                else:
+                    logger.error(f"Failed to send certificate email for donation {donation.id}")
+                    return False
+            else:
+                logger.warning(f"No PDFs generated for donation {donation.id}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error in _fulfill_donation for donation {donation.id}: {e}")
+            raise
+
+    @staticmethod
+    def _prepare_donation_data(donation: Donation) -> Dict[str, Any]:
+        """
+        Prepare donation data dict for email templates.
+
+        Consistent with app.py pattern for donation_data structure.
+
+        Args:
+            donation: Donation ORM object
+
+        Returns:
+            dict: Donation data for email templates
+        """
+        return {
+            'id': donation.id,
+            'total_amount': float(donation.total_amount),
+            'created_at': donation.created_at,
+            'person': {
+                'email': donation.person.email if donation.person else '',
+                'first_name': donation.person.first_name if donation.person else '',
+                'last_name': donation.person.last_name if donation.person else ''
+            },
+            'verses': [{
+                'reference': va.verse.german_reference if va.verse else '',
+                'text': va.verse.text if va.verse else ''
+            } for va in donation.verse_associations]
+        }
+
+    @staticmethod
+    def _send_admin_alert_for_fulfillment_error(donation: Donation, error: str):
+        """Send admin alert when PDF/email fulfillment fails."""
+        from email_service import email_service
+
+        try:
+            email_service.send_admin_alert(
+                subject=f"Fulfillment-Fehler bei Donation #{donation.id}",
+                message=f"Die PDF-Generierung oder der E-Mail-Versand ist fehlgeschlagen für Donation #{donation.id}.",
+                error_details=error,
+                context={
+                    'donation_id': donation.id,
+                    'payment_status': donation.payment_status,
+                    'user_email': donation.person.email if donation.person else 'unbekannt',
+                    'total_amount': str(donation.total_amount)
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to send admin alert for donation {donation.id}: {e}")
     
     @staticmethod
     def verify_webhook_signature(payload, signature, webhook_secret):
