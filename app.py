@@ -1847,6 +1847,78 @@ def api_payment_status(payment_intent_id):
         app.logger.error(f"Unexpected error checking payment status for {payment_intent_id}: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+
+@app.route("/api/donation/status/<int:donation_id>")
+@csrf.exempt  # GET requests for status checking don't need CSRF protection
+@limiter.limit("30 per minute")  # Allow frequent status checks but prevent abuse
+def api_donation_status(donation_id):
+    """
+    API endpoint to check donation status from database.
+
+    This endpoint is polled by the frontend during payment processing.
+    It checks the database status (set by webhooks) rather than Stripe directly.
+
+    Security: Only returns status for donations belonging to current session.
+
+    Returns:
+        - status: Current payment_status (pending, processing, completed, failed, disputed)
+        - pdfs_ready: Boolean - True when certificate_sent_at is set
+        - redirect_url: URL to redirect to when pdfs_ready=True
+        - error_redirect_url: URL to redirect to on failure
+    """
+    try:
+        # Security check: Donation must belong to current session
+        current_donation_id = session.get('current_donation_id')
+        completed_donations = session.get('completed_donations', [])
+
+        if donation_id != current_donation_id and donation_id not in completed_donations:
+            app.logger.warning(
+                f"Unauthorized donation status check: requested={donation_id}, "
+                f"current={current_donation_id}, completed={completed_donations}"
+            )
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Load donation from database
+        donation = Donation.query.get(donation_id)
+        if not donation:
+            app.logger.error(f"Donation {donation_id} not found in database")
+            return jsonify({'error': 'Donation not found'}), 404
+
+        # Determine if PDFs are ready (webhook has completed fulfillment)
+        pdfs_ready = donation.certificate_sent_at is not None
+
+        # Build response based on status
+        response_data = {
+            'success': True,
+            'donation_id': donation_id,
+            'status': donation.payment_status,
+            'pdfs_ready': pdfs_ready
+        }
+
+        # Add redirect URLs based on status
+        if donation.payment_status in ('failed', 'disputed'):
+            # Payment failed - redirect to error page
+            response_data['error_redirect_url'] = url_for(
+                'checkout_fehler',
+                reason='payment_failed',
+                _external=False
+            )
+        elif pdfs_ready:
+            # PDFs ready - redirect to success page
+            response_data['redirect_url'] = url_for(
+                'checkout_erfolg',
+                donation_id=donation_id,
+                _external=False
+            )
+        # else: still processing - frontend continues polling
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        app.logger.error(f"Error checking donation status for {donation_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
 # ==========================================
 
 # ==========================================
