@@ -1493,36 +1493,57 @@ def checkout_erfolg():
                          pdfs_available=False)
 
 def prepare_success_page_with_pdfs(donation_id, session_id):
-    """Bereitet Template-Context mit PDF-Generierung vor"""
+    """Bereitet Template-Context mit PDF-Generierung vor
+
+    IDEMPOTENZ: Prüft zuerst ob certificate_sent_at bereits gesetzt ist
+    (d.h. Webhook hat bereits PDFs generiert und E-Mail gesendet).
+    Falls ja, werden nur existierende PDFs geladen, nicht neu generiert.
+    """
     from sqlalchemy import func
-    
+
     try:
-        # Generate PDFs for the donation
+        # IDEMPOTENZ-CHECK: Hat Webhook bereits PDFs generiert und E-Mail gesendet?
+        donation = Donation.query.get(donation_id)
+        if not donation:
+            app.logger.error(f"Donation {donation_id} not found in prepare_success_page_with_pdfs")
+            raise PDFGenerationError(f"Donation {donation_id} not found")
+
+        if donation.certificate_sent_at:
+            # Webhook hat bereits generiert - nur existierende PDFs laden
+            app.logger.info(
+                f"Donation {donation_id}: certificate_sent_at already set "
+                f"({donation.certificate_sent_at}), loading existing PDFs instead of regenerating"
+            )
+            return _prepare_existing_pdfs_context(donation, session_id)
+
+        # Normaler Flow: PDFs generieren (Webhook hat noch nicht)
+        app.logger.info(f"Donation {donation_id}: Generating PDFs from success page (webhook hasn't yet)")
+
         # Ensure fresh database session for PDF generation
         db.session.commit()  # Commit any pending changes
         db.session.close()   # Close current session
-        
+
         # Generate PDFs to avoid transaction conflicts
         generated_documents = {
             'certificates': [],
             'tax_receipts': [],
             'errors': []
         }
-        
+
         try:
             # Create fresh PDF service instance with new DB session
             pdf_service_fresh = PDFGeneratorService(app)
-            
+
             # Generate personal certificate
             cert = pdf_service_fresh.generate_certificate_atomic(
-                donation_id, 
-                'personal_certificate', 
+                donation_id,
+                'personal_certificate',
                 session_id
             )
             if cert:
                 generated_documents['certificates'].append(cert)
-            
-            # Generate tax receipt if wanted
+
+            # Reload donation after session close/commit
             donation = Donation.query.get(donation_id)
             if donation and donation.wants_receipt:
                 tax_receipt = pdf_service_fresh.generate_tax_receipt_atomic(
@@ -1619,12 +1640,16 @@ def prepare_success_page_with_pdfs(donation_id, session_id):
                         pdf_attachments
                     )
                     
-                    # Mark email as sent in database
+                    # Mark email as sent in database + IDEMPOTENZ-MARKER
                     donation.email_sent = True
                     donation.email_sent_at = datetime.utcnow()
+                    donation.certificate_sent_at = datetime.utcnow()  # Idempotenz-Marker für Webhook
                     db.session.commit()
-                    
-                    app.logger.info(f"Certificate email sent for donation {donation.id} with {len(pdf_attachments)} PDF attachments")
+
+                    app.logger.info(
+                        f"Certificate email sent for donation {donation.id} with {len(pdf_attachments)} PDF attachments "
+                        f"(certificate_sent_at set, source: success_page)"
+                    )
                 
         except Exception as email_error:
             app.logger.error(f"Failed to send certificate email for donation {donation_id}: {email_error}")
@@ -1668,6 +1693,74 @@ def prepare_success_page_with_pdfs(donation_id, session_id):
             'total_amount': db.session.query(func.sum(Donation.amount)).filter_by(payment_status='completed').scalar() or 0,
             'remaining_verses': Verse.query.filter_by(is_sponsored=False).count()
         }
+
+def _prepare_existing_pdfs_context(donation, session_id):
+    """Lädt existierende PDFs für eine Donation (Webhook hat bereits generiert).
+
+    Diese Funktion wird aufgerufen wenn certificate_sent_at bereits gesetzt ist,
+    d.h. der Webhook hat bereits PDFs generiert und E-Mail gesendet.
+    Wir laden nur die existierenden Certificate-Records aus der DB.
+
+    Args:
+        donation: Donation-Objekt
+        session_id: Session ID für PDF-Access-Kontrolle
+
+    Returns:
+        dict: Template-Context mit existierenden PDF-Links
+    """
+    from sqlalchemy import func
+
+    # Lade existierende Certificates aus der DB
+    existing_certs = Certificate.query.filter_by(donation_id=donation.id).all()
+
+    certificate_links = []
+    tax_receipt_links = []
+
+    for cert in existing_certs:
+        if cert.certificate_type in ('personal_certificate', 'sponsorship'):
+            certificate_links.append({
+                'donation_id': cert.donation_id,
+                'download_url': cert.get_download_url(),
+                'filename': cert.filename,
+                'type': cert.certificate_type
+            })
+        elif cert.certificate_type == 'tax_receipt':
+            tax_receipt_links.append({
+                'donation_id': cert.donation_id,
+                'download_url': cert.get_download_url(),
+                'filename': cert.filename
+            })
+
+    # Verse-Referenzen sammeln
+    verse_references = []
+    for verse_assoc in donation.verse_associations:
+        verse_references.append(verse_assoc.verse.german_reference)
+    verse_reference = verse_references[0] if len(verse_references) == 1 else None
+
+    # Setup PDF session for access control
+    setup_pdf_session([donation.id], session_id)
+
+    user_email = donation.person.email if donation and donation.person else 'support@peter-schoeffer-stiftung.de'
+
+    app.logger.info(
+        f"Loaded {len(certificate_links)} certificates and {len(tax_receipt_links)} tax receipts "
+        f"for donation {donation.id} (existing PDFs from webhook)"
+    )
+
+    return {
+        'user_email': user_email,
+        'verse_reference': verse_reference,
+        'verse_references': verse_references,
+        'certificate_links': certificate_links,
+        'tax_receipt_links': tax_receipt_links,
+        'total_donations': 1,
+        'pdfs_available': len(certificate_links) > 0 or len(tax_receipt_links) > 0,
+        'pdfs_from_webhook': True,  # Flag für Template (optional)
+        'total_sponsored': Verse.query.filter_by(is_sponsored=True).count(),
+        'total_amount': db.session.query(func.sum(Donation.amount)).filter_by(payment_status='completed').scalar() or 0,
+        'remaining_verses': Verse.query.filter_by(is_sponsored=False).count()
+    }
+
 
 def setup_pdf_session(donation_ids, session_id):
     """Bereitet Session für PDF-Downloads vor"""
