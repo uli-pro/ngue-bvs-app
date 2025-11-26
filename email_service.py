@@ -346,6 +346,105 @@ class EmailService:
             self.logger.error(f"Tax receipt email failed: {e}")
             return False
 
+    def send_payment_failed_email(self, donation_data: Dict[str, Any],
+                                  failure_reason: str) -> bool:
+        """Send payment failed notification email (no certificate was issued yet)
+
+        This is used for immediate payment failures (e.g., card declined)
+        where no certificate/receipt was ever sent to the donor.
+
+        Args:
+            donation_data: Donation dict with 'id', 'person', 'total_amount', 'created_at'
+            failure_reason: Human-readable failure reason from Stripe
+
+        Returns:
+            bool: True if email sent successfully
+        """
+        try:
+            html_body, text_body = self._render_template(
+                'payment_failed',
+                donation=donation_data,
+                failure_reason=failure_reason,
+                timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
+            )
+
+            success = self.provider.send_email(
+                to_email=donation_data['person']['email'],
+                subject=f"Zahlung fehlgeschlagen - Spende #{donation_data['id']}",
+                html_body=html_body,
+                text_body=text_body
+            )
+
+            if success:
+                self.logger.info(f"Payment failed email sent for donation {donation_data['id']}")
+            return success
+
+        except Exception as e:
+            self.logger.error(f"Payment failed email failed for donation {donation_data.get('id')}: {e}")
+            return False
+
+    def send_storno_email(self, donation_data: Dict[str, Any],
+                          storno_pdf_path: str,
+                          storno_context: Dict[str, Any]) -> bool:
+        """Send storno/cancellation email with PDF attachment
+
+        This is used for delayed payment failures (SEPA) or chargebacks
+        where a certificate/receipt was already sent to the donor.
+
+        Args:
+            donation_data: Donation dict with 'id', 'person', 'total_amount', etc.
+            storno_pdf_path: Path to the generated storno PDF
+            storno_context: Context dict from pdf_service._prepare_storno_context() containing:
+                - original_receipt_number: Original receipt number being cancelled
+                - original_date: Date of original receipt
+                - cancellation_reason: Reason for cancellation
+                - cancellation_date: Today's date
+                - verse_references: List of affected verse references
+
+        Returns:
+            bool: True if email sent successfully
+        """
+        try:
+            # Merge donation_data with storno_context for template
+            html_body, text_body = self._render_template(
+                'storno',
+                donation=donation_data,
+                original_receipt_number=storno_context.get('original_receipt_number'),
+                original_date=storno_context.get('original_date'),
+                cancellation_reason=storno_context.get('cancellation_reason'),
+                cancellation_date=storno_context.get('cancellation_date'),
+                verse_references=storno_context.get('verse_references', []),
+                timestamp=datetime.now().strftime('%d.%m.%Y %H:%M')
+            )
+
+            # Attachment: Storno-PDF
+            attachments = [{
+                'path': storno_pdf_path,
+                'filename': f"Storno_Bescheinigung_{storno_context.get('original_receipt_number', donation_data['id'])}.pdf",
+                'mimetype': 'application/pdf'
+            }]
+
+            success = self.provider.send_email(
+                to_email=donation_data['person']['email'],
+                subject=f"Wichtig: Stornierung Ihrer Zuwendungsbestätigung - {storno_context.get('original_receipt_number')}",
+                html_body=html_body,
+                text_body=text_body,
+                attachments=attachments
+            )
+
+            if success:
+                self.logger.info(
+                    f"Storno email sent for donation {donation_data['id']} "
+                    f"(receipt {storno_context.get('original_receipt_number')})"
+                )
+            return success
+
+        except Exception as e:
+            self.logger.error(
+                f"Storno email failed for donation {donation_data.get('id')}: {e}"
+            )
+            return False
+
     def send_certificate_email_with_attachments(self, donation_data: Dict[str, Any],
                                               pdf_attachments: List[Dict[str, str]]) -> bool:
         """Send certificate email with multiple PDF attachments"""
