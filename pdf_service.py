@@ -186,8 +186,9 @@ class PDFGeneratorService:
         if not donation:
             raise ValidationError(f"Donation {donation_id} not found")
         
-        if donation.payment_status != 'completed':
-            raise ValidationError(f"Donation {donation_id} not completed")
+        # Allow 'completed' (card) and 'processing' (SEPA Optimistic Completion)
+        if donation.payment_status not in ('completed', 'processing'):
+            raise ValidationError(f"Donation {donation_id} not ready for PDF generation (status: {donation.payment_status})")
         
         try:
             # 3. Pfad und Dateiname generieren
@@ -525,8 +526,9 @@ class PDFGeneratorService:
         if not donation:
             raise ValidationError(f"Donation {donation_id} not found")
         
-        if donation.payment_status != 'completed':
-            raise ValidationError(f"Donation {donation_id} not completed")
+        # Allow 'completed' (card) and 'processing' (SEPA Optimistic Completion)
+        if donation.payment_status not in ('completed', 'processing'):
+            raise ValidationError(f"Donation {donation_id} not ready for PDF generation (status: {donation.payment_status})")
         
         # Prüfen ob Donation alle required fields hat
         if not donation.person_snapshot and not donation.person:
@@ -690,6 +692,14 @@ class PDFGeneratorService:
         static_dir = os.path.join(os.path.dirname(__file__), 'static')
         background_image_path = os.path.join(static_dir, 'certificates', 'certificate-background.png')
         
+        # Determine certificate date:
+        # - For completed donations: use completed_at
+        # - For SEPA (processing): use current date (Optimistic Completion)
+        if donation.completed_at:
+            cert_date = donation.completed_at
+        else:
+            cert_date = datetime.now()  # SEPA: use current date
+
         # Context für Sammelzertifikat mit mehreren Versen
         context = {
             'donation': donation,
@@ -699,7 +709,7 @@ class PDFGeneratorService:
             'is_multiple': len(verses) > 1,
             'background_image_path': f'file://{background_image_path}',
             'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            'formatted_date': donation.completed_at.strftime('%d.%m.%Y') if donation.completed_at else 'Unbekannt',
+            'formatted_date': cert_date.strftime('%d. %B %Y'),
             'certificate_title': f"Sponsoring-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}"
         }
         
