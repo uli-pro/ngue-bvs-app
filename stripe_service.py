@@ -402,6 +402,21 @@ class StripeService:
                         logger.error(f"Error fulfilling donation {donation.id}: {e}")
                         StripeService._send_admin_alert_for_fulfillment_error(donation, str(e))
 
+                # Sync to HubSpot CRM (runs for both SEPA and card, after payment_status='completed')
+                # Non-blocking: don't fail the webhook if HubSpot fails
+                try:
+                    from hubspot_service import HubSpotService
+                    hubspot_result = HubSpotService.sync_donation(donation)
+                    if hubspot_result['success']:
+                        logger.info(f"HubSpot sync successful for donation {donation.id}")
+                    else:
+                        error_msg = hubspot_result.get('error', 'Unknown error')
+                        logger.warning(f"HubSpot sync failed for donation {donation.id}: {error_msg}")
+                        StripeService._send_admin_alert_for_hubspot_error(donation, error_msg)
+                except Exception as e:
+                    logger.error(f"HubSpot sync error for donation {donation.id}: {e}")
+                    StripeService._send_admin_alert_for_hubspot_error(donation, str(e))
+
                 return True
 
             except Exception as e:
@@ -819,21 +834,8 @@ class StripeService:
                     donation.email_sent_at = datetime.utcnow()
                     db.session.commit()
                     logger.info(f"Certificate email sent for donation {donation.id}")
-
-                    # Sync to HubSpot CRM (non-blocking - don't fail fulfillment if HubSpot fails)
-                    try:
-                        from hubspot_service import HubSpotService
-                        hubspot_result = HubSpotService.sync_donation(donation)
-                        if hubspot_result['success']:
-                            logger.info(f"HubSpot sync successful for donation {donation.id}")
-                        else:
-                            error_msg = hubspot_result.get('error', 'Unknown error')
-                            logger.warning(f"HubSpot sync failed for donation {donation.id}: {error_msg}")
-                            StripeService._send_admin_alert_for_hubspot_error(donation, error_msg)
-                    except Exception as e:
-                        logger.error(f"HubSpot sync error for donation {donation.id}: {e}")
-                        StripeService._send_admin_alert_for_hubspot_error(donation, str(e))
-
+                    # Note: HubSpot sync is NOT done here - it happens in handle_successful_payment()
+                    # when payment_status becomes 'completed' (for both card and SEPA)
                     return True
                 else:
                     logger.error(f"Failed to send certificate email for donation {donation.id}")
