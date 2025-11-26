@@ -819,6 +819,21 @@ class StripeService:
                     donation.email_sent_at = datetime.utcnow()
                     db.session.commit()
                     logger.info(f"Certificate email sent for donation {donation.id}")
+
+                    # Sync to HubSpot CRM (non-blocking - don't fail fulfillment if HubSpot fails)
+                    try:
+                        from hubspot_service import HubSpotService
+                        hubspot_result = HubSpotService.sync_donation(donation)
+                        if hubspot_result['success']:
+                            logger.info(f"HubSpot sync successful for donation {donation.id}")
+                        else:
+                            error_msg = hubspot_result.get('error', 'Unknown error')
+                            logger.warning(f"HubSpot sync failed for donation {donation.id}: {error_msg}")
+                            StripeService._send_admin_alert_for_hubspot_error(donation, error_msg)
+                    except Exception as e:
+                        logger.error(f"HubSpot sync error for donation {donation.id}: {e}")
+                        StripeService._send_admin_alert_for_hubspot_error(donation, str(e))
+
                     return True
                 else:
                     logger.error(f"Failed to send certificate email for donation {donation.id}")
@@ -878,7 +893,47 @@ class StripeService:
             )
         except Exception as e:
             logger.error(f"Failed to send admin alert for donation {donation.id}: {e}")
-    
+
+    @staticmethod
+    def _send_admin_alert_for_hubspot_error(donation: Donation, error: str):
+        """Send admin alert when HubSpot sync fails."""
+        from email_service import email_service
+
+        # Get verse references for the alert
+        verse_refs = [
+            va.verse.german_reference if va.verse else 'unbekannt'
+            for va in donation.verse_associations
+        ]
+
+        try:
+            email_service.send_admin_alert(
+                subject=f"HubSpot-Sync fehlgeschlagen: Donation #{donation.id}",
+                message=(
+                    f"Die HubSpot-Synchronisation ist fehlgeschlagen für Donation #{donation.id}. "
+                    f"Die Spende wurde erfolgreich verarbeitet, aber der CRM-Eintrag muss manuell erstellt werden."
+                ),
+                error_details=error,
+                context={
+                    'donation_id': donation.id,
+                    'spender_name': (
+                        f"{donation.person.first_name} {donation.person.last_name}"
+                        if donation.person else 'unbekannt'
+                    ),
+                    'spender_email': donation.person.email if donation.person else 'unbekannt',
+                    'betrag': f"€{float(donation.total_amount):.2f}",
+                    'verse': ', '.join(verse_refs),
+                    'anzahl_verse': len(verse_refs),
+                    'zahlungsdatum': (
+                        donation.completed_at.strftime('%d.%m.%Y %H:%M')
+                        if donation.completed_at else 'unbekannt'
+                    ),
+                    'aktion_erforderlich': 'Bitte manuell in HubSpot anlegen'
+                }
+            )
+            logger.info(f"Sent admin alert for HubSpot sync failure on donation {donation.id}")
+        except Exception as e:
+            logger.error(f"Failed to send admin alert for HubSpot error on donation {donation.id}: {e}")
+
     @staticmethod
     def verify_webhook_signature(payload, signature, webhook_secret):
         """
