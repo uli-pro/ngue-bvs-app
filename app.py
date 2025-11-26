@@ -1789,7 +1789,7 @@ def checkout_verarbeitung():
     return render_template("checkout-verarbeitung.html",
                          payment_intent_id=payment_intent_id,
                          verse_count=verse_count,
-                         total_amount=f"{total_amount:.2f}")
+                         total_amount=total_amount)  # Zahl direkt übergeben, currency-Filter formatiert
 
 @app.route("/api/payment/status/<payment_intent_id>")
 @csrf.exempt  # GET requests for status checking don't need CSRF protection
