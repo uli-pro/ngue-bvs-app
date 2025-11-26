@@ -1,0 +1,48 @@
+Leider ist ein Problem aufgetreten
+
+Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},
+
+leider konnte Ihre Spende über {{ donation.total_amount|currency }} für die NGÜ Bibelübersetzung nicht abgeschlossen werden.
+
+===========================================
+GRUND DER ABLEHNUNG
+===========================================
+
+{{ failure_reason }}
+
+===========================================
+WAS BEDEUTET DAS FÜR SIE?
+===========================================
+
+- Es wurde KEIN Geld von Ihrem Konto abgebucht.
+- Die von Ihnen ausgewählten Bibelverse sind wieder verfügbar.
+- Sie können die Spende jederzeit erneut versuchen.
+
+===========================================
+BETROFFENE SPENDE
+===========================================
+
+Spenden-ID: #{{ donation.id }}
+Datum: {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}
+Betrag: {{ donation.total_amount|currency }}
+
+===========================================
+VERSE ERNEUT SPONSERN?
+===========================================
+
+Besuchen Sie unsere Website, um die Verse erneut auszuwählen:
+https://ngue-bvs.schoeffer.org/vers-auswaehlen
+
+===========================================
+
+Falls Sie Fragen haben, kontaktieren Sie uns gerne unter:
+info@ngue-bvs.schoeffer.org
+
+Mit freundlichen Grüßen
+
+Ihr Team der Peter-Schöffer-Stiftung
+NGÜ Bibelvers-Sponsoring
+
+---
+Diese Nachricht wurde automatisch generiert am {{ timestamp }}
+Weitere Informationen: https://ngue-bvs.schoeffer.org

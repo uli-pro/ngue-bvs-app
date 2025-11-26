@@ -1,0 +1,66 @@
+WICHTIGE MITTEILUNG: Stornierung Ihrer Zuwendungsbestätigung
+
+Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},
+
+leider müssen wir Ihnen mitteilen, dass Ihre Spende über {{ donation.total_amount|currency }}
+nicht erfolgreich abgeschlossen werden konnte.
+
+===========================================
+WICHTIGER HINWEIS ZUR STEUER
+===========================================
+
+Die Ihnen bereits zugesandte Zuwendungsbestätigung Nr. {{ original_receipt_number }}
+vom {{ original_date }} ist UNGÜLTIG und darf NICHT für steuerliche Zwecke verwendet werden.
+
+===========================================
+GRUND DER STORNIERUNG
+===========================================
+
+{{ cancellation_reason }}
+
+===========================================
+BETROFFENE BIBELVERSE
+===========================================
+
+{% for verse_ref in verse_references -%}
+- {{ verse_ref }}
+{% endfor %}
+Diese Verse wurden wieder zur Verfügung gestellt und können erneut gesponsert werden.
+
+===========================================
+WAS SIE JETZT TUN SOLLTEN
+===========================================
+
+1. SPENDENBESCHEINIGUNG VERNICHTEN:
+   Bitte vernichten Sie die ursprüngliche Bescheinigung.
+
+2. IM ANHANG:
+   Sie finden eine offizielle Stornierungsbestätigung für Ihre Unterlagen.
+
+3. STEUERERKLÄRUNG:
+   Falls Sie die Bescheinigung bereits eingereicht haben,
+   informieren Sie bitte Ihr Finanzamt über die Stornierung.
+
+===========================================
+VERSE ERNEUT SPONSERN?
+===========================================
+
+Falls Sie die Bibelverse erneut sponsern möchten, besuchen Sie:
+https://ngue-bvs.schoeffer.org/vers-auswaehlen
+
+===========================================
+
+Bei Fragen stehen wir Ihnen gerne zur Verfügung unter:
+info@ngue-bvs.schoeffer.org
+
+Wir bedauern die Unannehmlichkeiten und danken für Ihr Verständnis.
+
+Mit freundlichen Grüßen
+
+Ihr Team der Peter-Schöffer-Stiftung
+NGÜ Bibelvers-Sponsoring
+
+---
+Stornierung erstellt am {{ cancellation_date }}
+Referenz: {{ original_receipt_number }}
+Weitere Informationen: https://ngue-bvs.schoeffer.org

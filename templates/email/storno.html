@@ -1,0 +1,62 @@
+{% extends "email/base.html" %}
+
+{% block title %}Stornierung Ihrer Spendenbescheinigung{% endblock %}
+{% block header %}Wichtige Mitteilung{% endblock %}
+
+{% block content %}
+<h2>Stornierung Ihrer Zuwendungsbestätigung</h2>
+
+<p>Liebe/r {{ donation.person.first_name }} {{ donation.person.last_name }},</p>
+
+<p>leider müssen wir Ihnen mitteilen, dass Ihre Spende über <strong>{{ donation.total_amount|currency }}</strong>
+nicht erfolgreich abgeschlossen werden konnte.</p>
+
+<div class="highlight" style="background-color: #f8d7da; border-left-color: #721c24;">
+    <h3 style="color: #721c24; margin-top: 0;">Wichtiger Hinweis zur Steuer:</h3>
+    <p>Die Ihnen bereits zugesandte <strong>Zuwendungsbestätigung Nr. {{ original_receipt_number }}</strong>
+    vom {{ original_date }} ist <strong>ungültig</strong> und darf <strong>nicht</strong> für
+    steuerliche Zwecke verwendet werden.</p>
+</div>
+
+<p><strong>Grund der Stornierung:</strong></p>
+<p>{{ cancellation_reason }}</p>
+
+<p><strong>Betroffene Bibelverse:</strong></p>
+<ul>
+{% for verse_ref in verse_references %}
+    <li>{{ verse_ref }}</li>
+{% endfor %}
+</ul>
+<p>Diese Verse wurden wieder zur Verfügung gestellt und können erneut gesponsert werden.</p>
+
+<div class="highlight">
+    <h3>Was Sie jetzt tun sollten:</h3>
+    <ol>
+        <li><strong>Spendenbescheinigung vernichten:</strong> Bitte vernichten Sie die ursprüngliche Bescheinigung.</li>
+        <li><strong>Im Anhang:</strong> Sie finden eine offizielle Stornierungsbestätigung für Ihre Unterlagen.</li>
+        <li><strong>Steuererklärung:</strong> Falls Sie die Bescheinigung bereits eingereicht haben,
+            informieren Sie bitte Ihr Finanzamt über die Stornierung.</li>
+    </ol>
+</div>
+
+<p style="margin-top: 30px;">
+    <strong>Verse erneut sponsern?</strong><br>
+    Falls Sie die Bibelverse erneut sponsern möchten, besuchen Sie:
+</p>
+
+<p style="text-align: center;">
+    <a href="https://ngue-bvs.schoeffer.org/vers-auswaehlen" class="button">
+        Verse erneut sponsern
+    </a>
+</p>
+
+<p style="margin-top: 30px;">Bei Fragen stehen wir Ihnen gerne zur Verfügung unter
+<a href="mailto:info@ngue-bvs.schoeffer.org" style="color: #2c5aa0;">info@ngue-bvs.schoeffer.org</a>.</p>
+
+<p>Wir bedauern die Unannehmlichkeiten und danken für Ihr Verständnis.</p>
+
+<p>Mit freundlichen Grüßen<br>
+Ihr Team der Peter-Schöffer-Stiftung</p>
+{% endblock %}
+
+{% block footer_text %}Stornierung erstellt am {{ cancellation_date }} | Referenz: {{ original_receipt_number }}{% endblock %}
