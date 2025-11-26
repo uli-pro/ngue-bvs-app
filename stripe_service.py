@@ -416,46 +416,264 @@ class StripeService:
     @staticmethod
     def handle_failed_payment(payment_intent):
         """
-        Handle failed payment from webhook
-        
+        Handle failed payment from webhook.
+
+        Two scenarios:
+        1. Immediate failure (card): certificate_sent_at is NULL
+           → Release verses, send simple failure email, notify admin
+
+        2. Delayed failure (SEPA, after processing): certificate_sent_at is set
+           → Release verses, generate Storno-PDF, send Storno-Email, notify admin
+
         Args:
-            payment_intent: Stripe PaymentIntent object
+            payment_intent: Stripe PaymentIntent object (dict from webhook)
+
+        Returns:
+            bool: True if processing successful
         """
+        payment_intent_id = payment_intent.get('id')
+
         try:
             # Get donation ID from metadata
-            donation_id = payment_intent.metadata.get('donation_id')
-            if not donation_id or not donation_id.isdigit():
-                logger.error(f"No valid donation ID in failed PaymentIntent {payment_intent.id}")
+            donation_id = payment_intent.get('metadata', {}).get('donation_id')
+            if not donation_id or not str(donation_id).isdigit():
+                logger.error(f"No valid donation ID in failed PaymentIntent {payment_intent_id}")
                 return False
+
             donation_id = int(donation_id)
-            
+
+            # Find donation (allow pending, processing, or already failed for idempotency)
             donation = Donation.query.filter(
-                Donation.id == donation_id,
-                Donation.payment_status.in_(['pending', 'processing'])
+                Donation.id == donation_id
             ).first()
-            
+
             if not donation:
-                logger.error(f"No pending donation found for failed PaymentIntent {payment_intent.id}")
+                logger.error(f"Donation {donation_id} not found for failed PaymentIntent {payment_intent_id}")
                 return False
-            
+
+            # Idempotency: Already failed? Just return success
+            if donation.payment_status == 'failed':
+                logger.info(f"Donation {donation.id} already failed, skipping")
+                return True
+
+            # Only process if pending or processing
+            if donation.payment_status not in ('pending', 'processing'):
+                logger.warning(
+                    f"Donation {donation.id} has unexpected status {donation.payment_status} "
+                    f"for failed PaymentIntent {payment_intent_id}"
+                )
+                return False
+
+            # Extract error message from Stripe
             error_message = "Payment failed"
-            if hasattr(payment_intent, 'last_payment_error') and payment_intent.last_payment_error:
-                error_message = payment_intent.last_payment_error.get('message', error_message)
-            
-            donation.mark_failed(error_message)
-            
-            if donation.payment:
-                donation.payment.update_stripe_data(payment_intent)
-                donation.payment.mark_failed(error_message)
-            
-            db.session.commit()
-            logger.info(f"Marked donation {donation.id} as failed")
-            return True
-            
+            last_payment_error = payment_intent.get('last_payment_error')
+            if last_payment_error:
+                error_message = last_payment_error.get('message', error_message)
+
+            # Check if this is a delayed failure (SEPA) or immediate failure (card)
+            # Delayed failure = certificate was already sent during 'processing'
+            is_delayed_failure = donation.certificate_sent_at is not None
+
+            try:
+                # 1. Mark donation as failed (releases verses via mark_failed)
+                donation.mark_failed(error_message)
+
+                if donation.payment:
+                    donation.payment.update_stripe_data(payment_intent)
+                    donation.payment.mark_failed(error_message)
+
+                db.session.commit()
+                logger.info(
+                    f"Marked donation {donation.id} as failed "
+                    f"({'delayed SEPA' if is_delayed_failure else 'immediate card'})"
+                )
+
+                # 2. Send appropriate notification (outside main transaction)
+                try:
+                    if is_delayed_failure:
+                        # SEPA: Certificate was already sent → Storno flow
+                        StripeService._handle_storno_notification(donation, error_message)
+                    else:
+                        # Card: No certificate sent → Simple failure email
+                        StripeService._handle_failure_notification(donation, error_message)
+                except Exception as e:
+                    logger.error(f"Error sending failure notification for donation {donation.id}: {e}")
+                    # Continue - donation is already marked as failed
+
+                # 3. Send admin alert
+                try:
+                    StripeService._send_admin_alert_for_payment_failure(
+                        donation, error_message, is_delayed_failure
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending admin alert for donation {donation.id}: {e}")
+
+                return True
+
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Database error processing failed payment: {e}")
+                raise
+
         except Exception as e:
-            db.session.rollback()
             logger.error(f"Error handling failed payment: {e}")
             return False
+
+    @staticmethod
+    def _handle_failure_notification(donation: Donation, error_message: str):
+        """
+        Send simple failure email for immediate failures (card).
+
+        No certificate was ever sent, so no Storno needed.
+
+        Args:
+            donation: Donation object (already marked as failed)
+            error_message: Human-readable error from Stripe
+        """
+        from email_service import email_service
+
+        try:
+            donation_data = StripeService._prepare_donation_data(donation)
+
+            # Map Stripe error to German user-friendly message
+            failure_reason = StripeService._translate_stripe_error(error_message)
+
+            email_sent = email_service.send_payment_failed_email(
+                donation_data,
+                failure_reason
+            )
+
+            if email_sent:
+                logger.info(f"Payment failed email sent for donation {donation.id}")
+            else:
+                logger.error(f"Failed to send payment failed email for donation {donation.id}")
+
+        except Exception as e:
+            logger.error(f"Error in _handle_failure_notification for donation {donation.id}: {e}")
+            raise
+
+    @staticmethod
+    def _handle_storno_notification(donation: Donation, error_message: str):
+        """
+        Generate Storno-PDF and send Storno-Email for delayed failures (SEPA).
+
+        Certificate was already sent, so we need to formally cancel it.
+
+        Args:
+            donation: Donation object (already marked as failed)
+            error_message: Human-readable error from Stripe
+        """
+        from pdf_service import PDFGeneratorService
+        from email_service import email_service
+
+        try:
+            # Translate error to German
+            cancellation_reason = StripeService._translate_stripe_error(error_message)
+
+            # 1. Generate Storno-PDF
+            pdf_service = PDFGeneratorService(current_app._get_current_object())
+            storno_pdf_path = pdf_service.generate_storno_certificate(
+                donation.id,
+                cancellation_reason=cancellation_reason
+            )
+
+            if not storno_pdf_path:
+                logger.error(f"Failed to generate storno PDF for donation {donation.id}")
+                # Continue without PDF - at least try to send email
+                return
+
+            # 2. Get storno context for email (reuse pdf_service method)
+            storno_context = pdf_service._prepare_storno_context(donation, cancellation_reason)
+
+            # 3. Send Storno-Email with PDF attachment
+            donation_data = StripeService._prepare_donation_data(donation)
+
+            email_sent = email_service.send_storno_email(
+                donation_data,
+                storno_pdf_path,
+                storno_context
+            )
+
+            if email_sent:
+                # Mark storno as sent
+                donation.storno_sent_at = datetime.utcnow()
+                db.session.commit()
+                logger.info(f"Storno email sent for donation {donation.id}")
+            else:
+                logger.error(f"Failed to send storno email for donation {donation.id}")
+
+        except Exception as e:
+            logger.error(f"Error in _handle_storno_notification for donation {donation.id}: {e}")
+            raise
+
+    @staticmethod
+    def _send_admin_alert_for_payment_failure(donation: Donation, error_message: str,
+                                               is_delayed: bool):
+        """Send admin alert for payment failure."""
+        from email_service import email_service
+
+        failure_type = "SEPA-Lastschrift (verzögert)" if is_delayed else "Kartenzahlung (sofort)"
+
+        try:
+            email_service.send_admin_alert(
+                subject=f"Zahlung fehlgeschlagen: Donation #{donation.id} ({failure_type})",
+                message=f"Eine Zahlung ist fehlgeschlagen für Donation #{donation.id}.",
+                error_details=error_message,
+                context={
+                    'donation_id': donation.id,
+                    'payment_status': donation.payment_status,
+                    'failure_type': failure_type,
+                    'user_email': donation.person.email if donation.person else 'unbekannt',
+                    'total_amount': str(donation.total_amount),
+                    'certificate_was_sent': 'Ja' if is_delayed else 'Nein',
+                    'storno_required': 'Ja' if is_delayed else 'Nein'
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to send admin alert for failed donation {donation.id}: {e}")
+
+    @staticmethod
+    def _translate_stripe_error(error_message: str) -> str:
+        """
+        Translate Stripe error messages to German user-friendly messages.
+
+        Args:
+            error_message: Original Stripe error message (English)
+
+        Returns:
+            str: German user-friendly message
+        """
+        # Common Stripe error translations
+        translations = {
+            'insufficient_funds': 'Ihr Konto weist nicht genügend Deckung auf.',
+            'card_declined': 'Die Karte wurde abgelehnt.',
+            'expired_card': 'Die Karte ist abgelaufen.',
+            'incorrect_cvc': 'Die Prüfziffer (CVC) ist ungültig.',
+            'processing_error': 'Es ist ein Verarbeitungsfehler aufgetreten.',
+            'incorrect_number': 'Die Kartennummer ist ungültig.',
+            'debit_not_authorized': 'Die Lastschrift wurde nicht autorisiert.',
+            'account_closed': 'Das Bankkonto ist geschlossen.',
+            'no_account': 'Das Bankkonto existiert nicht.',
+            'refer_to_customer': 'Bitte kontaktieren Sie Ihre Bank.',
+            'generic_decline': 'Die Zahlung wurde von Ihrer Bank abgelehnt.'
+        }
+
+        # Check for known error codes in message
+        error_lower = error_message.lower()
+        for key, translation in translations.items():
+            if key in error_lower:
+                return translation
+
+        # Check for common phrases
+        if 'insufficient' in error_lower:
+            return 'Ihr Konto weist nicht genügend Deckung auf.'
+        if 'declined' in error_lower:
+            return 'Die Zahlung wurde von Ihrer Bank abgelehnt.'
+        if 'expired' in error_lower:
+            return 'Die Zahlungsmethode ist abgelaufen.'
+
+        # Default: Return original with German prefix
+        return f"Die Zahlung konnte nicht abgeschlossen werden: {error_message}"
     
     @staticmethod
     def handle_processing_payment(payment_intent):
