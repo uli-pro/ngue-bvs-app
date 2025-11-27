@@ -435,7 +435,7 @@ class StripeService:
 
         Two scenarios:
         1. Immediate failure (card): certificate_sent_at is NULL
-           → Release verses, send simple failure email, notify admin
+           → Release verses, NO email (user sees error in UI and can retry)
 
         2. Delayed failure (SEPA, after processing): certificate_sent_at is set
            → Release verses, generate Storno-PDF, send Storno-Email, notify admin
@@ -509,8 +509,12 @@ class StripeService:
                         # SEPA: Certificate was already sent → Storno flow
                         StripeService._handle_storno_notification(donation, error_message)
                     else:
-                        # Card: No certificate sent → Simple failure email
-                        StripeService._handle_failure_notification(donation, error_message)
+                        # Card/immediate failure: User sees error in UI, can retry
+                        # KEINE Email an User - nur Logging
+                        logger.info(
+                            f"Immediate payment failure for donation {donation.id}, "
+                            f"no email sent (user can retry on payment page)"
+                        )
                 except Exception as e:
                     logger.error(f"Error sending failure notification for donation {donation.id}: {e}")
                     # Continue - donation is already marked as failed

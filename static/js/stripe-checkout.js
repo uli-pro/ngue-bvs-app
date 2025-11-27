@@ -458,7 +458,12 @@ class StripeCheckout {
             default:
                 errorMessage = error.message || errorMessage;
         }
-        
+
+        // KRITISCHER FIX: Processing-State zurücksetzen, damit User Retry kann
+        this.processing = false;
+        this.hideLoading();
+        this.enableSubmitButton();
+
         this.showError(errorMessage);
     }
     

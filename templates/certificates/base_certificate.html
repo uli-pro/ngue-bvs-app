@@ -1,121 +1,121 @@
 <!DOCTYPE html>
 <html lang="de">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>NGÜ Spenderzertifikat</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
-        
-        @page {
-            size: A4;
-            margin: 0;
-        }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
-            background-image: url('{{ background_image_path }}');
-            background-size: 210mm 297mm;
-            background-repeat: no-repeat;
-            background-position: 0 0;
-            width: 210mm;
-            height: 297mm;
-            position: relative;
-        }
-        
-        .certificate-container {
-            width: 210mm;
-            height: 297mm;
-            position: relative;
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* Datum - zentriert oben */
-        .date-text {
-            position: absolute;
-            top: 125mm;
-            left: 0;
-            width: 210mm;
-            text-align: center;
-            font-size: 12pt;
-            font-weight: 400;
-            color: #666;
-            letter-spaching: 1.3px
-        }
-        
-        /* Haupttext "HIERMIT BESTÄTIGEN WIR:" */
-        .confirmation-text {
-            position: absolute;
-            top: 134mm;
-            left: 0;
-            width: 210mm;
-            text-align: center;
-            font-size: 16pt;
-            font-weight: 400;
-            color: #666;
-            letter-spacing: 1.3px;
-        }
-        
-        /* Spendername - groß und hervorgehoben */
-        .donor-name {
-            position: absolute;
-            top: 136mm;
-            left: 0;
-            width: 210mm;
-            text-align: center;
-            font-size: 28pt;
-            font-weight: 400;
-            color: #666;
-            letter-spacing: 1.4px;
-        }
-        
-        /* Spendentext */
-        .donation-text {
-            position: absolute;
-            top: 168mm;
-            left: 0;
-            width: 210mm;
-            text-align: center;
-            font-size: 14pt;
-            font-weight: 400;
-            color: #666;
-            letter-spacing: 1.2px;
-            line-height: 1.4;
-        }
-        
-        /* Übersetzungstext */
-        .translation-text {
-            position: absolute;
-            top: 175mm;
-            left: 0;
-            width: 210mm;
-            text-align: center;
-            font-size: 14pt;
-            font-weight: 400;
-            letter-spacing: 1.2px;
-            color: #666;
-        }
-        
-        /* Bibelvers-Referenz */
-        .verse-reference {
-            position: absolute;
-            top: 185mm;
-            left: 0;
-            width: 210mm;
-            text-align: center;
-            font-size: 26pt;
-            font-weight: 400;
-            color: #333F84;
-            font-style: italic;
-            letter-spacing: 1.2;
-        }
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap");
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+        background-image: url("{{ background_image_path }}");
+        background-size: 210mm 297mm;
+        background-repeat: no-repeat;
+        background-position: 0 0;
+        width: 210mm;
+        height: 297mm;
+        position: relative;
+      }
+
+      .certificate-container {
+        width: 210mm;
+        height: 297mm;
+        position: relative;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Datum - zentriert oben */
+      .date-text {
+        position: absolute;
+        top: 125mm;
+        left: 0;
+        width: 210mm;
+        text-align: center;
+        font-size: 12pt;
+        font-weight: 400;
+        color: #666;
+        letter-spacing: 1.3px;
+      }
+
+      /* Haupttext "HIERMIT BESTÄTIGEN WIR:" */
+      .confirmation-text {
+        position: absolute;
+        top: 134mm;
+        left: 0;
+        width: 210mm;
+        text-align: center;
+        font-size: 16pt;
+        font-weight: 400;
+        color: #666;
+        letter-spacing: 1.3px;
+      }
+
+      /* Spendername - groß und hervorgehoben */
+      .donor-name {
+        position: absolute;
+        top: 136mm;
+        left: 0;
+        width: 210mm;
+        text-align: center;
+        font-size: 28pt;
+        font-weight: 400;
+        color: #666;
+        letter-spacing: 1.4px;
+      }
+
+      /* Spendentext */
+      .donation-text {
+        position: absolute;
+        top: 168mm;
+        left: 0;
+        width: 210mm;
+        text-align: center;
+        font-size: 14pt;
+        font-weight: 400;
+        color: #666;
+        letter-spacing: 1.2px;
+        line-height: 1.4;
+      }
+
+      /* Übersetzungstext */
+      .translation-text {
+        position: absolute;
+        top: 175mm;
+        left: 0;
+        width: 210mm;
+        text-align: center;
+        font-size: 14pt;
+        font-weight: 400;
+        letter-spacing: 1.2px;
+        color: #666;
+      }
+
+      /* Bibelvers-Referenz */
+      .verse-reference {
+        position: absolute;
+        top: 185mm;
+        left: 0;
+        width: 210mm;
+        text-align: center;
+        font-size: 26pt;
+        font-weight: 400;
+        color: #333f84;
+        font-style: italic;
+        letter-spacing: 1.2px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="certificate-container">
-        {% block certificate_content %}{% endblock %}
+      {% block certificate_content %}{% endblock %}
     </div>
-</body>
+  </body>
 </html>
