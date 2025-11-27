@@ -49,7 +49,11 @@
                         <br>
                         <small class="text-muted">{{ donation.person.email }}</small>
                     </td>
-                    <td>{{ donation.verse_count }}</td>
+                    <td>
+                        {% for v in donation.verse_associations %}
+                            {{ v.verse.reference }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
                     <td>{{ donation.total_amount|currency }}</td>
                     <td>
                         <span class="badge bg-{{ 'success' if donation.payment_status == 'completed' else 'warning' if donation.payment_status == 'pending' else 'danger' }}">

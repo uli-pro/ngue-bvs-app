@@ -123,6 +123,7 @@ class HubSpotService:
 
             # Custom properties (must be created in HubSpot first)
             "stripe_payment_intent_id": donation.payment.stripe_payment_intent_id if donation.payment else "",
+            "ngue_donation_id": int(donation.id),
             "ngue_verse_count": str(donation.verse_count),
             "ngue_verse_references": verse_references,
             "ngue_pipeline_source": "ngue-bvs-app"
