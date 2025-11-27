@@ -415,16 +415,23 @@ class StripeCheckout {
     
     handlePaymentError(error) {
         this.debugError('Payment error:', error);
-        
+
+        // KRITISCHER FIX: State SOFORT zurücksetzen, BEVOR wir den Fehlertyp prüfen
+        // Dies stellt sicher, dass die UI bei ALLEN Fehlern wieder bedienbar ist
+        this.processing = false;
+        this.hideLoading();
+        this.enableSubmitButton();
+
         let errorMessage = 'Die Zahlung konnte nicht verarbeitet werden.';
-        
+
         switch (error.type) {
             case 'card_error':
                 switch (error.code) {
                     case 'authentication_required':
-                        errorMessage = '3D Secure Authentifizierung erforderlich. Sie werden weitergeleitet...';
-                        // Stripe will handle the redirect automatically
-                        return;
+                        // 3DS-Authentifizierung - Stripe handled den Redirect normalerweise automatisch
+                        // Falls nicht, zeigen wir eine Meldung und der User kann erneut versuchen
+                        errorMessage = '3D Secure Authentifizierung erforderlich. Bitte versuchen Sie es erneut.';
+                        break;
                     case 'card_declined':
                         errorMessage = 'Ihre Karte wurde abgelehnt. Bitte versuchen Sie eine andere Zahlungsmethode.';
                         break;
@@ -441,28 +448,23 @@ class StripeCheckout {
                         errorMessage = error.message || 'Kartenzahlung fehlgeschlagen.';
                 }
                 break;
-                
+
             case 'validation_error':
                 errorMessage = 'Bitte überprüfen Sie Ihre Eingaben.';
                 break;
-                
+
             case 'api_connection_error':
             case 'api_error':
                 errorMessage = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
                 break;
-                
+
             case 'rate_limit_error':
                 errorMessage = 'Zu viele Anfragen. Bitte warten Sie einen Moment.';
                 break;
-                
+
             default:
                 errorMessage = error.message || errorMessage;
         }
-
-        // KRITISCHER FIX: Processing-State zurücksetzen, damit User Retry kann
-        this.processing = false;
-        this.hideLoading();
-        this.enableSubmitButton();
 
         this.showError(errorMessage);
     }

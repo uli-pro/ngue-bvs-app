@@ -414,6 +414,6 @@
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3/"></script>
 
-<!-- Payment Processing Script -->
-<script src="{{ url_for('static', filename='js/stripe-checkout.js') }}"></script>
+<!-- Payment Processing Script (mit Cache-Busting) -->
+<script src="{{ url_for('static', filename='js/stripe-checkout.js') }}?v={{ cache_bust }}"></script>
 {% endblock %}

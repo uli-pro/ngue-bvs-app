@@ -153,6 +153,6 @@
   };
 </script>
 {% endblock %} {% block scripts %}
-<!-- Payment Status Checking Script -->
-<script src="{{ url_for('static', filename='js/payment-status.js') }}"></script>
+<!-- Payment Status Checking Script (mit Cache-Busting) -->
+<script src="{{ url_for('static', filename='js/payment-status.js') }}?v={{ cache_bust }}"></script>
 {% endblock %}

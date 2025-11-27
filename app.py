@@ -13,6 +13,10 @@ from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import secrets
+import time
+
+# Cache-Busting: Wird beim App-Start generiert, ändert sich bei jedem Neustart
+CACHE_BUST = str(int(time.time()))
 
 
 # Load environment variables
@@ -113,11 +117,12 @@ def currency_filter(value):
     return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-# Context processor to inject current year
+# Context processor to inject current year and cache-busting parameter
 @app.context_processor
 def inject_context():
     return {
-        'current_year': datetime.now().year
+        'current_year': datetime.now().year,
+        'cache_bust': CACHE_BUST
     }
 
 
@@ -1388,10 +1393,14 @@ def checkout_erfolg():
     Access methods:
     1. donation_id URL parameter (from /api/donation/status redirect)
     2. session['current_donation_id'] (fallback)
+    3. payment_intent URL parameter (Stripe redirect fallback for cached JS)
 
     Note: No Stripe API calls here - all data comes from database (set by webhook).
     """
+    from models import PaymentTransaction
+
     donation_id = None
+    found_via_payment_intent = False
 
     # Method 1: Direct donation_id parameter (from payment-status.js redirect)
     donation_id_param = request.args.get('donation_id')
@@ -1402,17 +1411,32 @@ def checkout_erfolg():
     if not donation_id:
         donation_id = session.get('current_donation_id')
 
+    # Method 3: Fallback via payment_intent (for cached JS that redirects with ?payment_intent=...)
+    if not donation_id:
+        payment_intent_param = request.args.get('payment_intent')
+        if payment_intent_param:
+            transaction = PaymentTransaction.query.filter_by(
+                stripe_payment_intent_id=payment_intent_param
+            ).first()
+            if transaction:
+                donation_id = transaction.donation_id
+                found_via_payment_intent = True
+                app.logger.info(f"Donation {donation_id} found via payment_intent fallback")
+                # Restore session for future requests
+                session['current_donation_id'] = donation_id
+                session.modified = True
+
     # Validate donation_id exists
     if not donation_id:
         app.logger.warning("No donation_id found for success page")
         flash("Keine Spende gefunden. Bitte kontaktieren Sie uns bei Fragen.", "warning")
         return redirect(url_for("index"))
 
-    # Security check: Donation must belong to current session
+    # Security check: Donation must belong to current session (skip if found via payment_intent)
     current_donation_id = session.get('current_donation_id')
     completed_donations = session.get('completed_donations', [])
 
-    if donation_id != current_donation_id and donation_id not in completed_donations:
+    if not found_via_payment_intent and donation_id != current_donation_id and donation_id not in completed_donations:
         app.logger.warning(
             f"Unauthorized success page access: requested={donation_id}, "
             f"current={current_donation_id}, completed={completed_donations}"
@@ -1535,8 +1559,24 @@ def checkout_verarbeitung():
     Frontend polls /api/donation/status/<donation_id> to check database status
     set by webhook. No direct Stripe polling from frontend anymore.
     """
-    # Get donation_id from session (set during PaymentIntent creation)
+    from models import PaymentTransaction
+
+    # Method 1: Get donation_id from session (set during PaymentIntent creation)
     donation_id = session.get('current_donation_id')
+
+    # Method 2: Fallback via payment_intent Query-Parameter (for cached JS/browser redirects)
+    if not donation_id:
+        payment_intent_param = request.args.get('payment_intent')
+        if payment_intent_param:
+            transaction = PaymentTransaction.query.filter_by(
+                stripe_payment_intent_id=payment_intent_param
+            ).first()
+            if transaction:
+                donation_id = transaction.donation_id
+                # Restore session for future polls
+                session['current_donation_id'] = donation_id
+                session.modified = True
+                app.logger.info(f"Session restored via payment_intent in verarbeitung: {donation_id}")
 
     if not donation_id:
         flash("Kein gültiger Zahlungsvorgang gefunden.", "error")
