@@ -519,13 +519,14 @@ class StripeService:
                     logger.error(f"Error sending failure notification for donation {donation.id}: {e}")
                     # Continue - donation is already marked as failed
 
-                # 3. Send admin alert
-                try:
-                    StripeService._send_admin_alert_for_payment_failure(
-                        donation, error_message, is_delayed_failure
-                    )
-                except Exception as e:
-                    logger.error(f"Error sending admin alert for donation {donation.id}: {e}")
+                # 3. Send admin alert only for delayed failures (certificates already sent)
+                if is_delayed_failure:
+                    try:
+                        StripeService._send_admin_alert_for_payment_failure(
+                            donation, error_message, is_delayed_failure
+                        )
+                    except Exception as e:
+                        logger.error(f"Error sending admin alert for donation {donation.id}: {e}")
 
                 return True
 
