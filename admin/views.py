@@ -382,7 +382,7 @@ def resend_tax_receipt(donation_id):
 def view_tax_receipt(donation_id):
     """View/Download tax receipt PDF"""
     donation = Donation.query.get_or_404(donation_id)
-    
+
     # Get the latest tax receipt for this donation
     tax_receipt = Certificate.query.filter_by(
         donation_id=donation_id,
@@ -391,7 +391,7 @@ def view_tax_receipt(donation_id):
     if not tax_receipt or not tax_receipt.exists_on_disk:
         flash('Keine Spendenbescheinigung vorhanden. Bitte zuerst generieren.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
-    
+
     # Send the PDF file to the browser for viewing
     return send_file(
         tax_receipt.file_path,
@@ -399,3 +399,83 @@ def view_tax_receipt(donation_id):
         download_name=tax_receipt.filename,
         mimetype='application/pdf'
     )
+
+
+# ==========================================
+# DATABASE CLEANUP MANAGEMENT
+# ==========================================
+
+@admin_required
+def get_cleanup_stats():
+    """API endpoint to get cleanup statistics for dashboard display.
+
+    Returns JSON with counts of:
+    - Expired reservations (ready to clean)
+    - Orphaned pending donations (older than 24h)
+    - Active reservations (not expired)
+    - Recent cleanup results (if available)
+    """
+    try:
+        cutoff_24h = datetime.utcnow() - timedelta(hours=24)
+
+        stats = {
+            'expired_reservations': VerseReservation.query.filter(
+                VerseReservation.expires_at < datetime.utcnow()
+            ).count(),
+            'orphaned_pending_donations': Donation.query.filter(
+                Donation.payment_status == 'pending',
+                Donation.created_at < cutoff_24h
+            ).count(),
+            'active_reservations': VerseReservation.query.filter(
+                VerseReservation.expires_at > datetime.utcnow()
+            ).count(),
+            'pending_donations_total': Donation.query.filter(
+                Donation.payment_status == 'pending'
+            ).count(),
+            'timestamp': datetime.utcnow().isoformat()
+        }
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@admin_required
+def cleanup_orphaned():
+    """Manual cleanup of orphaned pending donations and expired reservations.
+
+    This endpoint performs:
+    1. Cleanup of expired verse reservations
+    2. Cleanup of orphaned pending donations (older than 24h)
+
+    Returns redirect to admin index with flash messages showing results.
+    """
+    try:
+        # Step 1: Cleanup expired reservations
+        expired_res = VerseReservation.cleanup_expired()
+
+        # Step 2: Cleanup orphaned pending donations
+        orphaned_don = Donation.cleanup_orphaned_pending(max_age_hours=24)
+
+        # Build result message
+        if expired_res > 0 or orphaned_don > 0:
+            flash(
+                f'Cleanup erfolgreich: {expired_res} abgelaufene Reservierungen, '
+                f'{orphaned_don} verwaiste Pending-Donations gelöscht.',
+                'success'
+            )
+        else:
+            flash('Keine Daten zum Bereinigen gefunden.', 'info')
+
+        return redirect(url_for('admin.index'))
+
+    except Exception as e:
+        flash(f'Cleanup fehlgeschlagen: {str(e)}', 'danger')
+        return redirect(url_for('admin.index'))

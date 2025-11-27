@@ -516,12 +516,23 @@ class Donation(db.Model):
 
         self.payment_status = 'completed'
         self.completed_at = datetime.utcnow()
-        # Mark all verses as sponsored
+
+        # Mark all verses as sponsored and collect verse IDs
+        verse_ids = []
         for verse_assoc in self.verse_associations:
             verse_assoc.verse.is_sponsored = True
             verse_assoc.verse.sponsored_at = datetime.utcnow()
+            verse_ids.append(verse_assoc.verse_id)
+
+        # Clean up reservations for sponsored verses
+        if verse_ids:
+            VerseReservation.query.filter(
+                VerseReservation.verse_id.in_(verse_ids)
+            ).delete(synchronize_session=False)
+
         # Update person's last donation date
-        self.person.last_donation_at = datetime.utcnow()
+        if self.person:
+            self.person.last_donation_at = datetime.utcnow()
         if self.payment:
             self.payment.mark_confirmed()
         db.session.commit()
@@ -539,10 +550,19 @@ class Donation(db.Model):
         - Call payment.mark_confirmed()
         """
         now = datetime.utcnow()
+        verse_ids = []
         for verse_assoc in self.verse_associations:
             if not verse_assoc.verse.is_sponsored:
                 verse_assoc.verse.is_sponsored = True
                 verse_assoc.verse.sponsored_at = now
+            verse_ids.append(verse_assoc.verse_id)
+
+        # Clean up reservations for sponsored verses
+        if verse_ids:
+            VerseReservation.query.filter(
+                VerseReservation.verse_id.in_(verse_ids)
+            ).delete(synchronize_session=False)
+
         # Update person's last donation date
         if self.person:
             self.person.last_donation_at = now
@@ -554,10 +574,19 @@ class Donation(db.Model):
             return
 
         self.payment_status = 'failed'
-        # Mark all verses as available again
+
+        # Mark all verses as available again and collect verse IDs
+        verse_ids = []
         for verse_assoc in self.verse_associations:
             verse_assoc.verse.is_sponsored = False
             verse_assoc.verse.sponsored_at = None
+            verse_ids.append(verse_assoc.verse_id)
+
+        # Clean up any lingering reservations (verses are now free)
+        if verse_ids:
+            VerseReservation.query.filter(
+                VerseReservation.verse_id.in_(verse_ids)
+            ).delete(synchronize_session=False)
 
         # Store error message in dedicated field
         if error_message:
@@ -572,10 +601,19 @@ class Donation(db.Model):
             return
 
         self.payment_status = 'disputed'
-        # Mark all verses as available again
+
+        # Mark all verses as available again and collect verse IDs
+        verse_ids = []
         for verse_assoc in self.verse_associations:
             verse_assoc.verse.is_sponsored = False
             verse_assoc.verse.sponsored_at = None
+            verse_ids.append(verse_assoc.verse_id)
+
+        # Clean up any lingering reservations (verses are now free)
+        if verse_ids:
+            VerseReservation.query.filter(
+                VerseReservation.verse_id.in_(verse_ids)
+            ).delete(synchronize_session=False)
 
         # Store dispute reason
         if reason:
@@ -604,6 +642,53 @@ class Donation(db.Model):
     def has_multiple_verses(self):
         """Check if this donation has multiple verses"""
         return self.verse_count > 1
+
+    @classmethod
+    def cleanup_orphaned_pending(cls, max_age_hours=24):
+        """Delete orphaned pending donations older than max_age_hours.
+
+        Orphaned donations occur when:
+        - User starts checkout but abandons it
+        - User starts checkout but payment fails without webhook
+        - Session expires before payment completion
+
+        Args:
+            max_age_hours: Maximum age in hours for pending donations (default: 24)
+
+        Returns:
+            int: Number of deleted donations
+        """
+        cutoff = datetime.utcnow() - timedelta(hours=max_age_hours)
+
+        # Find old pending donations with row-level locking (skip locked rows)
+        old_pending = cls.query.filter(
+            cls.payment_status == 'pending',
+            cls.created_at < cutoff
+        ).with_for_update(skip_locked=True).all()
+
+        if not old_pending:
+            return 0
+
+        count = len(old_pending)
+        for donation in old_pending:
+            # Collect verse IDs for reservation cleanup
+            verse_ids = [dv.verse_id for dv in donation.verse_associations]
+
+            # Clean up any lingering reservations for these verses
+            if verse_ids:
+                VerseReservation.query.filter(
+                    VerseReservation.verse_id.in_(verse_ids)
+                ).delete(synchronize_session=False)
+
+            # Delete associated PaymentTransaction first (NOT NULL constraint)
+            if donation.payment:
+                db.session.delete(donation.payment)
+
+            # Delete donation (CASCADE will delete DonationVerse records)
+            db.session.delete(donation)
+
+        db.session.commit()
+        return count
 
 
 class MagicLinkToken(db.Model):

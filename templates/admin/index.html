@@ -42,6 +42,56 @@
     </div>
 </div>
 
+<!-- Database Cleanup Panel -->
+<div class="card mb-4">
+    <div class="card-header bg-warning bg-opacity-25">
+        <h5 class="card-title mb-0">Datenbank-Cleanup</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3" id="cleanup-stats">
+            <div class="col-md-3">
+                <div class="text-center p-2 border rounded">
+                    <small class="text-muted d-block">Abgelaufene Reservierungen</small>
+                    <strong id="stat-expired-res" class="fs-4">-</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-2 border rounded">
+                    <small class="text-muted d-block">Verwaiste Pending-Donations (&gt;24h)</small>
+                    <strong id="stat-orphaned-don" class="fs-4">-</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-2 border rounded">
+                    <small class="text-muted d-block">Aktive Reservierungen</small>
+                    <strong id="stat-active-res" class="fs-4">-</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-2 border rounded">
+                    <small class="text-muted d-block">Pending-Donations gesamt</small>
+                    <strong id="stat-pending-don" class="fs-4">-</strong>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted" id="cleanup-timestamp">Zuletzt aktualisiert: -</small>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="loadCleanupStats()">
+                    Aktualisieren
+                </button>
+                <form method="POST" action="{{ url_for('admin.cleanup_orphaned') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-warning"
+                            onclick="return confirm('Alle verwaisten Daten bereinigen? Dies löscht abgelaufene Reservierungen und Pending-Donations älter als 24h.')">
+                        Jetzt bereinigen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-body">
         <h5 class="card-title">Schnellaktionen</h5>
@@ -61,4 +111,28 @@
         </div>
     </div>
 </div>
+
+<script>
+function loadCleanupStats() {
+    fetch('{{ url_for("admin.get_cleanup_stats") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('stat-expired-res').textContent = data.stats.expired_reservations;
+                document.getElementById('stat-orphaned-don').textContent = data.stats.orphaned_pending_donations;
+                document.getElementById('stat-active-res').textContent = data.stats.active_reservations;
+                document.getElementById('stat-pending-don').textContent = data.stats.pending_donations_total;
+
+                // Format timestamp
+                const timestamp = new Date(data.stats.timestamp);
+                document.getElementById('cleanup-timestamp').textContent =
+                    'Zuletzt aktualisiert: ' + timestamp.toLocaleTimeString('de-DE');
+            }
+        })
+        .catch(error => console.error('Error loading cleanup stats:', error));
+}
+
+// Load stats on page load
+document.addEventListener('DOMContentLoaded', loadCleanupStats);
+</script>
 {% endblock %}

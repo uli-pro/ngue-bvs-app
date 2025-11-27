@@ -45,7 +45,11 @@ def init_admin(app):
     admin_bp.add_url_rule('/donations/<int:donation_id>/regenerate-tax-receipt', 'regenerate_tax_receipt', views.regenerate_tax_receipt, methods=['POST'])
     admin_bp.add_url_rule('/donations/<int:donation_id>/resend-tax-receipt', 'resend_tax_receipt', views.resend_tax_receipt, methods=['POST'])
     admin_bp.add_url_rule('/donations/<int:donation_id>/view-tax-receipt', 'view_tax_receipt', views.view_tax_receipt, methods=['GET'])
-    
+
+    # Database cleanup management
+    admin_bp.add_url_rule('/cleanup', 'cleanup_orphaned', views.cleanup_orphaned, methods=['POST'])
+    admin_bp.add_url_rule('/api/cleanup-stats', 'get_cleanup_stats', views.get_cleanup_stats, methods=['GET'])
+
     # Apply rate limiting - skip for now as it requires route-specific setup
-    
+
     return admin_bp

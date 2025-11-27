@@ -1,7 +1,6 @@
 # =============================================================================
 # NGÜ BVS App - Git Ignore File
 # =============================================================================
-
 # -----------------------------------------------------------------------------
 # Python & Flask Runtime
 # -----------------------------------------------------------------------------
@@ -20,7 +19,6 @@ instance/
 htmlcov/
 *.egg-info/
 *.egg
-
 # -----------------------------------------------------------------------------
 # Environment Variables & Secrets
 # -----------------------------------------------------------------------------
@@ -31,7 +29,6 @@ htmlcov/
 *.key
 *.crt
 *.cert
-
 # -----------------------------------------------------------------------------
 # Database Files
 # -----------------------------------------------------------------------------
@@ -43,7 +40,6 @@ htmlcov/
 *.dump
 *.backup
 *.bak
-
 # -----------------------------------------------------------------------------
 # Docker & Deployment
 # -----------------------------------------------------------------------------
@@ -53,31 +49,24 @@ app-deployment/certbot/
 app-deployment/logs/
 app-deployment/.env
 !app-deployment/.env.example
-
 # Docker build cache
 app-deployment/nginx/ssl/
-
 # -----------------------------------------------------------------------------
 # IDE & OS Files
 # -----------------------------------------------------------------------------
 # VS Code
 .vscode/
 *.code-workspace
-
 # IntelliJ/PyCharm
 .idea/
-
 # Vim
 *.swp
 *.swo
 *~
-
 # macOS
 .DS_Store
-
 # Windows
 Thumbs.db
-
 # -----------------------------------------------------------------------------
 # Logs & Temporary Files
 # -----------------------------------------------------------------------------
@@ -86,24 +75,21 @@ logs/
 tmp/
 temp/
 uploads/
-
 # -----------------------------------------------------------------------------
 # Project Specific
 # -----------------------------------------------------------------------------
 # Non-deployment files
 do_not_deploy/
 do-not-deploy/
-
-# Runtime generated certificates (alle Unterverzeichnisse)
-certificates/
+# Runtime generated certificates (nur Root-Level, nicht templates/)
+/certificates/
 !certificates/.gitkeep
-
+# Exception: Template-Dateien in templates/certificates/ NICHT ignorieren
+!templates/certificates/
 # Legacy certificate location (should be empty after migration)
 app-deployment/certificates/
-
 # Backup directories
 backups/
 db-backups/
-
 # Old/archived files
 *.old
