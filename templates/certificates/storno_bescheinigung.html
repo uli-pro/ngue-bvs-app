@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>
+      Stornierung Zuwendungsbestätigung - {{ original_receipt_number }}
+    </title>
+    <style>
+      @page {
+        size: A4;
+        margin: 25mm;
+        /* Background image contains handwritten signature */
+        /* Note: background_image_path is set by pdf_service with absolute file:// URL */
+        background-image: url("{{ background_image_path }}");
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+      }
+      body {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 11pt;
+        line-height: 1.6;
+        color: #000000;
+      }
+      h1 {
+        font-size: 18pt;
+        text-align: center;
+        margin-bottom: 30mm;
+        margin-top: 20mm;
+      }
+      .warning {
+        background-color: #fff3cd;
+        border: 2px solid #856404;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
+      .info-box {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 20px 0;
+        background-color: #f9f9f9;
+      }
+      .signature {
+        margin-top: 40mm;
+        text-align: right;
+      }
+      .signature-space {
+        height: 30mm;
+        /* Handwritten signature is in background image at this position */
+      }
+      strong {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Stornierung der Zuwendungsbestätigung</h1>
+
+    <p>
+      Peter-Schöffer-Stiftung<br />
+      Wormser Weg 18<br />
+      67574 Osthofen
+    </p>
+
+    <p style="margin-top: 20mm">
+      <strong>{{ donor_name }}</strong><br />
+      {{ donor_address.street }}<br />
+      {{ donor_address.postal_code }} {{ donor_address.city }}<br />
+      {{ donor_address.country }}
+    </p>
+
+    <p style="margin-top: 10mm">
+      <strong
+        >Betreff: Stornierung der Zuwendungsbestätigung Nr. {{
+        original_receipt_number }}</strong
+      >
+    </p>
+
+    <p style="margin-top: 10mm">Sehr geehrte/r {{ donor_name }},</p>
+
+    <div class="warning">
+      <p><strong>Wichtiger Hinweis:</strong></p>
+      <p>
+        Die Ihnen am <strong>{{ original_date }}</strong> ausgestellte
+        Zuwendungsbestätigung Nr.
+        <strong>{{ original_receipt_number }}</strong> über
+        <strong>{{ amount|currency }}</strong> ist <strong>ungültig</strong>.
+      </p>
+    </div>
+
+    <p><strong>Grund:</strong></p>
+    <p>{{ cancellation_reason }} (Datum: {{ cancellation_date }})</p>
+
+    <div class="info-box">
+      <p><strong>Betroffene Bibelverse:</strong></p>
+      <ul>
+        {% for verse_ref in verse_references %}
+        <li>{{ verse_ref }}</li>
+        {% endfor %}
+      </ul>
+      <p>Diese Verse wurden wieder zur Verfügung gestellt.</p>
+    </div>
+
+    <p><strong>Steuerrechtliche Konsequenz:</strong></p>
+    <p>
+      Die oben genannte Zuwendungsbestätigung kann <strong>nicht</strong> für
+      steuerliche Zwecke verwendet werden. Wir bitten Sie, diese Bescheinigung
+      nicht in Ihrer Einkommensteuererklärung geltend zu machen.
+    </p>
+
+    <p>
+      Falls Sie die Spende zu einem anderen Zeitpunkt erneut tätigen möchten,
+      besuchen Sie bitte unsere Website:
+      <strong>https://ngue-bvs.schoeffer.org</strong>
+    </p>
+
+    <p style="margin-top: 15mm">Mit freundlichen Grüßen</p>
+
+    <div class="signature">
+      <p>
+        Peter-Schöffer-Stiftung<br />
+        vertreten durch den Vorstand Daniel Weninger
+      </p>
+      <!-- Handwritten signature is in background image -->
+      <div class="signature-space"></div>
+    </div>
+
+    <p style="font-size: 9pt; color: #666; margin-top: 30mm">
+      Stornierung ausgestellt am: {{ cancellation_date }}<br />
+      Referenz: {{ original_receipt_number }}
+    </p>
+  </body>
+</html>
