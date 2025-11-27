@@ -87,6 +87,7 @@ services:
       # Application Configuration
       DOMAIN_NAME: ${DOMAIN_NAME:-ngue-bvs.schoeffer.org}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
     volumes:
       # Session storage (persistent)
       - flask-session:/app/flask_session
