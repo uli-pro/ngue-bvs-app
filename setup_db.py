@@ -270,10 +270,88 @@ def import_verses():
         logger.info(f"✓ Successfully imported {imported} verses")
         return True
 
+def mark_daniel_verses_sponsored():
+    """Mark all verses from the book of Daniel as sponsored (€100 each)"""
+    logger.info("Marking Daniel verses as sponsored...")
+
+    with app.app_context():
+        try:
+            # Find all Daniel verses
+            daniel_verses = Verse.query.filter_by(book='DAN').all()
+
+            if not daniel_verses:
+                logger.warning("No Daniel verses found in database")
+                return
+
+            # Check if already marked
+            sponsored_count = sum(1 for v in daniel_verses if v.is_sponsored)
+            if sponsored_count == len(daniel_verses):
+                logger.info(f"Daniel verses already sponsored ({len(daniel_verses)} verses)")
+                return
+
+            # Create or find sponsor person for Daniel
+            sponsor = Person.query.filter_by(email='daniel-sponsor@ngue.schoeffer.org').first()
+            if not sponsor:
+                sponsor = Person(
+                    email='daniel-sponsor@ngue.schoeffer.org',
+                    first_name='Daniel & Daniela',
+                    last_name='Sponsor',
+                    salutation='Eheleute',
+                    street='Bibelweg',
+                    house_number='1',
+                    postal_code='00000',
+                    city='Sponsor-Stadt',
+                    country='DE',
+                    newsletter_consent=False
+                )
+                db.session.add(sponsor)
+                db.session.flush()
+
+            # Calculate total amount
+            total_amount = len(daniel_verses) * 100.00
+
+            # Create donation for all Daniel verses
+            donation = Donation(
+                person_id=sponsor.id,
+                person_snapshot=sponsor.to_snapshot(),
+                verse_count=len(daniel_verses),
+                total_amount=total_amount,
+                currency='EUR',
+                wants_receipt=False,
+                privacy_consent=True,
+                payment_status='completed',
+                completed_at=datetime.utcnow()
+            )
+            db.session.add(donation)
+            db.session.flush()
+
+            # Mark all Daniel verses as sponsored and link to donation
+            for verse in daniel_verses:
+                # Create donation-verse link
+                donation_verse = DonationVerse(
+                    donation_id=donation.id,
+                    verse_id=verse.id,
+                    amount=100.00
+                )
+                db.session.add(donation_verse)
+
+                # Mark verse as sponsored
+                verse.is_sponsored = True
+                verse.sponsored_at = datetime.utcnow()
+
+            db.session.commit()
+            logger.info(f"✓ Marked {len(daniel_verses)} Daniel verses as sponsored (€{total_amount:.2f} total)")
+
+        except Exception as e:
+            logger.error(f"Error marking Daniel verses: {e}")
+            db.session.rollback()
+            raise
+
+
 def create_sample_data():
     """Create minimal sample data for testing"""
     logger.info("Creating sample data...")
-    
+
     with app.app_context():
         try:
             # Check if sample data already exists
@@ -408,7 +486,9 @@ def main():
             if not import_verses():
                 logger.error("Verse import failed!")
                 sys.exit(1)
-        
+            # Automatically mark Daniel verses as sponsored after import
+            mark_daniel_verses_sponsored()
+
         if args.sample_data:
             create_sample_data()
         

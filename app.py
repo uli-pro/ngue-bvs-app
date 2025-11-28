@@ -246,11 +246,15 @@ def index():
     # AT-specific progress
     at_percentage = round((AT_ALREADY_TRANSLATED / AT_VERSES * 100), 1)
     
+    # Calculate total amount donated (each verse costs €100)
+    total_amount = sponsored_verses * 100
+
     stats = {
         'total_verses': total_verses,
         'sponsored_verses': sponsored_verses,
         'available_verses': available_verses,
-        'percentage': percentage
+        'percentage': percentage,
+        'total_amount': total_amount
     }
     
     # Bible translation progress stats

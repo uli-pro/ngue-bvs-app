@@ -129,12 +129,14 @@
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
-                            <h2 class="text-primary mb-3">{{ stats.percentage }}% gesponsert</h2>
-                            <div class="progress" style="height: 30px;">
+                            <h2 class="text-primary mb-2">{{ stats.percentage }}% gesponsert</h2>
+                            <div class="progress mb-3" style="height: 30px;">
                                 <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.percentage }}%" aria-valuenow="{{ stats.percentage }}" aria-valuemin="0" aria-valuemax="100">{{ stats.percentage }}%</div>
                             </div>
+                            <h3>{{ stats.total_amount|currency }}</h3>
+                            <p class="mb-0">gespendet</p>
                         </div>
-                        
+
                         <div class="row text-center mb-4">
                             <div class="col-6">
                                 <h3 class="text-primary">{{ "{:,}".format(stats.sponsored_verses).replace(",", ".") }}</h3>
