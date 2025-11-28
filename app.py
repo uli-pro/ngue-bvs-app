@@ -768,9 +768,9 @@ def vers_spendenart(verse_id):
         session['reservation_id'] = reservation.id
         session.modified = True
     except Exception as e:
-        flash("Dieser Vers ist bereits reserviert.", "warning")
+        flash("Dieser Vers ist derzeit von einer anderen Person reserviert. Bitte wählen Sie einen anderen Vers oder versuchen Sie es später noch einmal.", "warning")
         return redirect(url_for("vers_auswaehlen"))
-    
+
     # Direct redirect to checkout_spendendaten
     return redirect(url_for("checkout_spendendaten"))
 
@@ -798,9 +798,9 @@ def vers_spendenart_by_id(verse_id):
         session['reservation_id'] = reservation.id
         session.modified = True
     except Exception as e:
-        flash("Dieser Vers ist bereits reserviert.", "warning")
+        flash("Dieser Vers ist derzeit von einer anderen Person reserviert. Bitte wählen Sie einen anderen Vers oder versuchen Sie es später noch einmal.", "warning")
         return redirect(url_for("vers_auswaehlen"))
-    
+
     # Direct redirect to checkout_spendendaten
     return redirect(url_for("checkout_spendendaten"))
 
@@ -1745,7 +1745,7 @@ def api_cart_add():
         )
         
         if existing_reservation:
-            return jsonify({'success': False, 'error': 'Vers wird bereits reserviert'}), 400
+            return jsonify({'success': False, 'error': 'Dieser Vers ist derzeit von einer anderen Person reserviert. Bitte wählen Sie einen anderen Vers oder versuchen Sie es später noch einmal.'}), 400
         
         # Initialize cart if needed and handle corruption
         handle_corrupted_session()
