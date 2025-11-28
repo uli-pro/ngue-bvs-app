@@ -1,8 +1,12 @@
 <!-- This template was developed with assistance from Claude Code (Anthropic) -->
 <!-- Core design and user experience decisions are original work -->
 
-{% extends "layout.html" %} {% block title %}Zahlung wird verarbeitet{% endblock
-%} {% block main %}
+{% extends "layout.html" %}
+{% set show_donate_button = false %}
+
+{% block title %}Zahlung wird verarbeitet{% endblock %}
+
+{% block main %}
 <div class="container py-5">
   <!-- Progress Indicator -->
   <div class="row mb-4">

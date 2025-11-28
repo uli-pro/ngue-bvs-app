@@ -63,9 +63,11 @@
                             <li><a class="dropdown-item" href="/faq">FAQ</a></li>
                         </ul>
                     </li>
+                    {% if show_donate_button|default(true) %}
                     <li class="nav-item">
                         <a class="btn btn-primary ms-2" href="/vers-auswaehlen">Jetzt spenden</a>
                     </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
