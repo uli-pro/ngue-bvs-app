@@ -199,19 +199,10 @@ class PDFGeneratorService:
             # 4. Template-Context vorbereiten
             context = self._prepare_certificate_context(donation, certificate_type)
 
-            # DEBUG: Log formatted_amount
-            self.logger.info(f"DEBUG Certificate generation for donation {donation.id}: "
-                           f"total_amount={donation.total_amount}, "
-                           f"formatted_amount={context.get('formatted_amount')}")
-
             # 5. HTML rendern
             template_name = f"certificates/{certificate_type}.html"
             html_content = render_template(template_name, **context)
 
-            # DEBUG: Check if formatted_amount appears in rendered HTML
-            if 'formatted_amount' in str(context):
-                self.logger.info(f"DEBUG HTML contains '200': {'200' in html_content}")
-            
             # 6. PDF generieren
             self._generate_pdf_from_html(html_content, file_path)
             

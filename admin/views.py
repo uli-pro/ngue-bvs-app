@@ -178,17 +178,17 @@ def donation_detail(donation_id):
     """Show donation details with actions"""
     donation = Donation.query.get_or_404(donation_id)
     
-    # Check if certificates exist for this donation
+    # Check if certificates exist for this donation (get newest)
     certificate = Certificate.query.filter_by(
-        donation_id=donation_id, 
+        donation_id=donation_id,
         certificate_type='personal_certificate'
-    ).first()
-    
-    # Check if tax receipt exists for this donation
+    ).order_by(Certificate.generated_at.desc()).first()
+
+    # Check if tax receipt exists for this donation (get newest)
     tax_receipt = Certificate.query.filter_by(
         donation_id=donation_id,
         certificate_type='tax_receipt'
-    ).first()
+    ).order_by(Certificate.generated_at.desc()).first()
     
     return render_template('admin/donation_detail.html', 
                          donation=donation, 
@@ -223,7 +223,7 @@ def resend_certificate(donation_id):
     donation = Donation.query.get_or_404(donation_id)
     
     # Get the latest certificate for this donation
-    certificate = Certificate.query.filter_by(donation_id=donation_id).first()
+    certificate = Certificate.query.filter_by(donation_id=donation_id).order_by(Certificate.generated_at.desc()).first()
     if not certificate or not certificate.exists_on_disk:
         flash('Kein Zertifikat vorhanden. Bitte zuerst generieren.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
@@ -285,7 +285,7 @@ def view_certificate(donation_id):
     certificate = Certificate.query.filter_by(
         donation_id=donation_id,
         certificate_type='personal_certificate'
-    ).first()
+    ).order_by(Certificate.generated_at.desc()).first()
     if not certificate or not certificate.exists_on_disk:
         flash('Kein Zertifikat vorhanden. Bitte zuerst generieren.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
@@ -329,11 +329,11 @@ def resend_tax_receipt(donation_id):
     tax_receipt = Certificate.query.filter_by(
         donation_id=donation_id,
         certificate_type='tax_receipt'
-    ).first()
+    ).order_by(Certificate.generated_at.desc()).first()
     if not tax_receipt or not tax_receipt.exists_on_disk:
         flash('Keine Spendenbescheinigung vorhanden. Bitte zuerst generieren.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
-    
+
     # Send email using existing tax receipt email method
     # The email service expects donation data in a specific format
     donation_data = {
@@ -387,7 +387,7 @@ def view_tax_receipt(donation_id):
     tax_receipt = Certificate.query.filter_by(
         donation_id=donation_id,
         certificate_type='tax_receipt'
-    ).first()
+    ).order_by(Certificate.generated_at.desc()).first()
     if not tax_receipt or not tax_receipt.exists_on_disk:
         flash('Keine Spendenbescheinigung vorhanden. Bitte zuerst generieren.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
