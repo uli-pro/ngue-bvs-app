@@ -30,6 +30,19 @@ from flask import Flask, render_template, current_app
 from sqlalchemy.exc import SQLAlchemyError
 from models import db, Donation, Certificate, Person, Verse
 
+# Deutsche Monatsnamen für Datumsformatierung
+GERMAN_MONTHS = {
+    1: 'Januar', 2: 'Februar', 3: 'März', 4: 'April',
+    5: 'Mai', 6: 'Juni', 7: 'Juli', 8: 'August',
+    9: 'September', 10: 'Oktober', 11: 'November', 12: 'Dezember'
+}
+
+def format_date_german(dt: datetime) -> str:
+    """Formatiert ein Datum im deutschen Format: '03. Dezember 2025'"""
+    if dt is None:
+        return ''
+    return f"{dt.day:02d}. {GERMAN_MONTHS[dt.month]} {dt.year}"
+
 # Custom Exceptions
 class PDFGenerationError(Exception):
     """PDF-Generierung fehlgeschlagen"""
@@ -709,7 +722,7 @@ class PDFGeneratorService:
             'is_multiple': len(verses) > 1,
             'background_image_path': f'file://{background_image_path}',
             'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            'formatted_date': cert_date.strftime('%d. %B %Y'),
+            'formatted_date': format_date_german(cert_date),
             'certificate_title': f"Sponsoring-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}"
         }
         
@@ -741,8 +754,8 @@ class PDFGeneratorService:
             'verse_count': len(verses),
             'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             'amount_in_words': self._amount_to_words(donation.total_amount),
-            'formatted_date': donation.completed_at.strftime('%d. %B %Y') if donation.completed_at else '',
-            'issue_date': datetime.now().strftime('%d. %B %Y'),
+            'formatted_date': format_date_german(donation.completed_at),
+            'issue_date': format_date_german(datetime.now()),
             'background_image_path': f'file://{background_image_path}',
 
             # Receipt numbering (legally required per §50 Abs. 1 EStDV)
