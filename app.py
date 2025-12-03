@@ -1559,7 +1559,7 @@ def _prepare_existing_pdfs_context(donation, session_id):
         'pdfs_available': len(certificate_links) > 0 or len(tax_receipt_links) > 0,
         'pdfs_from_webhook': True,  # Flag für Template (optional)
         'total_sponsored': Verse.query.filter_by(is_sponsored=True).count(),
-        'total_amount': db.session.query(func.sum(Donation.amount)).filter_by(payment_status='completed').scalar() or 0,
+        'total_amount': db.session.query(func.sum(Donation.total_amount)).filter_by(payment_status='completed').scalar() or 0,
         'remaining_verses': Verse.query.filter_by(is_sponsored=False).count()
     }
 
@@ -1611,7 +1611,7 @@ def checkout_verarbeitung():
 
     # Use actual donation data for display (more robust than session cart)
     verse_count = donation.verse_count or 1
-    total_amount = float(donation.amount)
+    total_amount = float(donation.total_amount)
 
     return render_template("checkout-verarbeitung.html",
                          donation_id=donation_id,
