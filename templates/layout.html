@@ -23,8 +23,69 @@
     
     <!-- CSRF Token für AJAX Requests -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{% block meta_description %}Unterstützen Sie die Neue Genfer Übersetzung (NGÜ) - Sponsern Sie einzelne Bibelverse des Alten Testaments für je 100€ und ermöglichen Sie eine moderne, präzise deutsche Bibelübersetzung.{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.url }}{% endblock %}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block og_title %}NGÜ Bibelvers-Sponsoring{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Unterstützen Sie die Neue Genfer Übersetzung - Sponsern Sie Bibelverse für je 100€{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+    <meta property="og:locale" content="de_DE">
+    <meta property="og:site_name" content="NGÜ Bibelvers-Sponsoring">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}NGÜ Bibelvers-Sponsoring{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Unterstützen Sie die Neue Genfer Übersetzung{% endblock %}">
+    <meta name="twitter:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+
     <title>NGÜ Bibelvers-Sponsoring - {% block title %}{% endblock %}</title>
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "NGÜ Bibelvers-Sponsoring",
+      "alternateName": "Neue Genfer Übersetzung Sponsoring",
+      "url": "https://ngue.familieprobst.org",
+      "logo": "https://ngue.familieprobst.org/static/logo-navbar.png",
+      "description": "Plattform zum Sponsern von Bibelversen der Neuen Genfer Übersetzung",
+      "parentOrganization": {
+        "@type": "Organization",
+        "name": "Peter-Schöffer-Stiftung",
+        "url": "https://www.schoeffer.org"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Wormser Weg 17",
+        "addressLocality": "Osthofen",
+        "postalCode": "67574",
+        "addressCountry": "DE"
+      },
+      "sameAs": [
+        "https://www.instagram.com/ngue2029/"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "NGÜ Bibelvers-Sponsoring",
+      "url": "https://ngue.familieprobst.org",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://ngue.familieprobst.org/vers-auswaehlen/keyword?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    {% block schema_org %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->

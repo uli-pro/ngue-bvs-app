@@ -4,7 +4,7 @@
 # All code is understood and can be explained by the author.
 
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, send_from_directory, abort
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
@@ -1044,6 +1044,22 @@ def transparenz():
     }
     
     return render_template("transparenz.html", stats=stats)
+
+
+# ==========================================
+# SEO ROUTES
+# ==========================================
+
+@app.route('/robots.txt')
+def robots_txt():
+    """Serve robots.txt for search engines"""
+    return send_from_directory(app.static_folder, 'robots.txt', mimetype='text/plain')
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    """Serve sitemap.xml for search engines"""
+    return send_from_directory(app.static_folder, 'sitemap.xml', mimetype='application/xml')
+
 
 # ==========================================
 # SECURE PDF DOWNLOAD ROUTES

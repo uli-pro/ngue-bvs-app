@@ -4,6 +4,58 @@
 {% extends "layout.html" %}
 
 {% block title %}FAQ - Häufig gestellte Fragen{% endblock %}
+{% block meta_description %}Häufige Fragen zum NGÜ Bibelvers-Sponsoring: Kosten, Ablauf, Spendenquittung und mehr verständlich erklärt.{% endblock %}
+
+{% block schema_org %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was kostet es, einen Bibelvers zu sponsern?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ein einzelner Bibelvers kostet 100€. Dieser Betrag deckt anteilig die Kosten für Übersetzung (45%), Revision (35%), Supervision (10%) und Qualitätssicherung (10%)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Erhalte ich eine Spendenquittung?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja, Sie erhalten automatisch eine Zuwendungsbestätigung per E-Mail. Die Peter-Schöffer-Stiftung ist als gemeinnützig anerkannt."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist die Neue Genfer Übersetzung (NGÜ)?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Die NGÜ ist eine moderne deutsche Bibelübersetzung, die höchste wissenschaftliche Präzision mit verständlicher Sprache verbindet. Sie gilt als die exakteste moderne deutsche Bibelübersetzung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie funktioniert das Vers-Sponsoring?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sie wählen einen der noch zu übersetzenden Verse aus dem Alten Testament aus und sponsern ihn mit einer Spende von 100€. Nach der Zahlung erhalten Sie automatisch ein personalisiertes Zertifikat sowie eine offizielle Spendenbescheinigung per E-Mail."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Zahlungsmethoden werden akzeptiert?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wir akzeptieren SEPA-Lastschrift sowie die Kreditkarten Visa, Mastercard und American Express. Die Zahlungsabwicklung erfolgt sicher über Stripe. Wir empfehlen SEPA-Lastschrift, da diese für alle Beteiligten die beste Option ist."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block main %}
 <div class="container py-5">

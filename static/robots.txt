@@ -1,0 +1,13 @@
+# NGÜ Bibelvers-Sponsoring - robots.txt
+User-agent: *
+Allow: /
+
+# Checkout- und Admin-Bereiche ausschließen
+Disallow: /checkout/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /stripe/
+Disallow: /download/
+
+# Sitemap
+Sitemap: https://ngue.familieprobst.org/sitemap.xml
