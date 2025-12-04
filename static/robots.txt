@@ -10,4 +10,4 @@ Disallow: /stripe/
 Disallow: /download/
 
 # Sitemap
-Sitemap: https://ngue.familieprobst.org/sitemap.xml
+Sitemap: https://ngue-bvs.schoeffer.org/sitemap.xml

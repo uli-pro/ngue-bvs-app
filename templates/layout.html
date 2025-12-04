@@ -24,6 +24,9 @@
     <!-- CSRF Token für AJAX Requests -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="5PtpzDKdbPd6BIXQ6Q9KRNik6cCTm2FlHwcyKBG08ak">
+
     <!-- SEO Meta Tags -->
     <meta name="description" content="{% block meta_description %}Unterstützen Sie die Neue Genfer Übersetzung (NGÜ) - Sponsern Sie einzelne Bibelverse des Alten Testaments für je 100€ und ermöglichen Sie eine moderne, präzise deutsche Bibelübersetzung.{% endblock %}">
     <link rel="canonical" href="{% block canonical_url %}{{ request.url }}{% endblock %}">
@@ -52,8 +55,8 @@
       "@type": "Organization",
       "name": "NGÜ Bibelvers-Sponsoring",
       "alternateName": "Neue Genfer Übersetzung Sponsoring",
-      "url": "https://ngue.familieprobst.org",
-      "logo": "https://ngue.familieprobst.org/static/logo-navbar.png",
+      "url": "https://ngue-bvs.schoeffer.org",
+      "logo": "https://ngue-bvs.schoeffer.org/static/logo-navbar.png",
       "description": "Plattform zum Sponsern von Bibelversen der Neuen Genfer Übersetzung",
       "parentOrganization": {
         "@type": "Organization",
@@ -77,10 +80,10 @@
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "NGÜ Bibelvers-Sponsoring",
-      "url": "https://ngue.familieprobst.org",
+      "url": "https://ngue-bvs.schoeffer.org",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://ngue.familieprobst.org/vers-auswaehlen/keyword?q={search_term_string}",
+        "target": "https://ngue-bvs.schoeffer.org/vers-auswaehlen/keyword?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
