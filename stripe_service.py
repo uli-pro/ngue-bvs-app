@@ -724,16 +724,22 @@ class StripeService:
                 return False
             donation_id = int(donation_id)
 
+            # Find donation - accept 'pending' or 'processing' for idempotency (Stripe retries)
             donation = Donation.query.filter(
                 Donation.id == donation_id,
-                Donation.payment_status == 'pending'
+                Donation.payment_status.in_(['pending', 'processing'])
             ).first()
 
             if not donation:
-                logger.error(f"No pending donation found for processing PaymentIntent {payment_intent.get('id')}")
+                # Check if donation exists but is already completed/failed
+                existing = Donation.query.get(donation_id)
+                if existing:
+                    logger.info(f"Donation {donation_id} already in status '{existing.payment_status}', returning OK for idempotency")
+                    return True
+                logger.error(f"No donation found for processing PaymentIntent {payment_intent.get('id')}")
                 return False
 
-            # Idempotency check: If already processed, skip
+            # Idempotency check: If already processed (certificate sent), just return OK
             if donation.certificate_sent_at:
                 logger.info(f"Donation {donation.id} already processed (certificate_sent_at set), skipping")
                 return True
