@@ -320,7 +320,8 @@ def mark_daniel_verses_sponsored():
                 wants_receipt=False,
                 privacy_consent=True,
                 payment_status='completed',
-                completed_at=datetime.utcnow()
+                completed_at=datetime.utcnow(),
+                is_bulk_sponsoring=True  # Externally acquired book sponsoring
             )
             db.session.add(donation)
             db.session.flush()

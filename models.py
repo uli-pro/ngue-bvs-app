@@ -481,6 +481,11 @@ class Donation(db.Model):
     storno_sent_at = db.Column(db.DateTime, nullable=True)  # When storno email was sent
     failure_reason = db.Column(db.String(255), nullable=True)  # Stripe error message
 
+    # Bulk sponsoring flag (for externally acquired book/chapter sponsorings)
+    # These have different pricing (e.g., €2000 for 21 verses instead of €2100)
+    # and are excluded from daily report totals
+    is_bulk_sponsoring = db.Column(db.Boolean, default=False, nullable=False)
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)

@@ -1,0 +1,91 @@
+{% extends "email/base.html" %}
+
+{% block title %}Täglicher Spenden-Report{% endblock %}
+{% block header %}Täglicher Spenden-Report{% endblock %}
+
+{% block content %}
+<h2>Spenden vom {{ report_date.strftime('%d.%m.%Y') }}</h2>
+
+{% if donations %}
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+    <thead>
+        <tr style="background-color: #2c5aa0; color: white;">
+            <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">ID</th>
+            <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">Spender</th>
+            <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd;">Verse</th>
+            <th style="padding: 12px 8px; text-align: right; border: 1px solid #ddd;">Betrag</th>
+            <th style="padding: 12px 8px; text-align: center; border: 1px solid #ddd;">Status</th>
+            <th style="padding: 12px 8px; text-align: right; border: 1px solid #ddd;">Datum & Uhrzeit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for donation in donations %}
+        <tr style="{% if loop.index is odd %}background-color: #f8f9fa;{% endif %}">
+            <td style="padding: 10px 8px; border: 1px solid #ddd;">#{{ donation.id }}</td>
+            <td style="padding: 10px 8px; border: 1px solid #ddd;">{{ donation.display_name }}</td>
+            <td style="padding: 10px 8px; border: 1px solid #ddd;">{{ donation.verses_display }}</td>
+            <td style="padding: 10px 8px; border: 1px solid #ddd; text-align: right;">
+                {{ format_currency(donation.total_amount) }}{% if donation.is_bulk_sponsoring %}*{% endif %}
+            </td>
+            <td style="padding: 10px 8px; border: 1px solid #ddd; text-align: center;">
+                {% if donation.payment_status == 'completed' %}
+                <span style="color: #28a745;">{{ donation.payment_status }}</span>
+                {% elif donation.payment_status == 'pending' %}
+                <span style="color: #ffc107;">{{ donation.payment_status }}</span>
+                {% elif donation.payment_status == 'failed' %}
+                <span style="color: #dc3545;">{{ donation.payment_status }}</span>
+                {% elif donation.payment_status == 'disputed' %}
+                <span style="color: #dc3545;">{{ donation.payment_status }}</span>
+                {% else %}
+                {{ donation.payment_status }}
+                {% endif %}
+            </td>
+            <td style="padding: 10px 8px; border: 1px solid #ddd; text-align: right;">
+                {{ donation.created_at.strftime('%d.%m. %H:%M') }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if bulk_count > 0 %}
+<p style="font-size: 12px; color: #666; margin-top: 10px;">
+    * = Bulk-Sponsoring (nicht im Gesamtbetrag enthalten)
+</p>
+{% endif %}
+
+<div class="highlight" style="margin-top: 25px;">
+    <h3 style="margin-top: 0;">Zusammenfassung Tagesspenden</h3>
+    <p>
+        <strong>Tagesbetrag (ohne Bulk-Sponsorings):</strong> {{ format_currency(total_amount) }}<br>
+        <strong>Anzahl Spenden:</strong> {{ donation_count }}{% if bulk_count > 0 %} (davon {{ bulk_count }} Bulk-Sponsoring{% if bulk_count > 1 %}s{% endif %}){% endif %}
+    </p>
+</div>
+
+<div class="highlight" style="margin-top: 15px; background-color: #d4edda; border-left-color: #28a745;">
+    <h3 style="margin-top: 0;">Gesamtspenden bis {{ report_date.strftime('%d.%m.%Y') }}</h3>
+    <p>
+        <strong>Kumulierter Betrag (ohne Bulk-Sponsorings):</strong> {{ format_currency(cumulative_amount) }}<br>
+        <strong>Anzahl abgeschlossener Spenden:</strong> {{ cumulative_count }}
+    </p>
+</div>
+
+{% else %}
+<div class="highlight">
+    <p style="margin: 0;">Keine Spenden am {{ report_date.strftime('%d.%m.%Y') }} eingegangen.</p>
+</div>
+
+<div class="highlight" style="margin-top: 15px; background-color: #d4edda; border-left-color: #28a745;">
+    <h3 style="margin-top: 0;">Gesamtspenden bis {{ report_date.strftime('%d.%m.%Y') }}</h3>
+    <p>
+        <strong>Kumulierter Betrag (ohne Bulk-Sponsorings):</strong> {{ format_currency(cumulative_amount) }}<br>
+        <strong>Anzahl abgeschlossener Spenden:</strong> {{ cumulative_count }}
+    </p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block footer_text %}
+Dieser Report wurde automatisch um {{ generated_at.strftime('%H:%M') }} Uhr generiert.
+{% endblock %}

@@ -1,0 +1,48 @@
+NGÜ Bibelvers-Sponsoring
+========================
+
+Täglicher Spenden-Report
+Datum: {{ report_date.strftime('%d.%m.%Y') }}
+
+{% if donations %}
+SPENDEN DES TAGES
+-----------------
+
+{% for donation in donations %}
+#{{ donation.id }} | {{ donation.display_name }}
+   Verse: {{ donation.verses_display }}
+   Betrag: {{ format_currency(donation.total_amount) }}{% if donation.is_bulk_sponsoring %} *{% endif %}
+
+   Status: {{ donation.payment_status }}
+   Datum: {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}
+
+{% endfor %}
+{% if bulk_count > 0 %}
+* = Bulk-Sponsoring (nicht im Gesamtbetrag enthalten)
+{% endif %}
+
+ZUSAMMENFASSUNG TAGESSPENDEN
+----------------------------
+Tagesbetrag (ohne Bulk-Sponsorings): {{ format_currency(total_amount) }}
+Anzahl Spenden: {{ donation_count }}{% if bulk_count > 0 %} (davon {{ bulk_count }} Bulk-Sponsoring{% if bulk_count > 1 %}s{% endif %}){% endif %}
+
+GESAMTSPENDEN BIS {{ report_date.strftime('%d.%m.%Y') }}
+----------------------------
+Kumulierter Betrag (ohne Bulk-Sponsorings): {{ format_currency(cumulative_amount) }}
+Anzahl abgeschlossener Spenden: {{ cumulative_count }}
+
+{% else %}
+Keine Spenden am {{ report_date.strftime('%d.%m.%Y') }} eingegangen.
+
+GESAMTSPENDEN BIS {{ report_date.strftime('%d.%m.%Y') }}
+----------------------------
+Kumulierter Betrag (ohne Bulk-Sponsorings): {{ format_currency(cumulative_amount) }}
+Anzahl abgeschlossener Spenden: {{ cumulative_count }}
+{% endif %}
+
+---
+Peter-Schoeffer-Stiftung
+NGÜ Bibelvers-Sponsoring
+https://ngue-bvs.schoeffer.org
+
+Dieser Report wurde automatisch um {{ generated_at.strftime('%H:%M') }} Uhr generiert.

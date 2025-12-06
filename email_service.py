@@ -734,5 +734,207 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert
             self.logger.error(f"Admin alert failed: {e}")
             return False
 
+    def send_daily_donation_report(self, report_date: 'date' = None) -> bool:
+        """Send daily donation report to admin email.
+
+        Args:
+            report_date: Date for the report (default: yesterday)
+
+        Returns:
+            bool: True if email sent successfully
+        """
+        from datetime import date, timedelta
+        from decimal import Decimal
+        from models import Donation
+        from book_names import get_german_book_name
+
+        try:
+            admin_email = current_app.config.get('ADMIN_EMAIL')
+            if not admin_email:
+                self.logger.warning("ADMIN_EMAIL not configured - cannot send daily report")
+                return False
+
+            # Default to yesterday
+            if report_date is None:
+                report_date = date.today() - timedelta(days=1)
+
+            # Query all donations for the given date (00:00:00 - 23:59:59)
+            start_of_day = datetime.combine(report_date, datetime.min.time())
+            end_of_day = datetime.combine(report_date, datetime.max.time())
+
+            donations = Donation.query.filter(
+                Donation.created_at >= start_of_day,
+                Donation.created_at <= end_of_day
+            ).order_by(Donation.created_at.asc()).all()
+
+            # Prepare donation data with formatted verses
+            donation_data = []
+            total_amount = Decimal('0')
+            bulk_count = 0
+
+            for donation in donations:
+                # Format verses display
+                verses_display = self._format_verses_for_report(donation)
+
+                # Create a simple object with the data we need
+                donation_info = {
+                    'id': donation.id,
+                    'display_name': donation.display_name,
+                    'verses_display': verses_display,
+                    'total_amount': donation.total_amount,
+                    'payment_status': donation.payment_status,
+                    'created_at': donation.created_at,
+                    'is_bulk_sponsoring': donation.is_bulk_sponsoring
+                }
+                donation_data.append(type('DonationInfo', (), donation_info)())
+
+                # Only count non-bulk sponsorings in total
+                if not donation.is_bulk_sponsoring:
+                    total_amount += donation.total_amount
+                else:
+                    bulk_count += 1
+
+            # Calculate cumulative totals (all completed donations excluding bulk)
+            from sqlalchemy import func
+            from models import db
+            cumulative_result = db.session.query(
+                func.sum(Donation.total_amount),
+                func.count(Donation.id)
+            ).filter(
+                Donation.payment_status == 'completed',
+                Donation.is_bulk_sponsoring == False,
+                Donation.created_at <= end_of_day
+            ).first()
+
+            cumulative_amount = cumulative_result[0] or Decimal('0')
+            cumulative_count = cumulative_result[1] or 0
+
+            # Render templates
+            generated_at = datetime.now()
+
+            # Add custom filter for currency formatting
+            def format_currency(value):
+                if value is None:
+                    return "0,00 EUR"
+                return f"{value:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", ".")
+
+            # Render HTML template
+            html_body = render_template(
+                'email/daily_report.html',
+                report_date=report_date,
+                donations=donation_data,
+                total_amount=total_amount,
+                donation_count=len(donations),
+                bulk_count=bulk_count,
+                cumulative_amount=cumulative_amount,
+                cumulative_count=cumulative_count,
+                generated_at=generated_at,
+                format_currency=format_currency
+            )
+
+            # Render text template
+            text_body = render_template(
+                'email/daily_report.txt',
+                report_date=report_date,
+                donations=donation_data,
+                total_amount=total_amount,
+                donation_count=len(donations),
+                bulk_count=bulk_count,
+                cumulative_amount=cumulative_amount,
+                cumulative_count=cumulative_count,
+                generated_at=generated_at,
+                format_currency=format_currency
+            )
+
+            # Send email
+            subject = f"NGÜ Spenden-Report {report_date.strftime('%d.%m.%Y')}"
+
+            success = self.provider.send_email(
+                to_email=admin_email,
+                subject=subject,
+                html_body=html_body,
+                text_body=text_body
+            )
+
+            if success:
+                self.logger.info(f"Daily donation report sent for {report_date}")
+            else:
+                self.logger.error(f"Failed to send daily donation report for {report_date}")
+
+            return success
+
+        except Exception as e:
+            self.logger.error(f"Daily donation report failed: {e}")
+            return False
+
+    def _format_verses_for_report(self, donation) -> str:
+        """Format verses for display in report.
+
+        Returns formatted string like:
+        - "1. Mose 1,1" (single verse)
+        - "Psalm 23,1; 23,2; 23,3" (2-5 verses)
+        - "Psalm 23,1-6 (6 Verse)" (6+ verses)
+        - "Daniel (komplett)" (bulk sponsoring of entire book)
+        """
+        from book_names import get_german_book_name
+
+        verses = donation.get_verses_sorted() if hasattr(donation, 'get_verses_sorted') else []
+
+        if not verses:
+            return f"{donation.verse_count} Verse"
+
+        # Check if bulk sponsoring - might be entire book or chapter
+        if donation.is_bulk_sponsoring:
+            # Check if all verses are from same book
+            books = set(v.book for v in verses)
+            if len(books) == 1:
+                book_name = get_german_book_name(verses[0].book)
+                # Check if it's all verses in a single chapter
+                chapters = set(v.chapter for v in verses)
+                if len(chapters) == 1:
+                    return f"{book_name} Kap. {verses[0].chapter} (komplett)"
+                else:
+                    return f"{book_name} (komplett)"
+
+        verse_count = len(verses)
+
+        if verse_count == 1:
+            v = verses[0]
+            book_name = get_german_book_name(v.book)
+            return f"{book_name} {v.chapter},{v.verse}"
+
+        elif verse_count <= 5:
+            # Show all verse references
+            refs = []
+            current_book = None
+            for v in verses:
+                book_name = get_german_book_name(v.book)
+                if current_book != v.book:
+                    refs.append(f"{book_name} {v.chapter},{v.verse}")
+                    current_book = v.book
+                else:
+                    refs.append(f"{v.chapter},{v.verse}")
+            return "; ".join(refs)
+
+        else:
+            # Show range for 6+ verses
+            first_v = verses[0]
+            last_v = verses[-1]
+            first_book = get_german_book_name(first_v.book)
+
+            # Check if all same book
+            if all(v.book == first_v.book for v in verses):
+                if all(v.chapter == first_v.chapter for v in verses):
+                    # Same chapter
+                    return f"{first_book} {first_v.chapter},{first_v.verse}-{last_v.verse} ({verse_count} Verse)"
+                else:
+                    # Same book, different chapters
+                    return f"{first_book} {first_v.chapter},{first_v.verse} - {last_v.chapter},{last_v.verse} ({verse_count} Verse)"
+            else:
+                # Different books
+                last_book = get_german_book_name(last_v.book)
+                return f"{first_book} - {last_book} ({verse_count} Verse)"
+
+
 # Global instance
 email_service = EmailService()

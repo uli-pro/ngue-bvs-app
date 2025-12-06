@@ -122,6 +122,7 @@ app-deployment/nginx/ssl/
 !book_names.py
 !vectorize.py
 !setup_db.py
+!send_daily_report.py
 !requirements.txt
 
 # Static and template files
