@@ -794,20 +794,41 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert
                 else:
                     bulk_count += 1
 
-            # Calculate cumulative totals (all completed donations excluding bulk)
+            # Calculate cumulative totals by status (excluding bulk sponsorings)
             from sqlalchemy import func
             from models import db
-            cumulative_result = db.session.query(
-                func.sum(Donation.total_amount),
-                func.count(Donation.id)
-            ).filter(
-                Donation.payment_status == 'completed',
-                Donation.is_bulk_sponsoring == False,
-                Donation.created_at <= end_of_day
-            ).first()
 
-            cumulative_amount = cumulative_result[0] or Decimal('0')
-            cumulative_count = cumulative_result[1] or 0
+            # Helper function to get sum and count for a status
+            def get_status_totals(status):
+                result = db.session.query(
+                    func.sum(Donation.total_amount),
+                    func.count(Donation.id)
+                ).filter(
+                    Donation.payment_status == status,
+                    Donation.is_bulk_sponsoring == False,
+                    Donation.created_at <= end_of_day
+                ).first()
+                return {
+                    'amount': result[0] or Decimal('0'),
+                    'count': result[1] or 0
+                }
+
+            # Get totals for each relevant status
+            completed_totals = get_status_totals('completed')
+            processing_totals = get_status_totals('processing')
+            disputed_totals = get_status_totals('disputed')
+            failed_totals = get_status_totals('failed')
+
+            # Calculate net total (completed + processing - disputed)
+            cumulative_amount = (
+                completed_totals['amount'] +
+                processing_totals['amount'] -
+                disputed_totals['amount']
+            )
+            cumulative_count = (
+                completed_totals['count'] +
+                processing_totals['count']
+            )  # disputed counted separately
 
             # Render templates
             generated_at = datetime.now()
@@ -818,33 +839,30 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert
                     return "0,00 EUR"
                 return f"{value:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", ".")
 
+            # Template context with all status breakdowns
+            template_context = {
+                'report_date': report_date,
+                'donations': donation_data,
+                'total_amount': total_amount,
+                'donation_count': len(donations),
+                'bulk_count': bulk_count,
+                # Cumulative totals by status
+                'completed_totals': completed_totals,
+                'processing_totals': processing_totals,
+                'disputed_totals': disputed_totals,
+                'failed_totals': failed_totals,
+                # Net total (completed + processing - disputed)
+                'cumulative_amount': cumulative_amount,
+                'cumulative_count': cumulative_count,
+                'generated_at': generated_at,
+                'format_currency': format_currency
+            }
+
             # Render HTML template
-            html_body = render_template(
-                'email/daily_report.html',
-                report_date=report_date,
-                donations=donation_data,
-                total_amount=total_amount,
-                donation_count=len(donations),
-                bulk_count=bulk_count,
-                cumulative_amount=cumulative_amount,
-                cumulative_count=cumulative_count,
-                generated_at=generated_at,
-                format_currency=format_currency
-            )
+            html_body = render_template('email/daily_report.html', **template_context)
 
             # Render text template
-            text_body = render_template(
-                'email/daily_report.txt',
-                report_date=report_date,
-                donations=donation_data,
-                total_amount=total_amount,
-                donation_count=len(donations),
-                bulk_count=bulk_count,
-                cumulative_amount=cumulative_amount,
-                cumulative_count=cumulative_count,
-                generated_at=generated_at,
-                format_currency=format_currency
-            )
+            text_body = render_template('email/daily_report.txt', **template_context)
 
             # Send email
             subject = f"NGÜ Spenden-Report {report_date.strftime('%d.%m.%Y')}"

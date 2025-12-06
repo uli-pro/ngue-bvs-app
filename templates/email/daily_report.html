@@ -64,10 +64,36 @@
 
 <div class="highlight" style="margin-top: 15px; background-color: #d4edda; border-left-color: #28a745;">
     <h3 style="margin-top: 0;">Gesamtspenden bis {{ report_date.strftime('%d.%m.%Y') }}</h3>
-    <p>
-        <strong>Kumulierter Betrag (ohne Bulk-Sponsorings):</strong> {{ format_currency(cumulative_amount) }}<br>
-        <strong>Anzahl abgeschlossener Spenden:</strong> {{ cumulative_count }}
+    <p style="margin-bottom: 0; font-size: 13px; color: #666;">(ohne Bulk-Sponsorings)</p>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+        <tbody>
+            <tr>
+                <td style="padding: 5px 0;">{{ completed_totals.count }} completed Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(completed_totals.amount) }}</td>
+            </tr>
+            {% if processing_totals.count > 0 %}
+            <tr>
+                <td style="padding: 5px 0;">{{ processing_totals.count }} processing Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(processing_totals.amount) }}</td>
+            </tr>
+            {% endif %}
+            {% if disputed_totals.count > 0 %}
+            <tr style="color: #dc3545;">
+                <td style="padding: 5px 0;">{{ disputed_totals.count }} disputed Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">-{{ format_currency(disputed_totals.amount) }}</td>
+            </tr>
+            {% endif %}
+            <tr style="border-top: 2px solid #28a745; font-weight: bold;">
+                <td style="padding: 8px 0 5px 0;">Gesamtbetrag:</td>
+                <td style="padding: 8px 0 5px 0; text-align: right; font-family: monospace;">{{ format_currency(cumulative_amount) }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% if failed_totals.count > 0 %}
+    <p style="margin-top: 10px; margin-bottom: 0; font-size: 13px; color: #999;">
+        {{ failed_totals.count }} failed Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
     </p>
+    {% endif %}
 </div>
 
 {% else %}
@@ -77,10 +103,36 @@
 
 <div class="highlight" style="margin-top: 15px; background-color: #d4edda; border-left-color: #28a745;">
     <h3 style="margin-top: 0;">Gesamtspenden bis {{ report_date.strftime('%d.%m.%Y') }}</h3>
-    <p>
-        <strong>Kumulierter Betrag (ohne Bulk-Sponsorings):</strong> {{ format_currency(cumulative_amount) }}<br>
-        <strong>Anzahl abgeschlossener Spenden:</strong> {{ cumulative_count }}
+    <p style="margin-bottom: 0; font-size: 13px; color: #666;">(ohne Bulk-Sponsorings)</p>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+        <tbody>
+            <tr>
+                <td style="padding: 5px 0;">{{ completed_totals.count }} completed Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(completed_totals.amount) }}</td>
+            </tr>
+            {% if processing_totals.count > 0 %}
+            <tr>
+                <td style="padding: 5px 0;">{{ processing_totals.count }} processing Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(processing_totals.amount) }}</td>
+            </tr>
+            {% endif %}
+            {% if disputed_totals.count > 0 %}
+            <tr style="color: #dc3545;">
+                <td style="padding: 5px 0;">{{ disputed_totals.count }} disputed Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">-{{ format_currency(disputed_totals.amount) }}</td>
+            </tr>
+            {% endif %}
+            <tr style="border-top: 2px solid #28a745; font-weight: bold;">
+                <td style="padding: 8px 0 5px 0;">Gesamtbetrag:</td>
+                <td style="padding: 8px 0 5px 0; text-align: right; font-family: monospace;">{{ format_currency(cumulative_amount) }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% if failed_totals.count > 0 %}
+    <p style="margin-top: 10px; margin-bottom: 0; font-size: 13px; color: #999;">
+        {{ failed_totals.count }} failed Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
     </p>
+    {% endif %}
 </div>
 {% endif %}
 
