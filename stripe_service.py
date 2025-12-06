@@ -345,8 +345,9 @@ class StripeService:
             # Get donation ID from metadata
             donation_id = payment_intent.get('metadata', {}).get('donation_id')
             if not donation_id or not str(donation_id).isdigit():
-                logger.error(f"No valid donation ID in PaymentIntent {payment_intent_id}")
-                return False
+                # No donation_id means this PaymentIntent is not from our app (e.g., RaiseNow)
+                logger.info(f"PaymentIntent {payment_intent_id} has no donation_id - not from this app, ignoring")
+                return True
 
             donation_id = int(donation_id)
 
@@ -452,8 +453,9 @@ class StripeService:
             # Get donation ID from metadata
             donation_id = payment_intent.get('metadata', {}).get('donation_id')
             if not donation_id or not str(donation_id).isdigit():
-                logger.error(f"No valid donation ID in failed PaymentIntent {payment_intent_id}")
-                return False
+                # No donation_id means this PaymentIntent is not from our app (e.g., RaiseNow)
+                logger.info(f"Failed PaymentIntent {payment_intent_id} has no donation_id - not from this app, ignoring")
+                return True
 
             donation_id = int(donation_id)
 
@@ -720,8 +722,10 @@ class StripeService:
             # Get donation ID from metadata
             donation_id = payment_intent.get('metadata', {}).get('donation_id')
             if not donation_id or not str(donation_id).isdigit():
-                logger.error(f"No valid donation ID in processing PaymentIntent {payment_intent.get('id')}")
-                return False
+                # No donation_id means this PaymentIntent is not from our app (e.g., RaiseNow)
+                # Return True to acknowledge the webhook without processing
+                logger.info(f"PaymentIntent {payment_intent.get('id')} has no donation_id - not from this app, ignoring")
+                return True
             donation_id = int(donation_id)
 
             # Find donation - accept 'pending' or 'processing' for idempotency (Stripe retries)
@@ -1249,17 +1253,18 @@ class StripeService:
             # Get donation ID from metadata
             donation_id = payment_intent.metadata.get('donation_id')
             if not donation_id or not donation_id.isdigit():
-                logger.error(f"No valid donation ID in requires_action PaymentIntent {payment_intent.id}")
-                return False
+                # No donation_id means this PaymentIntent is not from our app (e.g., RaiseNow)
+                logger.info(f"Requires_action PaymentIntent {payment_intent.id} has no donation_id - not from this app, ignoring")
+                return True
             donation_id = int(donation_id)
-            
+
             donation = Donation.query.filter(
                 Donation.id == donation_id,
                 Donation.payment_status.in_(['pending', 'processing'])
             ).first()
-            
+
             if not donation:
-                logger.error(f"No pending donation found for requires_action PaymentIntent {payment_intent.id}")
+                logger.info(f"No pending donation found for requires_action PaymentIntent {payment_intent.id} - may be already processed")
                 return False
             
             # Keep status as processing for now - user needs to complete action
@@ -1290,17 +1295,18 @@ class StripeService:
             # Get donation ID from metadata
             donation_id = payment_intent.metadata.get('donation_id')
             if not donation_id or not donation_id.isdigit():
-                logger.error(f"No valid donation ID in canceled PaymentIntent {payment_intent.id}")
-                return False
+                # No donation_id means this PaymentIntent is not from our app (e.g., RaiseNow)
+                logger.info(f"Canceled PaymentIntent {payment_intent.id} has no donation_id - not from this app, ignoring")
+                return True
             donation_id = int(donation_id)
-            
+
             donation = Donation.query.filter(
                 Donation.id == donation_id,
                 Donation.payment_status.in_(['pending', 'processing'])
             ).first()
-            
+
             if not donation:
-                logger.error(f"No pending donation found for canceled PaymentIntent {payment_intent.id}")
+                logger.info(f"No pending donation found for canceled PaymentIntent {payment_intent.id} - may be already processed")
                 return False
             
             cancellation_reason = payment_intent.cancellation_reason or 'canceled'
