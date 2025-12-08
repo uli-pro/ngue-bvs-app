@@ -749,9 +749,11 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert
         from book_names import get_german_book_name
 
         try:
-            admin_email = current_app.config.get('ADMIN_EMAIL')
-            if not admin_email:
-                self.logger.warning("ADMIN_EMAIL not configured - cannot send daily report")
+            # Get list of admin emails (comma-separated)
+            admin_emails_str = current_app.config.get('ADMIN_EMAILS', '')
+            admin_emails = [e.strip() for e in admin_emails_str.split(',') if e.strip()]
+            if not admin_emails:
+                self.logger.warning("ADMIN_EMAILS not configured - cannot send daily report")
                 return False
 
             # Default to yesterday
@@ -864,22 +866,25 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert
             # Render text template
             text_body = render_template('email/daily_report.txt', **template_context)
 
-            # Send email
+            # Send email to all admin recipients
             subject = f"NGÜ Spenden-Report {report_date.strftime('%d.%m.%Y')}"
 
-            success = self.provider.send_email(
-                to_email=admin_email,
-                subject=subject,
-                html_body=html_body,
-                text_body=text_body
-            )
+            all_success = True
+            for admin_email in admin_emails:
+                success = self.provider.send_email(
+                    to_email=admin_email,
+                    subject=subject,
+                    html_body=html_body,
+                    text_body=text_body
+                )
 
-            if success:
-                self.logger.info(f"Daily donation report sent for {report_date}")
-            else:
-                self.logger.error(f"Failed to send daily donation report for {report_date}")
+                if success:
+                    self.logger.info(f"Daily donation report sent to {admin_email} for {report_date}")
+                else:
+                    self.logger.error(f"Failed to send daily donation report to {admin_email}")
+                    all_success = False
 
-            return success
+            return all_success
 
         except Exception as e:
             self.logger.error(f"Daily donation report failed: {e}")

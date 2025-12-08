@@ -33,6 +33,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Admin notification configuration
 app.config["ADMIN_EMAIL"] = os.environ.get("ADMIN_EMAIL")
+app.config["ADMIN_EMAILS"] = os.environ.get("ADMIN_EMAILS", "")
 
 # Certificate storage configuration
 app.config['CERTIFICATE_STORAGE_PATH'] = os.path.join(os.getcwd(), 'certificates')
