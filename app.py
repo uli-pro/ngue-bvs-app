@@ -97,6 +97,32 @@ else:
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = 'Lax'
 
+# Content Security Policy
+@app.after_request
+def set_security_headers(response):
+    """Set security headers including CSP for HubSpot Analytics"""
+    # Content Security Policy - allow HubSpot tracking
+    csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' "
+        "https://js.stripe.com "
+        "https://cdn.jsdelivr.net "
+        "https://js.hs-scripts.com "
+        "https://js.hsforms.net "
+        "https://js.hs-analytics.net; "
+        "connect-src 'self' "
+        "https://api.stripe.com "
+        "https://forms.hsforms.com "
+        "https://forms.hubspot.com "
+        "https://api.hubspot.com; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "frame-src https://js.stripe.com;"
+    )
+    response.headers['Content-Security-Policy'] = csp
+    return response
+
 
 # Initialize Flask-Session
 sess = Session(app)
