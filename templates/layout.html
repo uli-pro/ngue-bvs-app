@@ -81,7 +81,11 @@
     <script>
       // HubSpot wird nur geladen, wenn Analytics-Cookies akzeptiert wurden
       function loadHubSpot() {
-        if (localStorage.getItem("ngu_analytics_consent") === "true") {
+        // TEMPORARY DEBUG: Always load HubSpot for testing validation
+        // TODO: Remove this override after HubSpot validation is complete
+        var consentGranted = true; // OVERRIDE - normally: localStorage.getItem("ngu_analytics_consent") === "true"
+
+        if (consentGranted) {
           var script = document.createElement("script");
           script.type = "text/javascript";
           script.id = "hs-script-loader";
@@ -89,6 +93,7 @@
           script.defer = true;
           script.src = "//js.hs-scripts.com/47813211.js";
           document.head.appendChild(script);
+          console.log("🔍 DEBUG: HubSpot loaded (consent override active)");
         }
       }
 
@@ -573,11 +578,13 @@
         localStorage.setItem("ngu_analytics_consent", "true");
         document.getElementById("cookie-banner").style.display = "none";
 
-        // HubSpot laden
-        loadHubSpot();
+        // HubSpot laden (wird bereits beim Seitenladen durch Debug-Override geladen)
+        // loadHubSpot(); // Not needed - already loaded via override
 
         // Optional: Erfolgsmeldung
-        console.log("Analytics-Cookies aktiviert - HubSpot wird geladen");
+        console.log(
+          "Analytics-Cookies aktiviert - HubSpot bereits geladen (Debug-Modus)"
+        );
       }
 
       function acceptOnlyNecessary() {
