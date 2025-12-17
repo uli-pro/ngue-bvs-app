@@ -8,7 +8,7 @@
     <style>
       @page {
         size: A4;
-        margin: 25mm;
+        margin: 20mm 25mm 15mm 25mm;
         /* Background image contains handwritten signature */
         /* Note: background_image_path is set by pdf_service with absolute file:// URL */
         background-image: url("{{ background_image_path }}");
@@ -18,35 +18,54 @@
       body {
         font-family: "Times New Roman", Times, serif;
         font-size: 11pt;
-        line-height: 1.6;
+        line-height: 1.3;
         color: #000000;
+        margin: 0;
+        padding: 0;
       }
-      h1 {
-        font-size: 18pt;
+      .letterhead {
         text-align: center;
-        margin-bottom: 30mm;
-        margin-top: 20mm;
+        font-size: 10pt;
+        margin-bottom: 2mm;
       }
-      .warning {
+      .letterhead-line {
+        border-bottom: 1px solid #333;
+        margin: 2mm 0 24mm 0;
+      }
+      .recipient {
+        margin-bottom: 18mm;
+      }
+      .subject {
+        margin: 12mm 0;
+      }
+      .warning-box {
         background-color: #fff3cd;
-        border: 2px solid #856404;
-        padding: 15px;
-        margin: 20px 0;
-        border-radius: 5px;
-      }
-      .info-box {
-        border: 1px solid #ccc;
-        padding: 15px;
-        margin: 20px 0;
-        background-color: #f9f9f9;
+        border: 1px solid #856404;
+        padding: 8px 10px;
+        margin: 5mm 0;
+        border-radius: 3px;
       }
       .signature {
-        margin-top: 40mm;
-        text-align: right;
+        margin-top: 5mm;
+        text-align: left;
       }
       .signature-space {
-        height: 30mm;
+        height: 15mm;
         /* Handwritten signature is in background image at this position */
+      }
+      .signature-text {
+        text-align: left;
+      }
+      .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        font-size: 9pt;
+        color: #666;
+      }
+      p {
+        margin: 2mm 0;
       }
       strong {
         font-weight: bold;
@@ -54,80 +73,70 @@
     </style>
   </head>
   <body>
-    <h1>Stornierung der Zuwendungsbestätigung</h1>
+    <!-- Briefkopf zentriert in einer Zeile -->
+    <div class="letterhead">
+      Peter-Schöffer-Stiftung &middot; Wormser Weg 18 &middot; 67574 Osthofen
+    </div>
+    <div class="letterhead-line"></div>
 
-    <p>
-      Peter-Schöffer-Stiftung<br />
-      Wormser Weg 18<br />
-      67574 Osthofen
-    </p>
-
-    <p style="margin-top: 20mm">
+    <!-- Empfänger -->
+    <div class="recipient">
       <strong>{{ donor_name }}</strong><br />
       {{ donor_address.street }}<br />
       {{ donor_address.postal_code }} {{ donor_address.city }}<br />
       {{ donor_address.country }}
-    </p>
-
-    <p style="margin-top: 10mm">
-      <strong
-        >Betreff: Stornierung der Zuwendungsbestätigung Nr. {{
-        original_receipt_number }}</strong
-      >
-    </p>
-
-    <p style="margin-top: 10mm">Sehr geehrte/r {{ donor_name }},</p>
-
-    <div class="warning">
-      <p><strong>Wichtiger Hinweis:</strong></p>
-      <p>
-        Die Ihnen am <strong>{{ original_date }}</strong> ausgestellte
-        Zuwendungsbestätigung Nr.
-        <strong>{{ original_receipt_number }}</strong> über
-        <strong>{{ amount|currency }}</strong> ist <strong>ungültig</strong>.
-      </p>
     </div>
 
-    <p><strong>Grund:</strong></p>
-    <p>{{ cancellation_reason }} (Datum: {{ cancellation_date }})</p>
+    <!-- Betreff -->
+    <p class="subject">
+      <strong>Betreff: Stornierung der Zuwendungsbestätigung Nr. {{ original_receipt_number }}</strong>
+    </p>
 
-    <div class="info-box">
-      <p><strong>Betroffene Bibelverse:</strong></p>
-      <ul>
-        {% for verse_ref in verse_references %}
-        <li>{{ verse_ref }}</li>
-        {% endfor %}
-      </ul>
-      <p>Diese Verse wurden wieder zur Verfügung gestellt.</p>
+    <!-- Anrede -->
+    <p>Sehr geehrte/r {{ donor_name }},</p>
+
+    <!-- Wichtiger Hinweis (ohne Überschrift) -->
+    <div class="warning-box">
+      Die Ihnen am <strong>{{ original_date }}</strong> ausgestellte
+      Zuwendungsbestätigung Nr. <strong>{{ original_receipt_number }}</strong> über
+      <strong>{{ amount|currency }}</strong> ist <strong>ungültig</strong>.
     </div>
 
-    <p><strong>Steuerrechtliche Konsequenz:</strong></p>
-    <p>
-      Die oben genannte Zuwendungsbestätigung kann <strong>nicht</strong> für
-      steuerliche Zwecke verwendet werden. Wir bitten Sie, diese Bescheinigung
-      nicht in Ihrer Einkommensteuererklärung geltend zu machen.
-    </p>
+    <!-- Grund -->
+    <p><strong>Grund:</strong> {{ cancellation_reason }} (Datum: {{ cancellation_date }})</p>
+
+    <!-- Betroffene Bibelverse (inline mit Semikolons) -->
+    <p><strong>Betroffene Bibelverse:</strong> {{ verse_references|join('; ') }}</p>
+    <p>Diese Verse wurden wieder zur Verfügung gestellt.</p>
+
+    <!-- Steuerrechtliche Konsequenz -->
+    <p><strong>Steuerrechtliche Konsequenz:</strong>
+    Die oben genannte Zuwendungsbestätigung kann <strong>nicht</strong> für
+    steuerliche Zwecke verwendet werden. Wir bitten Sie, diese Bescheinigung
+    nicht in Ihrer Einkommensteuererklärung geltend zu machen.</p>
 
     <p>
       Falls Sie die Spende zu einem anderen Zeitpunkt erneut tätigen möchten,
-      besuchen Sie bitte unsere Website:
-      <strong>https://ngue-bvs.schoeffer.org</strong>
+      besuchen Sie bitte unsere Website: <strong>https://ngue-bvs.schoeffer.org</strong>
     </p>
 
-    <p style="margin-top: 15mm">Mit freundlichen Grüßen</p>
+    <!-- Grußformel -->
+    <p style="margin-top: 5mm">Mit freundlichen Grüßen</p>
 
+    <!-- Unterschrift -->
     <div class="signature">
-      <p>
+      <!-- Handwritten signature is in background image -->
+      <div class="signature-space"></div>
+      <p class="signature-text">
         Peter-Schöffer-Stiftung<br />
         vertreten durch den Vorstand Daniel Weninger
       </p>
-      <!-- Handwritten signature is in background image -->
-      <div class="signature-space"></div>
     </div>
 
-    <p style="font-size: 9pt; color: #666; margin-top: 30mm">
-      Stornierung ausgestellt am: {{ cancellation_date }}<br />
+    <!-- Footer fixiert am unteren Rand -->
+    <div class="footer">
+      Stornierung ausgestellt am: {{ cancellation_date }} &middot;
       Referenz: {{ original_receipt_number }}
-    </p>
+    </div>
   </body>
 </html>
