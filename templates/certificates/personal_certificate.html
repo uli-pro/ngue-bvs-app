@@ -31,13 +31,25 @@
     </div>
     
     <!-- Bibelvers-Referenz(en) - NUR die Referenz, NICHT der Text -->
-    <div class="verse-reference">
-        {% if verses|length == 1 %}
-            {{ verses[0].german_reference.upper() }}
-        {% else %}
+    {% set half = (verses|length + 1) // 2 %}
+    {% if verses|length <= 5 %}
+        <div class="verse-reference">
             {% for verse in verses %}
                 {{ verse.german_reference.upper() }}{% if not loop.last %}<br>{% endif %}
             {% endfor %}
-        {% endif %}
-    </div>
+        </div>
+    {% else %}
+        <div class="verse-reference two-column">
+            <div class="verse-col">
+                {% for verse in verses[:half] %}
+                    {{ verse.german_reference.upper() }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
+            <div class="verse-col">
+                {% for verse in verses[half:] %}
+                    {{ verse.german_reference.upper() }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}

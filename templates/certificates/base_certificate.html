@@ -98,18 +98,32 @@
         color: #666;
       }
 
-      /* Bibelvers-Referenz */
+      /* Bibelvers-Referenz - Basisstile */
       .verse-reference {
         position: absolute;
         top: 185mm;
         left: 0;
         width: 210mm;
         text-align: center;
-        font-size: 26pt;
+        font-size: 24pt;
         font-weight: 400;
         color: #333f84;
         font-style: italic;
         letter-spacing: 1.2px;
+        line-height: 1.5;
+      }
+
+      /* Zweispaltiges Layout für 6-10 Verse */
+      .verse-reference.two-column {
+        display: flex;
+        justify-content: center;
+        gap: 30mm;
+        padding: 0 20mm;
+        box-sizing: border-box;
+      }
+
+      .verse-reference .verse-col {
+        text-align: left;
       }
     </style>
   </head>
