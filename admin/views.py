@@ -177,59 +177,103 @@ def donations_list():
 def donation_detail(donation_id):
     """Show donation details with actions"""
     donation = Donation.query.get_or_404(donation_id)
-    
-    # Check if certificates exist for this donation (get newest)
-    certificate = Certificate.query.filter_by(
+
+    # Get ALL personal certificates for this donation (Multi-Part support)
+    # Sorted by filename to ensure Teil01, Teil02, etc. appear in order
+    certificates = Certificate.query.filter_by(
         donation_id=donation_id,
         certificate_type='personal_certificate'
-    ).order_by(Certificate.generated_at.desc()).first()
+    ).order_by(Certificate.filename.asc()).all()
 
     # Check if tax receipt exists for this donation (get newest)
     tax_receipt = Certificate.query.filter_by(
         donation_id=donation_id,
         certificate_type='tax_receipt'
     ).order_by(Certificate.generated_at.desc()).first()
-    
-    return render_template('admin/donation_detail.html', 
-                         donation=donation, 
-                         certificate=certificate,
+
+    return render_template('admin/donation_detail.html',
+                         donation=donation,
+                         certificates=certificates,  # Liste statt einzelnes Objekt
                          tax_receipt=tax_receipt)
 
 @admin_required
 def regenerate_certificate(donation_id):
-    """Regenerate certificate for donation"""
+    """Regenerate all certificates for donation (Multi-Part support)"""
+    import os
+    from flask import current_app
+
     donation = Donation.query.get_or_404(donation_id)
-    
-    if donation.payment_status != 'completed':
-        flash('Zertifikat kann nur fuer abgeschlossene Spenden generiert werden.', 'warning')
+
+    if donation.payment_status not in ('completed', 'processing'):
+        flash('Zertifikat kann nur fuer abgeschlossene/processing Spenden generiert werden.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
-    
-    # Generate new certificate using the existing PDF service
-    pdf_service = PDFGeneratorService()
+
+    # 1. Delete existing personal_certificate records and PDF files
+    existing_certs = Certificate.query.filter_by(
+        donation_id=donation_id,
+        certificate_type='personal_certificate'
+    ).all()
+
+    for cert in existing_certs:
+        # Delete PDF file from disk
+        if cert.file_path and os.path.exists(cert.file_path):
+            try:
+                os.remove(cert.file_path)
+            except OSError as e:
+                current_app.logger.warning(f"Could not delete old certificate file {cert.file_path}: {e}")
+        # Delete DB record
+        db.session.delete(cert)
+
+    db.session.commit()
+
+    # 2. Generate new certificates using Multi-Part method
+    pdf_service = PDFGeneratorService(current_app._get_current_object())
     try:
-        certificate = pdf_service.generate_certificate(donation.id, 'personal_certificate')
-        if certificate:
-            flash('Zertifikat wurde neu generiert.', 'success')
+        certificates = pdf_service.generate_multi_part_certificates(donation.id)
+        cert_count = len(certificates) if certificates else 0
+        if cert_count > 0:
+            flash(f'{cert_count} Zertifikat(e) wurden neu generiert.', 'success')
         else:
-            flash('Fehler beim Generieren des Zertifikats.', 'danger')
+            flash('Fehler beim Generieren der Zertifikate.', 'danger')
     except Exception as e:
-        flash(f'Fehler beim Generieren des Zertifikats: {str(e)}', 'danger')
-    
+        flash(f'Fehler beim Generieren der Zertifikate: {str(e)}', 'danger')
+
     return redirect(url_for('admin.donation_detail', donation_id=donation_id))
 
 @admin_required
 def resend_certificate(donation_id):
-    """Resend certificate email"""
+    """Resend all certificate emails (Multi-Part support)"""
     donation = Donation.query.get_or_404(donation_id)
-    
-    # Get the latest certificate for this donation
-    certificate = Certificate.query.filter_by(donation_id=donation_id).order_by(Certificate.generated_at.desc()).first()
-    if not certificate or not certificate.exists_on_disk:
-        flash('Kein Zertifikat vorhanden. Bitte zuerst generieren.', 'warning')
+
+    # Get ALL personal certificates for this donation
+    certificates = Certificate.query.filter_by(
+        donation_id=donation_id,
+        certificate_type='personal_certificate'
+    ).order_by(Certificate.filename.asc()).all()
+
+    # Check if any certificates exist
+    valid_certificates = [c for c in certificates if c.exists_on_disk]
+    if not valid_certificates:
+        flash('Keine Zertifikate vorhanden. Bitte zuerst generieren.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
-    
-    # Send email using existing certificate email method
-    # The email service expects donation data in a specific format
+
+    # Build attachments list for all certificates
+    pdf_attachments = []
+    total_certs = len(valid_certificates)
+    for i, cert in enumerate(valid_certificates):
+        if total_certs > 1:
+            part_num = i + 1
+            filename = f"NGÜ_Zertifikat_{donation.id}_Teil{part_num:02d}.pdf"
+        else:
+            filename = f"NGÜ_Zertifikat_{donation.id}.pdf"
+
+        pdf_attachments.append({
+            'path': cert.file_path,
+            'filename': filename,
+            'mimetype': 'application/pdf'
+        })
+
+    # Send email with all certificate attachments
     donation_data = {
         'id': donation.id,
         'created_at': donation.created_at,
@@ -240,21 +284,20 @@ def resend_certificate(donation_id):
             'first_name': donation.person.first_name,
             'last_name': donation.person.last_name
         },
-        # Add verses information for completeness
-        'verses': [{'reference': v.verse.reference, 'text': v.verse.text} 
+        'verses': [{'reference': v.verse.reference, 'text': v.verse.text}
                   for v in donation.verse_associations]
     }
-    
-    success = email_service.send_certificate_email(
+
+    success = email_service.send_certificate_email_with_attachments(
         donation_data,
-        certificate.file_path
+        pdf_attachments
     )
-    
+
     if success:
         donation.email_sent = True
         donation.email_sent_at = datetime.utcnow()
         db.session.commit()
-        
+
         # Send copy to admin
         admin_email = session.get('admin_email')
         if admin_email:
@@ -262,38 +305,54 @@ def resend_certificate(donation_id):
             admin_donation_data['person'] = donation_data['person'].copy()
             admin_donation_data['person']['email'] = admin_email
             try:
-                email_service.send_certificate_email(
+                email_service.send_certificate_email_with_attachments(
                     admin_donation_data,
-                    certificate.file_path
+                    pdf_attachments
                 )
-                flash('Zertifikat wurde per E-Mail versendet (Admin-Kopie gesendet).', 'success')
+                flash(f'{total_certs} Zertifikat(e) per E-Mail versendet (Admin-Kopie gesendet).', 'success')
             except:
-                flash('Zertifikat wurde per E-Mail versendet (Admin-Kopie fehlgeschlagen).', 'warning')
+                flash(f'{total_certs} Zertifikat(e) per E-Mail versendet (Admin-Kopie fehlgeschlagen).', 'warning')
         else:
-            flash('Zertifikat wurde per E-Mail versendet.', 'success')
+            flash(f'{total_certs} Zertifikat(e) wurden per E-Mail versendet.', 'success')
     else:
         flash('Fehler beim Versenden der E-Mail.', 'danger')
-    
+
     return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
 
 @admin_required
 def view_certificate(donation_id):
-    """View/Download certificate PDF"""
-    donation = Donation.query.get_or_404(donation_id)
-    
-    # Get the latest certificate for this donation
+    """View first certificate PDF (for backward compatibility)"""
+    # Get the first certificate for this donation
     certificate = Certificate.query.filter_by(
         donation_id=donation_id,
         certificate_type='personal_certificate'
-    ).order_by(Certificate.generated_at.desc()).first()
+    ).order_by(Certificate.filename.asc()).first()
+
     if not certificate or not certificate.exists_on_disk:
         flash('Kein Zertifikat vorhanden. Bitte zuerst generieren.', 'warning')
         return redirect(url_for('admin.donation_detail', donation_id=donation_id))
-    
-    # Send the PDF file to the browser for viewing
+
     return send_file(
         certificate.file_path,
-        as_attachment=False,  # Display in browser instead of download
+        as_attachment=False,
+        download_name=certificate.filename,
+        mimetype='application/pdf'
+    )
+
+
+@admin_required
+def view_certificate_by_id(certificate_id):
+    """View/Download a specific certificate PDF by its ID"""
+    certificate = Certificate.query.get_or_404(certificate_id)
+
+    if not certificate.exists_on_disk:
+        flash('Zertifikat-Datei nicht gefunden.', 'warning')
+        return redirect(url_for('admin.donation_detail', donation_id=certificate.donation_id))
+
+    return send_file(
+        certificate.file_path,
+        as_attachment=False,
         download_name=certificate.filename,
         mimetype='application/pdf'
     )

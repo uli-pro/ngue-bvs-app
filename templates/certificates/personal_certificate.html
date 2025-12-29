@@ -4,8 +4,11 @@
     <!-- Datum - zentriert -->
     <div class="date-text">
         Ausgestellt am: {{ formatted_date }}
+        {% if is_multi_part %}
+        <br><span style="font-size: 0.7em; color: #666;">Teil {{ part_number }} von {{ total_parts }}</span>
+        {% endif %}
     </div>
-    
+
     <!-- Bestätigungstext -->
     <div class="confirmation-text">
         HIERMIT BESTÄTIGEN WIR:

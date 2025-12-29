@@ -37,6 +37,9 @@ GERMAN_MONTHS = {
     9: 'September', 10: 'Oktober', 11: 'November', 12: 'Dezember'
 }
 
+# Maximale Anzahl von Versen pro Zertifikat (mehr passen nicht auf ein PDF)
+MAX_VERSES_PER_CERTIFICATE = 4
+
 def format_date_german(dt: datetime) -> str:
     """Formatiert ein Datum im deutschen Format: '03. Dezember 2025'"""
     if dt is None:
@@ -637,42 +640,219 @@ class PDFGeneratorService:
         """Alle Donations verwenden personal_certificate Template"""
         return 'personal_certificate'
 
-    def _generate_certificate_paths(self, donation: Donation, certificate_type: str, 
-                                   session_id: Optional[str] = None) -> Tuple[str, str]:
+    def _generate_certificate_paths(self, donation: Donation, certificate_type: str,
+                                   session_id: Optional[str] = None,
+                                   part_number: Optional[int] = None) -> Tuple[str, str]:
         """
         Generiert filename und file_path für Zertifikat
-        
+
         Schema: certificates/YYYY/MM/session_ID/donation_ID_type_YYYYMMDD_HHMMSS.pdf
-        
+        Bei Multi-Part: donation_ID_type01_YYYYMMDD_HHMMSS.pdf
+
+        Args:
+            donation: Die Donation für die das Zertifikat generiert wird
+            certificate_type: Typ des Zertifikats (z.B. 'personal_certificate')
+            session_id: Optionale Session-ID für Pfad-Gruppierung
+            part_number: Optionale Teil-Nummer für Multi-Part-Zertifikate (1-basiert)
+
         Returns:
             tuple: (filename, absolute_file_path)
         """
         # Basis-Verzeichnis
         base_dir = current_app.config['CERTIFICATE_STORAGE_PATH']
-        
+
         # Jahr/Monat-Struktur
         now = datetime.now()
         year_month = f"{now.year}/{now.month:02d}"
-        
+
         # Session-Verzeichnis
         session_dir = f"session_{session_id}" if session_id else "no_session"
-        
-        # Dateiname generieren
+
+        # Dateiname generieren - mit optionaler Teil-Nummer
         timestamp = now.strftime("%Y%m%d_%H%M%S")
-        filename = f"donation_{donation.id:03d}_{certificate_type}_{timestamp}.pdf"
-        
+        if part_number is not None:
+            # Multi-Part: donation_034_personal_certificate01_20251229_063353.pdf
+            filename = f"donation_{donation.id:03d}_{certificate_type}{part_number:02d}_{timestamp}.pdf"
+        else:
+            # Single-Part: donation_034_personal_certificate_20251229_063353.pdf
+            filename = f"donation_{donation.id:03d}_{certificate_type}_{timestamp}.pdf"
+
         # Vollständiger Pfad
         directory = os.path.join(base_dir, year_month, session_dir)
         file_path = os.path.join(directory, filename)
-        
+
         # Ordner erstellen falls nicht vorhanden
         os.makedirs(directory, exist_ok=True)
-        
+
         # Sicherheitsprüfung: Path Traversal verhindern
         if not os.path.abspath(file_path).startswith(os.path.abspath(base_dir)):
             raise FileSystemError("Invalid file path detected")
-        
+
         return filename, file_path
+
+    def _split_verses_into_chunks(self, verses: List[Verse]) -> List[List[Verse]]:
+        """
+        Teilt eine Liste von Versen in Chunks von max. MAX_VERSES_PER_CERTIFICATE auf.
+
+        Args:
+            verses: Liste aller Verse einer Donation
+
+        Returns:
+            Liste von Vers-Listen, je max. 4 Verse pro Liste
+        """
+        if len(verses) <= MAX_VERSES_PER_CERTIFICATE:
+            return [verses]  # Kein Split nötig
+
+        chunks = []
+        for i in range(0, len(verses), MAX_VERSES_PER_CERTIFICATE):
+            chunk = verses[i:i + MAX_VERSES_PER_CERTIFICATE]
+            chunks.append(chunk)
+
+        return chunks
+
+    def _prepare_certificate_context_for_part(self, donation: Donation,
+                                              verses: List[Verse],
+                                              part_number: int,
+                                              total_parts: int) -> Dict[str, Any]:
+        """
+        Bereitet Template-Context für ein Teil-Zertifikat vor.
+
+        WICHTIG: formatted_amount zeigt immer den GESAMTBETRAG der Spende,
+        nicht nur den Anteil dieses Teils.
+
+        Args:
+            donation: Die Donation
+            verses: Nur die Verse dieses Teil-Zertifikats
+            part_number: Aktuelle Teil-Nummer (1-basiert)
+            total_parts: Gesamtanzahl der Teile
+
+        Returns:
+            Template-Context Dictionary
+        """
+        # Person-Daten (bevorzugt aus Snapshot für historische Korrektheit)
+        person_data = donation.person_snapshot or {}
+        if not person_data:
+            person_data = {
+                'first_name': donation.person.first_name,
+                'last_name': donation.person.last_name,
+                'email': donation.person.email
+            }
+
+        # Absoluter Pfad für Hintergrundbild
+        static_dir = os.path.join(os.path.dirname(__file__), 'static')
+        background_image_path = os.path.join(static_dir, 'certificates', 'certificate-background.png')
+
+        # Determine certificate date
+        if donation.completed_at:
+            cert_date = donation.completed_at
+        else:
+            cert_date = datetime.now()  # SEPA: use current date
+
+        context = {
+            'donation': donation,
+            'person_snapshot': person_data,
+            'verses': verses,  # Nur die Verse dieses Teils
+            'verse_count': len(verses),
+            'is_multiple': len(verses) > 1,
+            'background_image_path': f'file://{background_image_path}',
+            # GESAMTBETRAG der Spende (nicht aufgeteilt!)
+            'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            'formatted_date': format_date_german(cert_date),
+            'certificate_title': f"Sponsoring-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}",
+            # Multi-Part Informationen
+            'is_multi_part': total_parts > 1,
+            'part_number': part_number,
+            'total_parts': total_parts
+        }
+
+        return context
+
+    def generate_multi_part_certificates(self, donation_id: int,
+                                         session_id: Optional[str] = None) -> List[Certificate]:
+        """
+        Generiert ein oder mehrere Teil-Zertifikate für eine Donation.
+
+        Bei ≤4 Versen: Ein einzelnes Zertifikat (ohne Teil-Nummer im Dateinamen)
+        Bei >4 Versen: Mehrere Teil-Zertifikate (mit Teil-Nummern 01, 02, etc.)
+
+        Args:
+            donation_id: ID der Donation
+            session_id: Optionale Session-ID für Pfad-Gruppierung
+
+        Returns:
+            Liste von Certificate-Objekten (mindestens 1)
+
+        Raises:
+            ValidationError: Bei ungültiger Donation
+            PDFGenerationError: Bei Fehlern in der PDF-Erstellung
+        """
+        with self._atomic_operation() as created_files:
+            # 1. Donation validieren
+            donation = self._validate_donation(donation_id)
+
+            # 2. Alle Verse laden und sortieren
+            verses = donation.get_verses_sorted()
+            if not verses:
+                raise PDFGenerationError(f"No verses found for donation {donation_id}")
+
+            self.logger.info(f"Multi-part certificate generation for donation {donation_id}: "
+                           f"{len(verses)} verses")
+
+            # 3. Verse in Chunks aufteilen
+            verse_chunks = self._split_verses_into_chunks(verses)
+            total_parts = len(verse_chunks)
+
+            self.logger.info(f"Split into {total_parts} part(s)")
+
+            certificates = []
+
+            # 4. Für jeden Chunk ein Zertifikat generieren
+            for i, verse_chunk in enumerate(verse_chunks):
+                part_number = i + 1  # 1-basiert
+
+                # Pfad generieren (mit oder ohne Teil-Nummer)
+                if total_parts > 1:
+                    filename, file_path = self._generate_certificate_paths(
+                        donation, 'personal_certificate', session_id, part_number=part_number
+                    )
+                else:
+                    filename, file_path = self._generate_certificate_paths(
+                        donation, 'personal_certificate', session_id, part_number=None
+                    )
+
+                created_files.append(file_path)  # Für Cleanup registrieren
+
+                # Context vorbereiten (mit Multi-Part-Infos)
+                context = self._prepare_certificate_context_for_part(
+                    donation, verse_chunk, part_number, total_parts
+                )
+
+                # HTML rendern
+                template_name = "certificates/personal_certificate.html"
+                html_content = render_template(template_name, **context)
+
+                # PDF generieren
+                self._generate_pdf_from_html(html_content, file_path)
+
+                # Certificate-Record erstellen
+                certificate = Certificate(
+                    donation_id=donation.id,
+                    certificate_type='personal_certificate',
+                    filename=filename,
+                    file_path=file_path
+                )
+
+                if not certificate.validate_file_path():
+                    raise ValidationError(f"Invalid file path: {file_path}")
+
+                db.session.add(certificate)
+                db.session.flush()  # ID generieren
+
+                certificates.append(certificate)
+
+                self.logger.info(f"Generated part {part_number}/{total_parts}: {filename}")
+
+            return certificates
 
     def _prepare_certificate_context(self, donation: Donation, certificate_type: str) -> Dict[str, Any]:
         """Bereitet Template-Context für Zertifikat vor"""

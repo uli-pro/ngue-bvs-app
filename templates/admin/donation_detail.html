@@ -103,38 +103,52 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Zertifikat</h5>
+                <h5 class="mb-0">
+                    Zertifikat{% if certificates|length > 1 %}e ({{ certificates|length }} Teil{% if certificates|length > 1 %}e{% endif %}){% endif %}
+                </h5>
             </div>
             <div class="card-body">
-                {% if certificate and certificate.exists_on_disk %}
-                    <p class="text-success">✓ Zertifikat vorhanden</p>
-                    <p class="small text-muted">
-                        Generiert: {{ certificate.generated_at.strftime('%d.%m.%Y %H:%M') }}<br>
-                        Dateigröße: {{ certificate.file_size }} Bytes<br>
-                        Pfad: {{ certificate.filename }}
-                    </p>
+                {% set valid_certs = certificates|selectattr('exists_on_disk')|list %}
+                {% if valid_certs %}
+                    <p class="text-success">✓ {{ valid_certs|length }} Zertifikat{% if valid_certs|length > 1 %}e{% endif %} vorhanden</p>
+
+                    {# Liste alle Zertifikate auf #}
+                    {% for cert in valid_certs %}
+                    <div class="border rounded p-2 mb-2 bg-light">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                {% if valid_certs|length > 1 %}
+                                <strong>Teil {{ loop.index }}:</strong>
+                                {% endif %}
+                                <small class="text-muted">
+                                    {{ cert.filename }}<br>
+                                    Generiert: {{ cert.generated_at.strftime('%d.%m.%Y %H:%M') }}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('admin.view_certificate_by_id', certificate_id=cert.id) }}"
+                               target="_blank" class="btn btn-sm btn-outline-info" title="Anzeigen">
+                                📄
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
                 {% else %}
                     <p class="text-warning">⚠ Kein Zertifikat vorhanden</p>
                 {% endif %}
-                
-                {% if donation.payment_status == 'completed' %}
+
+                {% if donation.payment_status in ['completed', 'processing'] %}
                 <form method="POST" action="{{ url_for('admin.regenerate_certificate', donation_id=donation.id) }}" class="mb-2">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-primary w-100">
-                        Zertifikat neu generieren
+                        {% if valid_certs %}Zertifikat{% if valid_certs|length > 1 %}e{% endif %} neu generieren{% else %}Zertifikat generieren{% endif %}
                     </button>
                 </form>
-                
-                {% if certificate and certificate.exists_on_disk %}
-                <a href="{{ url_for('admin.view_certificate', donation_id=donation.id) }}" 
-                   target="_blank" class="btn btn-info w-100 mb-2">
-                    📄 Zertifikat anzeigen
-                </a>
-                
+
+                {% if valid_certs %}
                 <form method="POST" action="{{ url_for('admin.resend_certificate', donation_id=donation.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-success w-100">
-                        Per E-Mail versenden
+                        {{ valid_certs|length }} Zertifikat{% if valid_certs|length > 1 %}e{% endif %} per E-Mail versenden
                     </button>
                 </form>
                 {% endif %}

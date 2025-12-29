@@ -785,6 +785,9 @@ class StripeService:
         - handle_processing_payment() for SEPA (Optimistic Completion)
         - handle_successful_payment() for card payments (if not already fulfilled)
 
+        For donations with >4 verses, multiple certificate PDFs are generated
+        (Multi-Part Certificates) and sent as separate email attachments.
+
         Args:
             donation: Donation object with verses already sponsored
 
@@ -799,22 +802,34 @@ class StripeService:
             pdf_service = PDFGeneratorService(current_app._get_current_object())
             pdf_attachments = []
 
-            # Personal certificate
+            # Personal certificate(s) - uses Multi-Part generation for >4 verses
             try:
-                cert = pdf_service.generate_certificate_atomic(
+                certificates = pdf_service.generate_multi_part_certificates(
                     donation.id,
-                    'personal_certificate',
                     session_id=None  # No session in webhook context
                 )
-                if cert and cert.file_path:
-                    pdf_attachments.append({
-                        'path': cert.file_path,
-                        'filename': f"NGÜ_Zertifikat_{donation.id}.pdf",
-                        'mimetype': 'application/pdf'
-                    })
-                    logger.info(f"Generated certificate for donation {donation.id}")
+
+                # Add each certificate as separate attachment
+                total_certs = len(certificates)
+                for i, cert in enumerate(certificates):
+                    if cert and cert.file_path:
+                        # Dateiname: Mit Teil-Nummer wenn mehrere PDFs
+                        if total_certs > 1:
+                            part_num = i + 1
+                            filename = f"NGÜ_Zertifikat_{donation.id}_Teil{part_num:02d}.pdf"
+                        else:
+                            filename = f"NGÜ_Zertifikat_{donation.id}.pdf"
+
+                        pdf_attachments.append({
+                            'path': cert.file_path,
+                            'filename': filename,
+                            'mimetype': 'application/pdf'
+                        })
+
+                logger.info(f"Generated {total_certs} certificate(s) for donation {donation.id}")
+
             except Exception as e:
-                logger.error(f"Failed to generate certificate for donation {donation.id}: {e}")
+                logger.error(f"Failed to generate certificates for donation {donation.id}: {e}")
 
             # Tax receipt if wanted
             if donation.wants_receipt:
@@ -848,7 +863,8 @@ class StripeService:
                     donation.email_sent = True
                     donation.email_sent_at = datetime.utcnow()
                     db.session.commit()
-                    logger.info(f"Certificate email sent for donation {donation.id}")
+                    logger.info(f"Certificate email sent for donation {donation.id} "
+                               f"with {len(pdf_attachments)} attachment(s)")
                     # Note: HubSpot sync is NOT done here - it happens in handle_successful_payment()
                     # when payment_status becomes 'completed' (for both card and SEPA)
                     return True

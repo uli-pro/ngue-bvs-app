@@ -40,6 +40,7 @@ def init_admin(app):
     admin_bp.add_url_rule('/donations/<int:donation_id>/regenerate-certificate', 'regenerate_certificate', views.regenerate_certificate, methods=['POST'])
     admin_bp.add_url_rule('/donations/<int:donation_id>/resend-certificate', 'resend_certificate', views.resend_certificate, methods=['POST'])
     admin_bp.add_url_rule('/donations/<int:donation_id>/view-certificate', 'view_certificate', views.view_certificate, methods=['GET'])
+    admin_bp.add_url_rule('/certificates/<int:certificate_id>/view', 'view_certificate_by_id', views.view_certificate_by_id, methods=['GET'])
     
     # Tax receipt management
     admin_bp.add_url_rule('/donations/<int:donation_id>/regenerate-tax-receipt', 'regenerate_tax_receipt', views.regenerate_tax_receipt, methods=['POST'])
