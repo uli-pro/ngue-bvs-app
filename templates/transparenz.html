@@ -1,422 +1,518 @@
 <!-- This template was developed with assistance from Claude Code (Anthropic) -->
 <!-- Core design and user experience decisions are original work -->
 
-{% extends "layout.html" %}
-
-{% block title %}Transparenz - Wohin fließt Ihre Spende?{% endblock %}
-{% block meta_description %}Wohin fließt Ihre Spende? 100% Transparenz über die Verwendung Ihrer Bibelvers-Spende für die NGÜ-Übersetzung.{% endblock %}
-
-{% block main %}
+{% extends "layout.html" %} {% block title %}Transparenz - Wohin fließt Ihre
+Spende?{% endblock %} {% block meta_description %}Wohin fließt Ihre Spende? 100%
+Transparenz über die Verwendung Ihrer Bibelvers-Spende für die
+NGÜ-Übersetzung.{% endblock %} {% block main %}
 
 <!-- Header -->
 <section class="hero-section">
-    <div class="container">
-        <h1 class="text-center mb-3">Wohin fließt Ihre Spende?</h1>
-        <p class="lead text-center text-secondary">Transparenz über die Mittelverwendung</p>
-    </div>
+  <div class="container">
+    <h1 class="text-center mb-3">Wohin fließt Ihre Spende?</h1>
+    <p class="lead text-center text-secondary">
+      Transparenz über die Mittelverwendung
+    </p>
+  </div>
 </section>
 
 <!-- Cost Breakdown -->
 <section class="section-padding">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="card border-primary mb-5">
-                    <div class="text-center mb-5">
-                        <h2>Mittelverwendung pro {{ 100|currency }} Spende</h2>
-                    </div>
-                    <div class="card-body p-5">
-                        <div class="row text-center mb-4">
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: #28a745; color: white;">
-                                    <h3 class="mb-2">45%</h3>
-                                    <h4>{{ 45|currency }}</h4>
-                                    <p class="mb-0">Erstübersetzung</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: var(--color-primary); color: white;">
-                                    <h3 class="mb-2">35%</h3>
-                                    <h4>{{ 35|currency }}</h4>
-                                    <p class="mb-0">Revision</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: #007bff; color: white;">
-                                    <h3 class="mb-2">10%</h3>
-                                    <h4>{{ 10|currency }}</h4>
-                                    <p class="mb-0">Fachliche Begleitung</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="p-4 rounded mb-3" style="background-color: #fd7e14; color: white;">
-                                    <h3 class="mb-2">10%</h3>
-                                    <h4>{{ 10|currency }}</h4>
-                                    <p class="mb-0">Qualitätssicherung</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Progress Bar Visualization -->
-                        <div class="progress mb-4" style="height: 40px;">
-                            <div class="progress-bar" role="progressbar" style="width: 45%; background-color: #28a745;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100">
-                                <strong>45% Erstübersetzung</strong>
-                            </div>
-                            <div class="progress-bar" role="progressbar" style="width: 35%; background-color: var(--color-primary);" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100">
-                                <strong>35% Revision</strong>
-                            </div>
-                            <div class="progress-bar" role="progressbar" style="width: 10%; background-color: #007bff;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
-                                <strong>10% Fachliche Begleitung</strong>
-                            </div>
-                            <div class="progress-bar" role="progressbar" style="width: 10%; background-color: #fd7e14;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
-                                <strong>10% Qualitätssicherung</strong>
-                            </div>
-                        </div>
-                        
-                        <p class="text-center text-muted">
-                            <strong>90% Ihrer Spende</strong> fließen direkt in die Übersetzungsarbeit, <strong>10%</strong> in professionelle Strukturen zur Sicherung der Qualität.
-                        </p>
-                    </div>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="card border-primary mb-5">
+          <div class="text-center mb-5">
+            <h2>Mittelverwendung pro {{ 100|currency }} Spende</h2>
+          </div>
+          <div class="card-body p-5">
+            <div class="row text-center mb-4">
+              <div class="col-md-3">
+                <div
+                  class="p-4 rounded mb-3"
+                  style="background-color: #28a745; color: white"
+                >
+                  <h3 class="mb-2">45%</h3>
+                  <h4>{{ 45|currency }}</h4>
+                  <p class="mb-0">Erstübersetzung</p>
                 </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="p-4 rounded mb-3"
+                  style="background-color: var(--color-primary); color: white"
+                >
+                  <h3 class="mb-2">35%</h3>
+                  <h4>{{ 35|currency }}</h4>
+                  <p class="mb-0">Revision</p>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="p-4 rounded mb-3"
+                  style="background-color: #007bff; color: white"
+                >
+                  <h3 class="mb-2">10%</h3>
+                  <h4>{{ 10|currency }}</h4>
+                  <p class="mb-0">Fachliche Begleitung</p>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="p-4 rounded mb-3"
+                  style="background-color: #fd7e14; color: white"
+                >
+                  <h3 class="mb-2">10%</h3>
+                  <h4>{{ 10|currency }}</h4>
+                  <p class="mb-0">Qualitätssicherung</p>
+                </div>
+              </div>
             </div>
+
+            <!-- Progress Bar Visualization -->
+            <div class="progress mb-4" style="height: 40px">
+              <div
+                class="progress-bar"
+                role="progressbar"
+                style="width: 45%; background-color: #28a745"
+                aria-valuenow="45"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <strong>45% Erstübersetzung</strong>
+              </div>
+              <div
+                class="progress-bar"
+                role="progressbar"
+                style="width: 35%; background-color: var(--color-primary)"
+                aria-valuenow="35"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <strong>35% Revision</strong>
+              </div>
+              <div
+                class="progress-bar"
+                role="progressbar"
+                style="width: 10%; background-color: #007bff"
+                aria-valuenow="10"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <strong>10% Fachliche Begleitung</strong>
+              </div>
+              <div
+                class="progress-bar"
+                role="progressbar"
+                style="width: 10%; background-color: #fd7e14"
+                aria-valuenow="10"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <strong>10% Qualitätssicherung</strong>
+              </div>
+            </div>
+
+            <p class="text-center text-muted">
+              <strong>90% Ihrer Spende</strong> fließen direkt in die
+              Übersetzungsarbeit, <strong>10%</strong> in professionelle
+              Strukturen zur Sicherung der Qualität.
+            </p>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </section>
 
 <!-- Detailed Breakdown -->
 <section class="bg-light-custom section-padding">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2>Detaillierte Aufschlüsselung</h2>
-        </div>
-        
-        <div class="row g-4">
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: #28a745;">
-                    <div class="card-header text-white" style="background-color: #28a745;">
-                        <h5 class="mb-0">
-                            <i class="fas fa-language me-2"></i>
-                            Erstübersetzung ({{ 45|currency }})
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
-                                Übersetzung vom Grundtext
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
-                                Exegetische Arbeit
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
-                                Wissenschaftliche Recherche
-                            </li>
-                            <li>
-                                <i class="fas fa-check me-2" style="color: #28a745;"></i>
-                                Sprachliche Erstfassung
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: var(--color-primary);">
-                    <div class="card-header text-white" style="background-color: var(--color-primary);">
-                        <h5 class="mb-0">
-                            <i class="fas fa-edit me-2"></i>
-                            Revision ({{ 35|currency }})
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: var(--color-primary);"></i>
-                                Kritische Durcharbeitung anhand des Grundtextes
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: var(--color-primary);"></i>
-                                Eigene exegetische Recherchen
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: var(--color-primary);"></i>
-                                Gemeinsame Diskussion und Ringen um Lösungen
-                            </li>
-                            <li>
-                                <i class="fas fa-check me-2" style="color: var(--color-primary);"></i>
-                                Erstellung gemeinsamer Textfassung
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: #007bff;">
-                    <div class="card-header text-white" style="background-color: #007bff;">
-                        <h5 class="mb-0">
-                            <i class="fas fa-user-graduate me-2"></i>
-                            Fachliche Begleitung ({{ 10|currency }})
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Finale Korrektur durch Theologieexperten
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Konsistenzprüfung mit bereits übersetzten Texten
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Lektorat für sprachliche Qualität
-                            </li>
-                            <li>
-                                <i class="fas fa-check me-2" style="color: #007bff;"></i>
-                                Freigabe für Veröffentlichung
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-3">
-                <div class="card h-100" style="border-color: #fd7e14;">
-                    <div class="card-header text-white" style="background-color: #fd7e14;">
-                        <h5 class="mb-0">
-                            <i class="fas fa-shield-alt me-2"></i>
-                            Qualitätssicherung ({{ 10|currency }})
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
-                                Projektleitung und Koordination
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
-                                Qualitätsstandards und -kontrolle
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
-                                Verwaltungsstrukturen der Stiftung
-                            </li>
-                            <li>
-                                <i class="fas fa-check me-2" style="color: #fd7e14;"></i>
-                                Langfristige Nachhaltigkeit des Projekts
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2>Detaillierte Aufschlüsselung</h2>
     </div>
+
+    <div class="row g-4">
+      <div class="col-lg-3">
+        <div class="card h-100" style="border-color: #28a745">
+          <div class="card-header text-white" style="background-color: #28a745">
+            <h5 class="mb-0">
+              <i class="fas fa-language me-2"></i>
+              Erstübersetzung ({{ 45|currency }})
+            </h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-unstyled">
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #28a745"></i>
+                Übersetzung vom Grundtext
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #28a745"></i>
+                Exegetische Arbeit
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #28a745"></i>
+                Wissenschaftliche Recherche
+              </li>
+              <li>
+                <i class="fas fa-check me-2" style="color: #28a745"></i>
+                Sprachliche Erstfassung
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3">
+        <div class="card h-100" style="border-color: var(--color-primary)">
+          <div
+            class="card-header text-white"
+            style="background-color: var(--color-primary)"
+          >
+            <h5 class="mb-0">
+              <i class="fas fa-edit me-2"></i>
+              Revision ({{ 35|currency }})
+            </h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-unstyled">
+              <li class="mb-2">
+                <i
+                  class="fas fa-check me-2"
+                  style="color: var(--color-primary)"
+                ></i>
+                Kritische Durcharbeitung anhand des Grundtextes
+              </li>
+              <li class="mb-2">
+                <i
+                  class="fas fa-check me-2"
+                  style="color: var(--color-primary)"
+                ></i>
+                Eigene exegetische Recherchen
+              </li>
+              <li class="mb-2">
+                <i
+                  class="fas fa-check me-2"
+                  style="color: var(--color-primary)"
+                ></i>
+                Gemeinsame Diskussion und Ringen um Lösungen
+              </li>
+              <li>
+                <i
+                  class="fas fa-check me-2"
+                  style="color: var(--color-primary)"
+                ></i>
+                Erstellung gemeinsamer Textfassung
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3">
+        <div class="card h-100" style="border-color: #007bff">
+          <div class="card-header text-white" style="background-color: #007bff">
+            <h5 class="mb-0">
+              <i class="fas fa-user-graduate me-2"></i>
+              Fachliche Begleitung ({{ 10|currency }})
+            </h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-unstyled">
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #007bff"></i>
+                Finale Korrektur durch Theologieexperten
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #007bff"></i>
+                Konsistenzprüfung mit bereits übersetzten Texten
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #007bff"></i>
+                Lektorat für sprachliche Qualität
+              </li>
+              <li>
+                <i class="fas fa-check me-2" style="color: #007bff"></i>
+                Freigabe für Veröffentlichung
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3">
+        <div class="card h-100" style="border-color: #fd7e14">
+          <div class="card-header text-white" style="background-color: #fd7e14">
+            <h5 class="mb-0">
+              <i class="fas fa-shield-alt me-2"></i>
+              Qualitätssicherung ({{ 10|currency }})
+            </h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-unstyled">
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #fd7e14"></i>
+                Projektleitung und Koordination
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #fd7e14"></i>
+                Qualitätsstandards und -kontrolle
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check me-2" style="color: #fd7e14"></i>
+                Verwaltungsstrukturen der Stiftung
+              </li>
+              <li>
+                <i class="fas fa-check me-2" style="color: #fd7e14"></i>
+                Langfristige Nachhaltigkeit des Projekts
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- First CTA after detailed breakdown -->
 <section class="section-padding">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-6">
-                <div class="text-center">
-                    <a href="/vers-auswaehlen" class="btn btn-danger btn-lg">
-                        <i class="fas fa-heart me-2"></i>
-                        SO INVESTIERE ICH GERNE - VERS SPONSERN
-                    </a>
-                </div>
-            </div>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="text-center">
+          <a href="/vers-auswaehlen" class="btn btn-danger btn-lg">
+            <i class="fas fa-heart me-2"></i>
+            SO INVESTIERE ICH GERNE - VERS SPONSERN
+          </a>
         </div>
+      </div>
     </div>
+  </div>
 </section>
 
 <!-- Impact & Project Status Combined -->
 <section class="section-padding">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2>Konkrete Auswirkung Ihrer Spende</h2>
-        </div>
-        
-        <div class="row g-4">
-            <!-- Was bewirkt Ihre Spende konkret -->
-            <div class="col-lg-6">
-                <div class="card h-100 bg-light-custom">
-                    <div class="card-body p-4">
-                        <h3 class="mb-4 text-center">Was bewirkt Ihre Spende konkret?</h3>
-                        
-                        <h4>Mit {{ 100|currency }} ermöglichen Sie:</h4>
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Die professionelle Übersetzung eines kompletten Bibelverses
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Mehrere Korrektur- und Lektoratsdurchgänge
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Theologische und sprachliche Qualitätsprüfung
-                            </li>
-                            <li class="mb-4">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Einen nachhaltigen Beitrag zur Verbreitung der biblischen Botschaft
-                            </li>
-                        </ul>
-                        
-                        <div class="bg-secondary text-white p-4 rounded" style="background-color: #343a40;">
-                            <h5 class="mb-3">Arbeitsaufwand pro Vers:</h5>
-                            <div class="row">
-                                <div class="col-6 mb-2">
-                                    <strong>54 Min.</strong><br>
-                                    <small>Erstübersetzung</small>
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <strong>42 Min.</strong><br>
-                                    <small>Revision</small>
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <strong>12 Min.</strong><br>
-                                    <small>Begleitung</small>
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <strong>12 Min.</strong><br>
-                                    <small>Qualitätssicherung</small>
-                                </div>
-                            </div>
-                            <hr class="my-3" style="border-color: rgba(255,255,255,0.3);">
-                            <div class="text-center">
-                                <strong>120 Minuten = 2 Stunden</strong><br>
-                                <small>Gesamtaufwand pro Vers</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Aktueller Finanzierungsstand -->
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-body p-4">
-                        <h3 class="mb-4 text-center">Aktueller Finanzierungsstand</h3>
-                        
-                        <div class="text-center mb-4">
-                            <h4 class="text-primary">{{ stats.percentage }}% finanziert</h4>
-                            <div class="progress mb-3" style="height: 30px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.percentage }}%" aria-valuenow="{{ stats.percentage }}" aria-valuemin="0" aria-valuemax="100">
-                                    {{ stats.percentage }}%
-                                </div>
-                            </div>
-                            <p class="lead">
-                                <strong>{{ stats.total_amount|currency }}</strong> von <strong>{{ stats.total_goal|currency }}</strong> finanziert
-                            </p>
-                        </div>
-                        
-                        <div class="row text-center mb-4">
-                            <div class="col-6">
-                                <h4 class="text-primary">{{ "{:,}".format(stats.sponsored_verses).replace(",", ".") }}</h4>
-                                <p>von {{ "{:,}".format(stats.total_verses).replace(",", ".") }} Versen gesponsert</p>
-                            </div>
-                            <div class="col-6">
-                                <h4 class="text-secondary">{{ "{:,}".format(stats.available_verses).replace(",", ".") }}</h4>
-                                <p>Verse warten noch auf Sponsor</p>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Jeder gesponserte Vers</strong> bringt uns der vollständigen NGÜ einen Schritt näher!
-                        </div>
-                        
-                        <h4 class="mt-4 text-primary text-center">Gemeinsam schaffen wir die NGÜ!</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2>Konkrete Auswirkung Ihrer Spende</h2>
     </div>
+
+    <div class="row g-4">
+      <!-- Was bewirkt Ihre Spende konkret -->
+      <div class="col-lg-6">
+        <div class="card h-100 bg-light-custom">
+          <div class="card-body p-4">
+            <h3 class="mb-4 text-center">Was bewirkt Ihre Spende konkret?</h3>
+
+            <h4>Mit {{ 100|currency }} ermöglichen Sie:</h4>
+            <ul class="list-unstyled">
+              <li class="mb-2">
+                <i class="fas fa-check-circle me-2"></i>
+                Die professionelle Übersetzung eines kompletten Bibelverses
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check-circle me-2"></i>
+                Mehrere Korrektur- und Lektoratsdurchgänge
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check-circle me-2"></i>
+                Theologische und sprachliche Qualitätsprüfung
+              </li>
+              <li class="mb-4">
+                <i class="fas fa-check-circle me-2"></i>
+                Einen nachhaltigen Beitrag zur Verbreitung der biblischen
+                Botschaft
+              </li>
+            </ul>
+
+            <div
+              class="bg-secondary text-white p-4 rounded"
+              style="background-color: #343a40"
+            >
+              <h5 class="mb-3">Arbeitsaufwand pro Vers:</h5>
+              <div class="row">
+                <div class="col-6 mb-2">
+                  <strong>54 Min.</strong><br />
+                  <small>Erstübersetzung</small>
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>42 Min.</strong><br />
+                  <small>Revision</small>
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>12 Min.</strong><br />
+                  <small>Begleitung</small>
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>12 Min.</strong><br />
+                  <small>Qualitätssicherung</small>
+                </div>
+              </div>
+              <hr class="my-3" style="border-color: rgba(255, 255, 255, 0.3)" />
+              <div class="text-center">
+                <strong>120 Minuten = 2 Stunden</strong><br />
+                <small>Gesamtaufwand pro Vers</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aktueller Finanzierungsstand -->
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-body p-4">
+            <h3 class="mb-4 text-center">Aktueller Finanzierungsstand</h3>
+
+            <div class="text-center mb-4">
+              <h4 class="text-primary">{{ stats.percentage }}% finanziert</h4>
+              <div class="progress mb-3" style="height: 30px">
+                <div
+                  class="progress-bar bg-primary"
+                  role="progressbar"
+                  style="width: {{ stats.percentage }}%"
+                  aria-valuenow="{{ stats.percentage }}"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                >
+                  {{ stats.percentage }}%
+                </div>
+              </div>
+              <p class="lead">
+                <strong>{{ stats.total_amount|currency }}</strong> von
+                <strong>{{ stats.total_goal|currency }}</strong> finanziert
+              </p>
+            </div>
+
+            <div class="row text-center mb-4">
+              <div class="col-6">
+                <h4 class="text-primary">
+                  {{ "{:,}".format(stats.sponsored_verses).replace(",", ".") }}
+                </h4>
+                <p>
+                  von {{ "{:,}".format(stats.total_verses).replace(",", ".") }}
+                  Versen gesponsert
+                </p>
+              </div>
+              <div class="col-6">
+                <h4 class="text-secondary">
+                  {{ "{:,}".format(stats.available_verses).replace(",", ".") }}
+                </h4>
+                <p>Verse warten noch auf Sponsor</p>
+              </div>
+            </div>
+
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Jeder gesponserte Vers</strong> bringt uns der
+              vollständigen NGÜ einen Schritt näher!
+            </div>
+
+            <h4 class="mt-4 text-primary text-center">
+              Gemeinsam schaffen wir die NGÜ!
+            </h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- Trust & Accountability -->
 <section class="section-padding">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2>Vertrauen durch Transparenz</h2>
-        </div>
-        
-        <div class="row g-4">
-            <div class="col-md-3">
-                <div class="card text-center h-100">
-                    <div class="card-body">
-                        <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
-                        <h5>Gemeinnützigkeitsbescheinigung</h5>
-                        <p class="small mb-0">Anerkannte gemeinnützige Stiftung</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="card text-center h-100">
-                    <div class="card-body">
-                        <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
-                        <h5>Jährliche Tätigkeitsberichte</h5>
-                        <p class="small mb-0">Vollständige Dokumentation unserer Arbeit</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="card text-center h-100">
-                    <div class="card-body">
-                        <i class="fas fa-balance-scale fa-3x text-primary mb-3"></i>
-                        <h5>Externe Wirtschaftsprüfung</h5>
-                        <p class="small mb-0">Unabhängige Kontrolle der Finanzen</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="card text-center h-100">
-                    <div class="card-body">
-                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
-                        <h5>Steuerliche Absetzbarkeit</h5>
-                        <p class="small mb-0">Ihre Spenden sind voll absetzbar</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-5">
-            <div class="p-3 rounded" style="background-color: var(--color-notice); border-left: 4px solid var(--color-notice-border); display: inline-block;">
-                <i class="fas fa-info-circle me-2" style="color: var(--color-notice-text);"></i>
-                <strong style="color: var(--color-notice-text);">90% aller Spenden</strong>
-                <span style="color: var(--color-notice-text);">fließen direkt in die Übersetzungsarbeit,</span>
-                <strong style="color: var(--color-notice-text);">10%</strong>
-                <span style="color: var(--color-notice-text);">in professionelle Strukturen, um nachhaltige Qualität zu gewährleisten.</span>
-            </div>
-        </div>
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2>Vertrauen durch Transparenz</h2>
     </div>
+
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="card text-center h-100">
+          <div class="card-body">
+            <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
+            <h5>Gemeinnützigkeitsbescheinigung</h5>
+            <p class="small mb-0">Anerkannte gemeinnützige Stiftung</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card text-center h-100">
+          <div class="card-body">
+            <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+            <h5>Jährliche Tätigkeitsberichte</h5>
+            <p class="small mb-0">Vollständige Dokumentation unserer Arbeit</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card text-center h-100">
+          <div class="card-body">
+            <i class="fas fa-balance-scale fa-3x text-primary mb-3"></i>
+            <h5>Externe Wirtschaftsprüfung</h5>
+            <p class="small mb-0">Unabhängige Kontrolle der Finanzen</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card text-center h-100">
+          <div class="card-body">
+            <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+            <h5>Steuerliche Absetzbarkeit</h5>
+            <p class="small mb-0">Ihre Spenden sind voll absetzbar</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-5">
+      <div
+        class="p-3 rounded"
+        style="
+          background-color: var(--color-notice);
+          border-left: 4px solid var(--color-notice-border);
+          display: inline-block;
+        "
+      >
+        <i
+          class="fas fa-info-circle me-2"
+          style="color: var(--color-notice-text)"
+        ></i>
+        <strong style="color: var(--color-notice-text)"
+          >90% aller Spenden</strong
+        >
+        <span style="color: var(--color-notice-text)"
+          >fließen direkt in die Übersetzungsarbeit,</span
+        >
+        <strong style="color: var(--color-notice-text)">10%</strong>
+        <span style="color: var(--color-notice-text)"
+          >in professionelle Strukturen, um nachhaltige Qualität zu
+          gewährleisten.</span
+        >
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- Final CTA -->
 <section class="section-padding">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 text-center">
-                <p class="lead mb-4">
-                    Transparente Mittelverwendung, professionelle Qualitätsstandards und ein klares Ziel: 
-                    Die NGÜ braucht Sie als Unterstützer!
-                </p>
-                <a href="/vers-auswaehlen" class="btn btn-danger btn-lg">
-                    <i class="fas fa-book-open me-2"></i>
-                    JETZT TEIL DER NGÜ-GESCHICHTE WERDEN
-                </a>
-            </div>
-        </div>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 text-center">
+        <p class="lead mb-4">
+          Transparente Mittelverwendung, professionelle Qualitätsstandards und
+          ein klares Ziel: Die NGÜ braucht Sie als Unterstützer!
+        </p>
+        <a href="/vers-auswaehlen" class="btn btn-danger btn-lg">
+          <i class="fas fa-book-open me-2"></i>
+          JETZT TEIL DER NGÜ-GESCHICHTE WERDEN
+        </a>
+      </div>
     </div>
+  </div>
 </section>
 
-{% endblock %} 
+{% endblock %}
