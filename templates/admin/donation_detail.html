@@ -46,7 +46,7 @@
                     <dd class="col-sm-9">
                         {% if donation.payment and donation.payment.stripe_payment_intent_id %}
                             <code>{{ donation.payment.stripe_payment_intent_id }}</code>
-                            <a href="https://dashboard.stripe.com/test/payments/{{ donation.payment.stripe_payment_intent_id }}"
+                            <a href="https://dashboard.stripe.com/{{ stripe_account_id }}/payments/{{ donation.payment.stripe_payment_intent_id }}"
                                target="_blank" class="ms-2">
                                 Stripe Dashboard →
                             </a>

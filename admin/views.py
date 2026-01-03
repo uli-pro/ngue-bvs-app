@@ -5,6 +5,7 @@ from sqlalchemy import or_, func
 from pdf_service import PDFGeneratorService
 from email_service import email_service
 from datetime import datetime, timedelta
+import os
 
 @admin_required
 def index():
@@ -177,7 +178,7 @@ def donations_list():
 def donation_detail(donation_id):
     """Show donation details with actions"""
     donation = Donation.query.get_or_404(donation_id)
-    
+
     # Check if certificates exist for this donation (get newest)
     certificate = Certificate.query.filter_by(
         donation_id=donation_id,
@@ -189,11 +190,15 @@ def donation_detail(donation_id):
         donation_id=donation_id,
         certificate_type='tax_receipt'
     ).order_by(Certificate.generated_at.desc()).first()
-    
-    return render_template('admin/donation_detail.html', 
-                         donation=donation, 
+
+    # Get Stripe account ID for correct dashboard links
+    stripe_account_id = os.getenv('STRIPE_ACCOUNT_ID', 'acct_1QzchbLmJHIgYDey')
+
+    return render_template('admin/donation_detail.html',
+                         donation=donation,
                          certificate=certificate,
-                         tax_receipt=tax_receipt)
+                         tax_receipt=tax_receipt,
+                         stripe_account_id=stripe_account_id)
 
 @admin_required
 def regenerate_certificate(donation_id):
