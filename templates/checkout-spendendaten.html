@@ -66,12 +66,15 @@
                     </div>
                     <div class="card-body">
                         <div class="form-check form-switch mb-3">
-                            <input type="checkbox" class="form-check-input" 
-                                   id="wantsReceipt" name="wantsReceipt" 
+                            <input type="checkbox" class="form-check-input"
+                                   id="wantsReceipt" name="wantsReceipt"
                                    {% if form_data.get('wantsReceipt', True) %}checked{% endif %}>
                             <label class="form-check-label" for="wantsReceipt">
                                 Ich möchte eine Spendenbescheinigung erhalten
                             </label>
+                            <small class="form-text text-muted d-block mt-1" style="font-style: italic;">
+                                Unsere Spendenbescheinigungen werden unseres Wissens nur in Deutschland steuerlich anerkannt. Wir stellen sie Ihnen aber gerne – unabhängig von Ihrem Wohnsitzland – aus.
+                            </small>
                         </div>
                         
                         <!-- Receipt Form (shown by default) -->
@@ -82,25 +85,74 @@
                             <div class="row mb-3">
                                 <div class="col-md-8">
                                     <label class="form-label">Straße *</label>
-                                    <input type="text" class="form-control" name="street" 
+                                    <input type="text" class="form-control" name="street"
                                            value="{{ form_data.get('street', '') }}">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Hausnummer *</label>
-                                    <input type="text" class="form-control" name="houseNumber" 
+                                    <input type="text" class="form-control" name="houseNumber"
                                            value="{{ form_data.get('houseNumber', '') }}">
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3">
-                                <div class="col-md-4">
+                                <div class="col-md-2">
+                                    <label class="form-label">Land *</label>
+                                    <select class="form-select" name="country" id="country" required>
+                                        <!-- DACH-Länder -->
+                                        <option value="DE" {% if form_data.get('country', 'DE') == 'DE' %}selected{% endif %}>🇩🇪 DE</option>
+                                        <option value="CH" {% if form_data.get('country') == 'CH' %}selected{% endif %}>🇨🇭 CH</option>
+                                        <option value="AT" {% if form_data.get('country') == 'AT' %}selected{% endif %}>🇦🇹 AT</option>
+                                        <option disabled>───</option>
+
+                                        <!-- Europa -->
+                                        <option value="BE" {% if form_data.get('country') == 'BE' %}selected{% endif %}>🇧🇪 BE</option>
+                                        <option value="DK" {% if form_data.get('country') == 'DK' %}selected{% endif %}>🇩🇰 DK</option>
+                                        <option value="FI" {% if form_data.get('country') == 'FI' %}selected{% endif %}>🇫🇮 FI</option>
+                                        <option value="FR" {% if form_data.get('country') == 'FR' %}selected{% endif %}>🇫🇷 FR</option>
+                                        <option value="GB" {% if form_data.get('country') == 'GB' %}selected{% endif %}>🇬🇧 GB</option>
+                                        <option value="IT" {% if form_data.get('country') == 'IT' %}selected{% endif %}>🇮🇹 IT</option>
+                                        <option value="LI" {% if form_data.get('country') == 'LI' %}selected{% endif %}>🇱🇮 LI</option>
+                                        <option value="LU" {% if form_data.get('country') == 'LU' %}selected{% endif %}>🇱🇺 LU</option>
+                                        <option value="NL" {% if form_data.get('country') == 'NL' %}selected{% endif %}>🇳🇱 NL</option>
+                                        <option value="NO" {% if form_data.get('country') == 'NO' %}selected{% endif %}>🇳🇴 NO</option>
+                                        <option value="PL" {% if form_data.get('country') == 'PL' %}selected{% endif %}>🇵🇱 PL</option>
+                                        <option value="SE" {% if form_data.get('country') == 'SE' %}selected{% endif %}>🇸🇪 SE</option>
+                                        <option value="ES" {% if form_data.get('country') == 'ES' %}selected{% endif %}>🇪🇸 ES</option>
+                                        <option value="CZ" {% if form_data.get('country') == 'CZ' %}selected{% endif %}>🇨🇿 CZ</option>
+                                        <option disabled>───</option>
+
+                                        <!-- Nord- und Südamerika -->
+                                        <option value="AR" {% if form_data.get('country') == 'AR' %}selected{% endif %}>🇦🇷 AR</option>
+                                        <option value="BO" {% if form_data.get('country') == 'BO' %}selected{% endif %}>🇧🇴 BO</option>
+                                        <option value="BR" {% if form_data.get('country') == 'BR' %}selected{% endif %}>🇧🇷 BR</option>
+                                        <option value="CA" {% if form_data.get('country') == 'CA' %}selected{% endif %}>🇨🇦 CA</option>
+                                        <option value="CL" {% if form_data.get('country') == 'CL' %}selected{% endif %}>🇨🇱 CL</option>
+                                        <option value="CO" {% if form_data.get('country') == 'CO' %}selected{% endif %}>🇨🇴 CO</option>
+                                        <option value="CR" {% if form_data.get('country') == 'CR' %}selected{% endif %}>🇨🇷 CR</option>
+                                        <option value="CU" {% if form_data.get('country') == 'CU' %}selected{% endif %}>🇨🇺 CU</option>
+                                        <option value="EC" {% if form_data.get('country') == 'EC' %}selected{% endif %}>🇪🇨 EC</option>
+                                        <option value="GT" {% if form_data.get('country') == 'GT' %}selected{% endif %}>🇬🇹 GT</option>
+                                        <option value="HN" {% if form_data.get('country') == 'HN' %}selected{% endif %}>🇭🇳 HN</option>
+                                        <option value="MX" {% if form_data.get('country') == 'MX' %}selected{% endif %}>🇲🇽 MX</option>
+                                        <option value="NI" {% if form_data.get('country') == 'NI' %}selected{% endif %}>🇳🇮 NI</option>
+                                        <option value="PA" {% if form_data.get('country') == 'PA' %}selected{% endif %}>🇵🇦 PA</option>
+                                        <option value="PE" {% if form_data.get('country') == 'PE' %}selected{% endif %}>🇵🇪 PE</option>
+                                        <option value="PY" {% if form_data.get('country') == 'PY' %}selected{% endif %}>🇵🇾 PY</option>
+                                        <option value="SV" {% if form_data.get('country') == 'SV' %}selected{% endif %}>🇸🇻 SV</option>
+                                        <option value="US" {% if form_data.get('country') == 'US' %}selected{% endif %}>🇺🇸 US</option>
+                                        <option value="UY" {% if form_data.get('country') == 'UY' %}selected{% endif %}>🇺🇾 UY</option>
+                                        <option value="VE" {% if form_data.get('country') == 'VE' %}selected{% endif %}>🇻🇪 VE</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
                                     <label class="form-label">PLZ *</label>
-                                    <input type="text" class="form-control" name="postalCode" 
+                                    <input type="text" class="form-control" name="postalCode"
                                            value="{{ form_data.get('postalCode', '') }}">
                                 </div>
-                                <div class="col-md-8">
+                                <div class="col-md-7">
                                     <label class="form-label">Ort *</label>
-                                    <input type="text" class="form-control" name="city" 
+                                    <input type="text" class="form-control" name="city"
                                            value="{{ form_data.get('city', '') }}">
                                 </div>
                             </div>

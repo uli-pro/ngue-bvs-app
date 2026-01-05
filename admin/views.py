@@ -76,6 +76,14 @@ def person_edit(person_id):
         person.postal_code = request.form.get('postal_code', '').strip()
         person.city = request.form.get('city', '').strip()
         person.newsletter_consent = request.form.get('newsletter_consent') == 'on'
+
+        # Country handling
+        country = request.form.get('country', 'DE').strip().upper()
+        if len(country) == 2 and country.isalpha():
+            person.country = country
+        else:
+            flash('Ungültiger Ländercode (muss 2 Buchstaben sein).', 'warning')
+
         person.data_updated_at = datetime.utcnow()
         
         db.session.commit()

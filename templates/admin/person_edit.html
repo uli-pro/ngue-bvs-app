@@ -9,7 +9,7 @@
     <div class="card-body">
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
+
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">E-Mail</label>
@@ -30,7 +30,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Vorname</label>
@@ -41,7 +41,7 @@
                     <input type="text" name="last_name" class="form-control" value="{{ person.last_name or '' }}">
                 </div>
             </div>
-            
+
             <div class="row mb-3">
                 <div class="col-md-9">
                     <label class="form-label">Straße</label>
@@ -52,18 +52,41 @@
                     <input type="text" name="house_number" class="form-control" value="{{ person.house_number or '' }}">
                 </div>
             </div>
-            
+
             <div class="row mb-3">
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label class="form-label">Land</label>
+                    <select class="form-select" name="country">
+                        <option value="DE" {% if person.country == 'DE' %}selected{% endif %}>🇩🇪 DE</option>
+                        <option value="CH" {% if person.country == 'CH' %}selected{% endif %}>🇨🇭 CH</option>
+                        <option value="AT" {% if person.country == 'AT' %}selected{% endif %}>🇦🇹 AT</option>
+                        <option disabled>──────────</option>
+                        <option value="BE" {% if person.country == 'BE' %}selected{% endif %}>🇧🇪 BE</option>
+                        <option value="DK" {% if person.country == 'DK' %}selected{% endif %}>🇩🇰 DK</option>
+                        <option value="FI" {% if person.country == 'FI' %}selected{% endif %}>🇫🇮 FI</option>
+                        <option value="FR" {% if person.country == 'FR' %}selected{% endif %}>🇫🇷 FR</option>
+                        <option value="GB" {% if person.country == 'GB' %}selected{% endif %}>🇬🇧 GB</option>
+                        <option value="IT" {% if person.country == 'IT' %}selected{% endif %}>🇮🇹 IT</option>
+                        <option value="LI" {% if person.country == 'LI' %}selected{% endif %}>🇱🇮 LI</option>
+                        <option value="LU" {% if person.country == 'LU' %}selected{% endif %}>🇱🇺 LU</option>
+                        <option value="NL" {% if person.country == 'NL' %}selected{% endif %}>🇳🇱 NL</option>
+                        <option value="NO" {% if person.country == 'NO' %}selected{% endif %}>🇳🇴 NO</option>
+                        <option value="PL" {% if person.country == 'PL' %}selected{% endif %}>🇵🇱 PL</option>
+                        <option value="SE" {% if person.country == 'SE' %}selected{% endif %}>🇸🇪 SE</option>
+                        <option value="ES" {% if person.country == 'ES' %}selected{% endif %}>🇪🇸 ES</option>
+                        <option value="CZ" {% if person.country == 'CZ' %}selected{% endif %}>🇨🇿 CZ</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">PLZ</label>
                     <input type="text" name="postal_code" class="form-control" value="{{ person.postal_code or '' }}">
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-7">
                     <label class="form-label">Ort</label>
                     <input type="text" name="city" class="form-control" value="{{ person.city or '' }}">
                 </div>
             </div>
-            
+
             <div class="mb-3">
                 <div class="form-check">
                     <input type="checkbox" name="newsletter_consent" class="form-check-input" id="newsletter"
@@ -73,9 +96,9 @@
                     </label>
                 </div>
             </div>
-            
+
             <hr>
-            
+
             <div class="d-flex justify-content-between">
                 <a href="{{ url_for('admin.persons_list') }}" class="btn btn-secondary">Abbrechen</a>
                 <button type="submit" class="btn btn-primary">Speichern</button>
@@ -92,11 +115,11 @@
         {% if person.donations.count() > 0 %}
         <div class="list-group">
             {% for donation in recent_donations %}
-            <a href="{{ url_for('admin.donation_detail', donation_id=donation.id) }}" 
+            <a href="{{ url_for('admin.donation_detail', donation_id=donation.id) }}"
                class="list-group-item list-group-item-action">
                 <div class="d-flex justify-content-between">
                     <span>
-                        Spende #{{ donation.id }} - 
+                        Spende #{{ donation.id }} -
                         {{ donation.verse_count }} Vers(e)
                     </span>
                     <span>

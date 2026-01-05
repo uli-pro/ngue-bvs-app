@@ -57,6 +57,10 @@ class HubSpotService:
         if person.city:
             properties["city"] = person.city
 
+        # Country mapping to HubSpot Standard-Property
+        if person.country:
+            properties["hs_country_region_code"] = person.country.upper()
+
         return properties
 
     @staticmethod

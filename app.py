@@ -1852,12 +1852,31 @@ def checkout_spendendaten():
                                  cart_items=cart_items,
                                  total_amount=total_amount,
                                  form_data=request.form)
-        
+
+        # ========================================================================
+        # COUNTRY HANDLING
+        # ========================================================================
+
+        # Country aus Form holen (Dropdown liefert ISO-Code oder Default 'DE')
+        country = request.form.get('country', 'DE').strip().upper()
+
+        # Validierung: Muss 2-Buchstaben ISO-Code sein
+        if not country or len(country) != 2 or not country.isalpha():
+            flash("Bitte wählen Sie ein Land aus der Liste.", "danger")
+            return render_template("checkout-spendendaten.html",
+                                 cart_items=cart_items,
+                                 total_amount=total_amount,
+                                 form_data=request.form)
+
         wants_receipt = request.form.get('wantsReceipt') == 'on'
         newsletter_consent = request.form.get('newsletter') == 'on'
-        
+
         # Validate receipt data if requested
-        person_data = {'email': email, 'newsletter_consent': newsletter_consent}
+        person_data = {
+            'email': email,
+            'newsletter_consent': newsletter_consent,
+            'country': country
+        }
         if wants_receipt:
             required_fields = ['salutation', 'firstName', 'lastName', 'street', 'houseNumber', 'postalCode', 'city']
             missing_fields = []

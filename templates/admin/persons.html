@@ -27,7 +27,7 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>E-Mail</th>
-                    <th>PLZ/Ort</th>
+                    <th>Land/PLZ/Ort</th>
                     <th>Newsletter</th>
                     <th>Spenden</th>
                     <th>Aktionen</th>
@@ -40,8 +40,8 @@
                     <td>{{ person.full_name_with_salutation }}</td>
                     <td>{{ person.email }}</td>
                     <td>
-                        {% if person.postal_code %}
-                            {{ person.postal_code }} {{ person.city }}
+                        {% if person.postal_code or person.city %}
+                            {{ person.country|default('DE', true) }}-{{ person.postal_code }} {{ person.city }}
                         {% else %}
                             <span class="text-muted">-</span>
                         {% endif %}
