@@ -201,6 +201,19 @@ def donation_detail(donation_id):
                          stripe_account_id=stripe_account_id)
 
 @admin_required
+def update_donation_comment(donation_id):
+    """Update admin comment for a donation"""
+    donation = Donation.query.get_or_404(donation_id)
+
+    if request.method == 'POST':
+        admin_comment = request.form.get('admin_comment', '').strip()
+        donation.admin_comment = admin_comment if admin_comment else None
+        db.session.commit()
+        flash('Kommentar wurde gespeichert.', 'success')
+
+    return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+@admin_required
 def regenerate_certificate(donation_id):
     """Regenerate certificate for donation"""
     donation = Donation.query.get_or_404(donation_id)

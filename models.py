@@ -486,6 +486,9 @@ class Donation(db.Model):
     # and are excluded from daily report totals
     is_bulk_sponsoring = db.Column(db.Boolean, default=False, nullable=False)
 
+    # Admin comment field for internal notes
+    admin_comment = db.Column(db.Text, nullable=True)
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)

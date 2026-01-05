@@ -77,6 +77,26 @@
     </div>
 </div>
 
+<!-- Admin Comment Row - Full Width -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Admin-Kommentar</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.update_donation_comment', donation_id=donation.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <textarea name="admin_comment" class="form-control" rows="3" placeholder="Interne Notizen zur Spende...">{{ donation.admin_comment or '' }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kommentar speichern</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Sponsored Verses Row - Full Width -->
 <div class="row mb-4">
     <div class="col-12">

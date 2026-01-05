@@ -37,6 +37,7 @@ def init_admin(app):
     # Donation management
     admin_bp.add_url_rule('/donations', 'donations_list', views.donations_list)
     admin_bp.add_url_rule('/donations/<int:donation_id>', 'donation_detail', views.donation_detail)
+    admin_bp.add_url_rule('/donations/<int:donation_id>/update-comment', 'update_donation_comment', views.update_donation_comment, methods=['POST'])
     admin_bp.add_url_rule('/donations/<int:donation_id>/regenerate-certificate', 'regenerate_certificate', views.regenerate_certificate, methods=['POST'])
     admin_bp.add_url_rule('/donations/<int:donation_id>/resend-certificate', 'resend_certificate', views.resend_certificate, methods=['POST'])
     admin_bp.add_url_rule('/donations/<int:donation_id>/view-certificate', 'view_certificate', views.view_certificate, methods=['GET'])
