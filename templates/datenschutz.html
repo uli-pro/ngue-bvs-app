@@ -35,6 +35,9 @@ main %}
         <a href="#hubspot-crm" class="btn btn-outline-primary btn-sm"
           >HubSpot-CRM</a
         >
+        <a href="#plausible" class="btn btn-outline-primary btn-sm"
+          >Plausible Analytics</a
+        >
         <a href="#ihre-rechte" class="btn btn-outline-primary btn-sm"
           >Ihre Rechte</a
         >
@@ -227,26 +230,25 @@ main %}
             <div class="col-md-6">
               <div class="card h-100">
                 <div class="card-header bg-gray">
-                  <h5 class="mb-0">Analyse-Cookies (optional)</h5>
+                  <h5 class="mb-0">Plausible Analytics (keine Cookies)</h5>
                 </div>
                 <div class="card-body">
                   <ul class="list-unstyled">
                     <li>
-                      <i class="fas fa-chart-line me-2"></i>HubSpot Analytics
+                      <i class="fas fa-chart-line me-2"></i>Privacy-First Analytics
                     </li>
                     <li class="mt-2">
-                      <small class="text-muted"
-                        >Werden nur mit Ihrer Zustimmung gesetzt.</small
+                      <small class="text-success"
+                        ><strong>Keine Cookies, keine persönlichen Daten.</strong></small
                       >
                     </li>
                   </ul>
                   <p class="small mb-2">
-                    <strong>Zweck:</strong> Besucherzahlen, beliebte Seiten,
-                    Conversion-Tracking
+                    <strong>Zweck:</strong> Anonyme Besucherstatistiken, Performance-Optimierung
                   </p>
                   <p class="small mb-0">
-                    <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO
-                    (Einwilligung)
+                    <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO
+                    (berechtigtes Interesse, keine personenbezogenen Daten)
                   </p>
                 </div>
               </div>
@@ -315,13 +317,13 @@ main %}
 
         <!-- HubSpot -->
         <div id="hubspot-crm" class="mb-5">
-          <h2>5. HubSpot (CRM & Analytics)</h2>
+          <h2>5. HubSpot CRM (Spenderverwaltung)</h2>
 
           <!-- HubSpot CRM -->
-          <div class="card mb-4">
+          <div class="card">
             <div class="card-header bg-primary text-white">
               <h5 class="mb-0">
-                5.1 HubSpot CRM (Spenderverwaltung) - Immer aktiv
+                HubSpot CRM - Server-seitige Datenübertragung
               </h5>
             </div>
             <div class="card-body">
@@ -396,82 +398,6 @@ main %}
             </div>
           </div>
 
-          <!-- HubSpot Analytics -->
-          <div class="card">
-            <div class="card-header bg-warning">
-              <h5 class="mb-0">
-                5.2 HubSpot Analytics - Nur mit Ihrer Einwilligung
-              </h5>
-            </div>
-            <div class="card-body">
-              <p>
-                Zusätzlich bieten wir die Möglichkeit, HubSpot Analytics zu
-                aktivieren, um unsere Website zu verbessern.
-              </p>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <h6>Was wird erfasst?</h6>
-                  <ul class="list-unstyled">
-                    <li>
-                      <i class="fas fa-chart-bar me-2"></i>Besuchte Seiten und
-                      Verweildauer
-                    </li>
-                    <li>
-                      <i class="fas fa-mouse-pointer me-2"></i>Klicks und
-                      Interaktionen
-                    </li>
-                    <li>
-                      <i class="fas fa-map-marker-alt me-2"></i>Herkunft der
-                      Besucher (Traffic-Quellen)
-                    </li>
-                    <li>
-                      <i class="fas fa-mobile-alt me-2"></i>Gerätetyp (Desktop,
-                      Tablet, Mobile)
-                    </li>
-                    <li>
-                      <i class="fas fa-globe me-2"></i>Ungefährer Standort
-                      (Land/Region)
-                    </li>
-                  </ul>
-                </div>
-                <div class="col-md-6">
-                  <div>
-                    <h6>
-                      <i class="fas fa-bullseye me-2"></i>Warum nutzen wir das?
-                    </h6>
-                    <ul class="list-unstyled">
-                      <li>
-                        <i class="fas fa-check me-2"></i>Verstehen, welche
-                        Inhalte hilfreich sind
-                      </li>
-                      <li>
-                        <i class="fas fa-check me-2"></i>Technische Probleme
-                        erkennen
-                      </li>
-                      <li>
-                        <i class="fas fa-check me-2"></i>Spendenprozess
-                        optimieren
-                      </li>
-                      <li>
-                        <i class="fas fa-check me-2"></i>Erfolg von Kampagnen
-                        messen
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <p class="mb-0">
-                <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO
-                (Einwilligung)
-                <br />
-                <strong>Widerruf:</strong> Sie können Ihre Einwilligung
-                jederzeit widerrufen (siehe Abschnitt 6).
-              </p>
-            </div>
-          </div>
-
           <div class="card mt-4">
             <div class="card-body">
               <h6>Datenschutz bei HubSpot:</h6>
@@ -494,40 +420,60 @@ main %}
           </div>
         </div>
 
-        <!-- Cookie-Einstellungen ändern -->
-        <div id="cookie-einstellungen" class="mb-5">
-          <h2>6. Cookie-Einstellungen ändern</h2>
+        <!-- Plausible Analytics -->
+        <div id="plausible" class="mb-5">
+          <h2>6. Plausible Analytics</h2>
           <div class="card">
-            <div class="card-body text-center">
-              <h5 class="mb-3">Ihre aktuelle Einstellung:</h5>
-              <div id="current-cookie-status" class="mb-3">
-                <span
-                  class="badge bg-secondary fs-6 py-2 px-3"
-                  id="cookie-status-text"
-                  >Wird geladen...</span
-                >
-              </div>
-              <p class="text-muted mb-3">
-                Hier können Sie Ihre Cookie-Einstellungen jederzeit ändern:
+            <div class="card-header bg-success text-white">
+              <h5 class="mb-0">
+                <i class="fas fa-shield-alt me-2"></i>Privacy-First Web-Analytics
+              </h5>
+            </div>
+            <div class="card-body">
+              <p class="lead">
+                Wir nutzen <strong>Plausible Analytics</strong> - eine datenschutzfreundliche Alternative zu Google Analytics.
               </p>
-              <div>
-                <button
-                  onclick="enableAnalytics()"
-                  class="btn btn-success me-2 mb-2"
-                >
-                  <i class="fas fa-check me-2"></i>Analytics aktivieren
-                </button>
-                <button
-                  onclick="disableAnalytics()"
-                  class="btn btn-warning mb-2"
-                >
-                  <i class="fas fa-times me-2"></i>Analytics deaktivieren
-                </button>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <h6><i class="fas fa-check-circle text-success me-2"></i>Was macht Plausible datenschutzfreundlich?</h6>
+                  <ul class="list-unstyled">
+                    <li><i class="fas fa-cookie-bite me-2 text-success"></i><strong>Keine Cookies</strong></li>
+                    <li><i class="fas fa-user-shield me-2 text-success"></i><strong>Keine personenbezogenen Daten</strong></li>
+                    <li><i class="fas fa-eye-slash me-2 text-success"></i><strong>Kein Cross-Site-Tracking</strong></li>
+                    <li><i class="fas fa-server me-2 text-success"></i><strong>Self-hosted auf deutschem Server</strong></li>
+                    <li><i class="fas fa-thumbs-up me-2 text-success"></i><strong>DSGVO-konform ohne Einwilligung</strong></li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h6><i class="fas fa-chart-line me-2"></i>Was wird gemessen?</h6>
+                  <ul class="list-unstyled">
+                    <li><i class="fas fa-file me-2"></i>Besuchte Seiten (anonymisiert)</li>
+                    <li><i class="fas fa-mouse-pointer me-2"></i>Klick-Events (z.B. "Verse Added")</li>
+                    <li><i class="fas fa-globe me-2"></i>Land (aus anonymisierter IP)</li>
+                    <li><i class="fas fa-mobile-alt me-2"></i>Gerätetyp (Desktop/Mobile)</li>
+                    <li><i class="fas fa-link me-2"></i>Referrer-Quellen</li>
+                  </ul>
+                </div>
               </div>
-              <p class="small text-muted mt-3 mb-0">
-                <i class="fas fa-info-circle me-1"></i>
-                Nach Änderung wird die Seite neu geladen.
-              </p>
+
+              <div class="p-3 rounded mt-3" style="background-color: #d1f4e0; border-left: 4px solid #28a745;">
+                <h6 style="color: #155724;"><i class="fas fa-info-circle me-2"></i>Technische Details:</h6>
+                <p class="mb-2" style="color: #155724;">
+                  <strong>IP-Adressen:</strong> Werden nicht gespeichert, nur für Geo-Lokalisierung (Land-Ebene) genutzt<br>
+                  <strong>Datenstandort:</strong> Self-hosted auf Server 213.165.95.155 (Deutschland)<br>
+                  <strong>Speicherdauer:</strong> Anonymisierte Statistiken, 24 Monate
+                </p>
+                <p class="mb-0" style="color: #155724;">
+                  <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse). Keine personenbezogenen Daten, daher keine Einwilligung erforderlich.
+                </p>
+              </div>
+
+              <div class="text-center mt-4">
+                <a href="https://plausible.io/data-policy" target="_blank" rel="noopener" class="btn btn-outline-success">
+                  <i class="fas fa-external-link-alt me-2"></i>Plausible Datenschutzrichtlinie
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -658,39 +604,5 @@ main %}
       }
     });
   });
-
-  // Cookie-Status anzeigen
-  function updateCookieStatus() {
-    const statusElement = document.getElementById("cookie-status-text");
-    const analyticsEnabled =
-      localStorage.getItem("ngu_analytics_consent") === "true";
-
-    if (analyticsEnabled) {
-      statusElement.textContent = "Analytics aktiviert";
-      statusElement.className = "badge bg-success fs-6 py-2 px-3";
-    } else {
-      statusElement.textContent = "Nur notwendige Cookies";
-      statusElement.className = "badge bg-secondary fs-6 py-2 px-3";
-    }
-  }
-
-  function enableAnalytics() {
-    localStorage.setItem("ngu_cookie_consent_set", "true");
-    localStorage.setItem("ngu_analytics_consent", "true");
-    alert("✅ Analytics-Cookies wurden aktiviert. Die Seite wird neu geladen.");
-    location.reload();
-  }
-
-  function disableAnalytics() {
-    localStorage.setItem("ngu_cookie_consent_set", "true");
-    localStorage.setItem("ngu_analytics_consent", "false");
-    alert(
-      "✅ Analytics-Cookies wurden deaktiviert. Die Seite wird neu geladen."
-    );
-    location.reload();
-  }
-
-  // Status beim Laden aktualisieren
-  document.addEventListener("DOMContentLoaded", updateCookieStatus);
 </script>
 {% endblock %}
