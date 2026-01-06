@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, session
 from admin.decorators import admin_required
-from models import db, Person, Verse, Donation, VerseReservation, Certificate
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, BookPriority
 from sqlalchemy import or_, func
 from pdf_service import PDFGeneratorService
 from email_service import email_service
@@ -504,4 +504,80 @@ def cleanup_orphaned():
 
     except Exception as e:
         flash(f'Cleanup fehlgeschlagen: {str(e)}', 'danger')
+        return redirect(url_for('admin.index'))
+
+
+# ==========================================
+# BOOK PRIORITIZATION MANAGEMENT
+# ==========================================
+
+@admin_required
+def book_priorities():
+    """
+    Admin page for managing book prioritization boosts.
+
+    GET: Display current boosts and form
+    POST: Apply or remove boost
+    """
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'apply_boost':
+            # Get form data
+            book_code = request.form.get('book_code')
+            boost_value = request.form.get('boost_value', type=int)
+            reason = request.form.get('reason')
+            admin_email = session.get('admin_email')
+
+            # Validate
+            if not book_code:
+                flash('Bitte ein Buch auswählen', 'error')
+                return redirect(url_for('admin.book_priorities'))
+
+            if boost_value is None or boost_value < -25 or boost_value > 25:
+                flash('Boost-Wert muss zwischen -25 und +25 liegen', 'error')
+                return redirect(url_for('admin.book_priorities'))
+
+            # Apply boost
+            try:
+                BookPriority.apply_boost(book_code, boost_value, reason, admin_email)
+                flash(f'Boost für {book_code} auf {boost_value:+d} gesetzt', 'success')
+            except ValueError as e:
+                flash(f'Fehler: {str(e)}', 'error')
+            except Exception as e:
+                flash(f'Unerwarteter Fehler: {str(e)}', 'error')
+
+        elif action == 'remove_boost':
+            book_code = request.form.get('book_code')
+
+            try:
+                BookPriority.remove_boost(book_code)
+                flash(f'Boost für {book_code} entfernt', 'success')
+            except Exception as e:
+                flash(f'Fehler beim Entfernen: {str(e)}', 'error')
+
+        return redirect(url_for('admin.book_priorities'))
+
+    # GET: Display page
+    try:
+        # Get active boosts
+        active_boosts = BookPriority.get_active_boosts()
+
+        # Get statistics
+        boost_stats = BookPriority.get_boost_statistics()
+
+        # Get all available books
+        all_books = db.session.query(Verse.book.distinct()).order_by(Verse.book).all()
+        all_books = [book[0] for book in all_books]
+
+        return render_template(
+            'admin/book_priorities.html',
+            active_boosts=active_boosts,
+            boost_stats=boost_stats,
+            all_books=all_books
+        )
+
+    except Exception as e:
+        flash(f'Fehler beim Laden der Seite: {str(e)}', 'error')
         return redirect(url_for('admin.index'))

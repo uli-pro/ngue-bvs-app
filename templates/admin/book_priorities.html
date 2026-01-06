@@ -1,0 +1,205 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Buch-Priorisierung - Admin - NGÜ Bibelvers-Sponsoring{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Buch-Priorisierung verwalten</h2>
+        <p class="text-muted">
+            Passen Sie die Anzeige-Häufigkeit einzelner Bibelbücher an, indem Sie Positivity-Score-Boosts vergeben.
+            Ein positiver Boost (+1 bis +25) erhöht die Sichtbarkeit eines Buches, ein negativer Boost (-1 bis -25) reduziert sie.
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Active Boosts -->
+    <div class="col-md-7">
+        <div class="stat-card mb-4">
+            <h4 class="mb-3">Aktive Boosts ({{ active_boosts|length }})</h4>
+
+            {% if active_boosts %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Buch</th>
+                                <th>Boost</th>
+                                <th>Verse</th>
+                                <th>Ø Original</th>
+                                <th>Ø Boosted</th>
+                                <th>90+ Verse</th>
+                                <th>Grund</th>
+                                <th>Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for boost in active_boosts %}
+                            <tr>
+                                <td><strong>{{ boost.book_code }}</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if boost.boost_value > 0 else 'warning' }}">
+                                        {{ '%+d' % boost.boost_value }}
+                                    </span>
+                                </td>
+                                <td>{{ boost_stats.get(boost.book_code, {}).get('total_verses', 'N/A') }}</td>
+                                <td>{{ boost_stats.get(boost.book_code, {}).get('original_avg_score', 'N/A') }}</td>
+                                <td>{{ boost_stats.get(boost.book_code, {}).get('boosted_avg_score', 'N/A') }}</td>
+                                <td>{{ boost_stats.get(boost.book_code, {}).get('verses_promoted_to_90', 'N/A') }}</td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ boost.reason[:50] + '...' if boost.reason and boost.reason|length > 50 else (boost.reason or '—') }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="remove_boost">
+                                        <input type="hidden" name="book_code" value="{{ boost.book_code }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Boost für {{ boost.book_code }} wirklich entfernen?')">
+                                            Entfernen
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">Keine aktiven Boosts. Erstellen Sie einen Boost mit dem Formular rechts.</p>
+            {% endif %}
+        </div>
+
+        <!-- Info Box -->
+        <div class="alert alert-info">
+            <h6 class="alert-heading">ℹ️ Wie funktioniert Buch-Priorisierung?</h6>
+            <ul class="mb-0 small">
+                <li><strong>Boost-Bereich:</strong> -25 bis +25 Punkte zum Positivity-Score</li>
+                <li><strong>Datenbank-basiert:</strong> Scores werden direkt in der DB aktualisiert (kein Runtime-Overhead)</li>
+                <li><strong>Reversibel:</strong> Original-Scores werden in <code>positivity_pre_boost</code> gespeichert</li>
+                <li><strong>Auswirkung:</strong> Verse mit höheren Scores erscheinen häufiger in "Empfohlene Verse"</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Right Column: Add/Update Boost Form -->
+    <div class="col-md-5">
+        <div class="stat-card">
+            <h4 class="mb-3">Boost erstellen/aktualisieren</h4>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="apply_boost">
+
+                <div class="mb-3">
+                    <label for="book_code" class="form-label">Buch auswählen</label>
+                    <select class="form-select" id="book_code" name="book_code" required>
+                        <option value="">-- Bitte wählen --</option>
+                        {% for book in all_books %}
+                            <option value="{{ book }}">{{ book }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Aktueller Boost wird überschrieben, falls bereits vorhanden.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="boost_value" class="form-label">Boost-Wert</label>
+                    <input type="number"
+                           class="form-control"
+                           id="boost_value"
+                           name="boost_value"
+                           min="-25"
+                           max="25"
+                           value="0"
+                           required>
+                    <small class="text-muted">Wert zwischen -25 und +25</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="reason" class="form-label">Grund (optional)</label>
+                    <textarea class="form-control"
+                              id="reason"
+                              name="reason"
+                              rows="3"
+                              placeholder="z.B. 'Wenig Spenden aus diesem Buch' oder 'Strategische Priorisierung für 2026'"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    Boost anwenden
+                </button>
+            </form>
+
+            <hr class="my-4">
+
+            <!-- Boost Value Guide -->
+            <h6>Empfohlene Boost-Werte</h6>
+            <div class="small">
+                <div class="mb-2">
+                    <span class="badge bg-success">+10 bis +25</span>
+                    <span class="text-muted">Starke Priorisierung (wenig gesponserte Verse)</span>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-success">+1 bis +9</span>
+                    <span class="text-muted">Moderate Priorisierung</span>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-warning">-1 bis -9</span>
+                    <span class="text-muted">Leichte Reduzierung</span>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-warning">-10 bis -25</span>
+                    <span class="text-muted">Starke Reduzierung (viele gesponserte Verse)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-submit confirmation for remove actions
+document.querySelectorAll('form[method="POST"]').forEach(form => {
+    const actionInput = form.querySelector('input[name="action"]');
+    if (actionInput && actionInput.value === 'remove_boost') {
+        form.addEventListener('submit', function(e) {
+            const bookCode = form.querySelector('input[name="book_code"]').value;
+            if (!confirm(`Boost für ${bookCode} wirklich entfernen? Die Original-Scores werden wiederhergestellt.`)) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+
+// Highlight book dropdown if a boost exists
+const bookSelect = document.getElementById('book_code');
+if (bookSelect) {
+    bookSelect.addEventListener('change', function() {
+        const existingBoosts = {{ active_boosts|map(attribute='book_code')|list|tojson }};
+        const selectedBook = this.value;
+
+        if (existingBoosts.includes(selectedBook)) {
+            this.classList.add('border-warning');
+            const warningText = document.getElementById('boost-warning');
+            if (!warningText) {
+                const warning = document.createElement('small');
+                warning.id = 'boost-warning';
+                warning.className = 'text-warning';
+                warning.textContent = '⚠️ Dieser Boost existiert bereits und wird aktualisiert.';
+                this.parentNode.appendChild(warning);
+            }
+        } else {
+            this.classList.remove('border-warning');
+            const warningText = document.getElementById('boost-warning');
+            if (warningText) {
+                warningText.remove();
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

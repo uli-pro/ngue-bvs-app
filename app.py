@@ -45,7 +45,7 @@ app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority
 from sqlalchemy import text
 from stripe_service import StripeService, StripeError
 from pdf_service import PDFGeneratorService, PDFGenerationError

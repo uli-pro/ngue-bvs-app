@@ -142,6 +142,7 @@ class Verse(db.Model):
     text_search = db.Column(TSVECTOR)
     text_embedding = db.Column(Vector(1536))
     positivity_score = db.Column(db.Integer)
+    positivity_pre_boost = db.Column(db.Integer)  # Original score before any boost
     is_sponsored = db.Column(db.Boolean, default=False, nullable=False)
     is_translated = db.Column(db.Boolean, default=False, nullable=False)
     translation_completed_at = db.Column(db.DateTime)
@@ -1123,3 +1124,185 @@ class AdminToken(db.Model):
         cutoff = datetime.utcnow() - timedelta(hours=24)
         cls.query.filter(cls.created_at < cutoff).delete()
         db.session.commit()
+
+
+class BookPriority(db.Model):
+    """
+    Manages book prioritization boosts for verse selection.
+
+    Stores boost configuration and applies transformations to verses table.
+    One active boost per book (enforced by UNIQUE constraint on book_code).
+    """
+    __tablename__ = 'book_priorities'
+
+    id = db.Column(db.Integer, primary_key=True)
+    book_code = db.Column(db.String(10), unique=True, nullable=False, index=True)
+    boost_value = db.Column(db.Integer, nullable=False)  # -25 to +25
+    reason = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.String(255))
+    is_active = db.Column(db.Boolean, default=True, index=True)
+
+    @classmethod
+    def apply_boost(cls, book_code, boost_value, reason=None, admin_email=None):
+        """
+        Applies boost to all verses of a book by updating positivity_score in DB.
+
+        Process:
+        1. Ensure positivity_pre_boost is set for all verses (if NULL)
+        2. Calculate new scores: pre_boost + boost_value (capped 0-100)
+        3. Update positivity_score in verses table
+        4. Insert/update BookPriority record
+
+        Args:
+            book_code: Book code (e.g., '1KI', '2CH')
+            boost_value: Integer from -25 to +25
+            reason: Optional explanation
+            admin_email: Email of admin making change
+
+        Raises:
+            ValueError: If book_code doesn't exist or boost_value out of range
+        """
+
+        # Validation
+        if not book_code:
+            raise ValueError("book_code is required")
+
+        if boost_value < -25 or boost_value > 25:
+            raise ValueError("boost_value must be between -25 and +25")
+
+        # Check if book exists
+        verse_count = db.session.query(Verse).filter_by(book=book_code).count()
+        if verse_count == 0:
+            raise ValueError(f"Book code '{book_code}' not found in verses table")
+
+        # 1. Ensure pre_boost is set (only if NULL)
+        db.session.execute(
+            text("""
+            UPDATE verses
+            SET positivity_pre_boost = positivity_score
+            WHERE book = :book AND positivity_pre_boost IS NULL
+            """),
+            {"book": book_code}
+        )
+
+        # 2. Apply boost (capped at 0 and 100)
+        db.session.execute(
+            text("""
+            UPDATE verses
+            SET positivity_score = GREATEST(0, LEAST(positivity_pre_boost + :boost, 100))
+            WHERE book = :book
+            """),
+            {"book": book_code, "boost": boost_value}
+        )
+
+        # 3. Insert or update BookPriority record
+        existing = cls.query.filter_by(book_code=book_code).first()
+
+        if existing:
+            # Update existing record
+            existing.boost_value = boost_value
+            existing.reason = reason
+            existing.created_by = admin_email
+            existing.is_active = True
+        else:
+            # Create new record
+            priority = cls(
+                book_code=book_code,
+                boost_value=boost_value,
+                reason=reason,
+                created_by=admin_email,
+                is_active=True
+            )
+            db.session.add(priority)
+
+        db.session.commit()
+
+    @classmethod
+    def remove_boost(cls, book_code):
+        """
+        Removes boost by restoring original scores from positivity_pre_boost.
+
+        Process:
+        1. Restore positivity_score from positivity_pre_boost
+        2. Mark BookPriority record as inactive (soft delete)
+
+        Args:
+            book_code: Book code to remove boost from
+        """
+
+        # 1. Restore original scores
+        db.session.execute(
+            text("""
+            UPDATE verses
+            SET positivity_score = positivity_pre_boost
+            WHERE book = :book
+            """),
+            {"book": book_code}
+        )
+
+        # 2. Mark BookPriority as inactive
+        priority = cls.query.filter_by(book_code=book_code).first()
+        if priority:
+            priority.is_active = False
+
+        db.session.commit()
+
+    @classmethod
+    def get_active_boosts(cls):
+        """
+        Returns all active book boosts.
+
+        Returns:
+            List of BookPriority objects with is_active=True
+        """
+        return cls.query.filter_by(is_active=True).order_by(cls.book_code).all()
+
+    @classmethod
+    def get_boost_statistics(cls):
+        """
+        Returns statistics for each boosted book.
+
+        Returns:
+            dict: {
+                'book_code': {
+                    'total_verses': int,
+                    'original_avg_score': float,
+                    'boosted_avg_score': float,
+                    'verses_promoted_to_90': int (how many reached 90+ with boost)
+                }
+            }
+        """
+
+        active_boosts = cls.get_active_boosts()
+        stats = {}
+
+        for boost in active_boosts:
+            # Query verses for this book
+            verses = db.session.query(
+                func.count(Verse.id).label('total'),
+                func.avg(Verse.positivity_pre_boost).label('orig_avg'),
+                func.avg(Verse.positivity_score).label('boost_avg'),
+                func.count(
+                    db.case(
+                        (Verse.positivity_score >= 90, 1),
+                        else_=None
+                    )
+                ).label('promoted')
+            ).filter(
+                Verse.book == boost.book_code,
+                Verse.is_sponsored == False
+            ).first()
+
+            stats[boost.book_code] = {
+                'total_verses': verses.total,
+                'original_avg_score': round(verses.orig_avg, 1) if verses.orig_avg else 0,
+                'boosted_avg_score': round(verses.boost_avg, 1) if verses.boost_avg else 0,
+                'verses_promoted_to_90': verses.promoted
+            }
+
+        return stats
+
+    def __repr__(self):
+        active = "active" if self.is_active else "inactive"
+        return f'<BookPriority {self.book_code} {self.boost_value:+d} ({active})>'

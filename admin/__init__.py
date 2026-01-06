@@ -51,6 +51,9 @@ def init_admin(app):
     admin_bp.add_url_rule('/cleanup', 'cleanup_orphaned', views.cleanup_orphaned, methods=['POST'])
     admin_bp.add_url_rule('/api/cleanup-stats', 'get_cleanup_stats', views.get_cleanup_stats, methods=['GET'])
 
+    # Book prioritization management
+    admin_bp.add_url_rule('/book-priorities', 'book_priorities', views.book_priorities, methods=['GET', 'POST'])
+
     # Apply rate limiting - skip for now as it requires route-specific setup
 
     return admin_bp
