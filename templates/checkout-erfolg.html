@@ -256,8 +256,19 @@
   </div>
 </section>
 
-<!-- JavaScript für Download-Tracking -->
+<!-- JavaScript für Download-Tracking und Analytics -->
 <script>
+  // Track successful donation
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.NGUEAnalytics) {
+      window.NGUEAnalytics.trackDonation(
+        '{{ donation.donation_type }}',
+        {{ donation.total_amount }},
+        {{ donation.verses|length }}
+      );
+    }
+  });
+
   function trackDownload(documentType, donationId) {
     // Optional: Analytics-Tracking für Downloads
     if (typeof gtag !== "undefined") {

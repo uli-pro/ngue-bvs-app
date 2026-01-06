@@ -487,20 +487,25 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Track verse added event
+                if (window.NGUEAnalytics) {
+                    window.NGUEAnalytics.trackVerseAdded(verseReference, 100);
+                }
+
                 // Update cart count in navigation
                 const cartBadge = document.querySelector('.cart-count');
                 if (cartBadge) {
                     cartBadge.textContent = data.cart_count;
                     cartBadge.style.display = data.cart_count > 0 ? 'inline' : 'none';
                 }
-                
+
                 // Show success feedback
                 if (button) {
                     button.textContent = 'HINZUGEFÜGT!';
                     button.classList.remove('btn-primary');
                     button.classList.add('btn-success');
                 }
-                
+
                 // Direct redirect to cart without alert or flash message
                 window.location.href = '/spendenkorb';
             } else {

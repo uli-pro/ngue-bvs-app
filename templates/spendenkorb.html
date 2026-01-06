@@ -78,7 +78,7 @@
                         Sie können im nächsten Schritt eine Spendenbescheinigung anfordern.
                     </div>
                     
-                    <a href="/checkout/spendendaten" class="btn btn-success btn-lg w-100">
+                    <a href="/checkout/spendendaten" class="btn btn-success btn-lg w-100" onclick="trackCheckoutStarted(event)">
                         Weiter zur Datenerfassung
                         <i class="fas fa-arrow-right"></i>
                     </a>
@@ -153,6 +153,17 @@
 
 {% block scripts %}
 <script>
+function trackCheckoutStarted(event) {
+    // Track checkout started event
+    if (window.NGUEAnalytics) {
+        const items = {{ cart_items|length }};
+        const amount = {{ total_amount }};
+        window.NGUEAnalytics.trackCheckoutStarted(items, amount);
+    }
+    // Allow navigation to continue
+    return true;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Handle remove item buttons
     document.querySelectorAll('.remove-item').forEach(button => {
