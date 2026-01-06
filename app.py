@@ -118,12 +118,21 @@ def currency_filter(value):
     return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+# Plausible Analytics Configuration
+app.config['PLAUSIBLE_ENABLED'] = os.getenv('PLAUSIBLE_ENABLED', 'false').lower() == 'true'
+app.config['PLAUSIBLE_DOMAIN'] = os.getenv('PLAUSIBLE_DOMAIN', '')
+app.config['PLAUSIBLE_SCRIPT_URL'] = os.getenv('PLAUSIBLE_SCRIPT_URL', '')
+
+
 # Context processor to inject current year and cache-busting parameter
 @app.context_processor
 def inject_context():
     return {
         'current_year': datetime.now().year,
-        'cache_bust': CACHE_BUST
+        'cache_bust': CACHE_BUST,
+        'plausible_enabled': app.config['PLAUSIBLE_ENABLED'],
+        'plausible_domain': app.config['PLAUSIBLE_DOMAIN'],
+        'plausible_script_url': app.config['PLAUSIBLE_SCRIPT_URL']
     }
 
 

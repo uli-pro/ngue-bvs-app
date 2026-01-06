@@ -77,24 +77,11 @@
       content="5PtpzDKdbPd6BIXQ6Q9KRNik6cCTm2FlHwcyKBG08ak"
     />
 
-    <!-- HubSpot Tracking Code - wird nur nach Cookie-Zustimmung geladen -->
-    <script>
-      // HubSpot wird nur geladen, wenn Analytics-Cookies akzeptiert wurden
-      function loadHubSpot() {
-        if (localStorage.getItem("ngu_analytics_consent") === "true") {
-          var script = document.createElement("script");
-          script.type = "text/javascript";
-          script.id = "hs-script-loader";
-          script.async = true;
-          script.defer = true;
-          script.src = "//js.hs-scripts.com/47813211.js";
-          document.head.appendChild(script);
-        }
-      }
-
-      // Beim Laden der Seite prüfen
-      document.addEventListener("DOMContentLoaded", loadHubSpot);
-    </script>
+    <!-- Plausible Analytics - Privacy-friendly, no cookies needed -->
+    {% if plausible_enabled %}
+    <script defer data-domain="{{ plausible_domain }}" src="{{ plausible_script_url }}"></script>
+    <script src="{{ url_for('static', filename='js/analytics.js') }}?v={{ cache_bust }}" defer></script>
+    {% endif %}
 
     <!-- SEO Meta Tags -->
     <meta
@@ -465,10 +452,9 @@
                 <i class="fas fa-cookie-bite me-2"></i>Cookie-Einstellungen
               </h5>
               <p class="mb-0 small">
-                Wir verwenden technisch notwendige Cookies für den Spendenkorb
-                und optionale Analytics-Cookies (HubSpot), um unsere Website zu
-                verbessern und die Wirksamkeit unserer Spendenkampagne zu
-                messen.
+                Wir verwenden technisch notwendige Cookies für den Spendenkorb.
+                Zusätzlich nutzen wir datenschutzfreundliches Analytics (Plausible),
+                das keine Cookies setzt und keine personenbezogenen Daten speichert.
                 <a
                   href="/datenschutz#cookies"
                   class="text-white text-decoration-underline"
@@ -573,11 +559,7 @@
         localStorage.setItem("ngu_analytics_consent", "true");
         document.getElementById("cookie-banner").style.display = "none";
 
-        // HubSpot laden
-        loadHubSpot();
-
-        // Optional: Erfolgsmeldung
-        console.log("Analytics-Cookies aktiviert - HubSpot wird geladen");
+        console.log("Cookie-Einstellungen gespeichert");
       }
 
       function acceptOnlyNecessary() {
