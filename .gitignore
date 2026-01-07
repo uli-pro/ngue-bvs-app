@@ -35,7 +35,7 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
-# *.sql
+ *.sql
 *.sql.gz
 *.dump
 *.backup
@@ -93,3 +93,5 @@ backups/
 db-backups/
 # Old/archived files
 *.old
+app-deployment/*.sql
+app-deployment/backup_*.sql

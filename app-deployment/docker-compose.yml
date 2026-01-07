@@ -84,6 +84,11 @@ services:
       # HubSpot CRM (Optional)
       HUBSPOT_API_KEY: ${HUBSPOT_API_KEY:-}
 
+      # Plausible Analytics
+      PLAUSIBLE_ENABLED: ${PLAUSIBLE_ENABLED:-false}
+      PLAUSIBLE_DOMAIN: ${PLAUSIBLE_DOMAIN:-}
+      PLAUSIBLE_SCRIPT_URL: ${PLAUSIBLE_SCRIPT_URL:-}
+
       # Application Configuration
       DOMAIN_NAME: ${DOMAIN_NAME:-ngue-bvs.schoeffer.org}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
