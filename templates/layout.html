@@ -442,61 +442,71 @@
 
     {% block scripts %}{% endblock %}
 
-    <!-- DSGVO-konformer Cookie-Banner -->
-    <div id="cookie-banner" class="cookie-banner" style="display: none">
-      <div class="cookie-banner-content">
-        <div class="container">
-          <div class="row align-items-center">
-            <div class="col-lg-8 mb-3 mb-lg-0">
-              <h5 class="mb-2">
-                <i class="fas fa-cookie-bite me-2"></i>Cookie-Einstellungen
-              </h5>
-              <p class="mb-0 small">
-                Wir verwenden technisch notwendige Cookies für den Spendenkorb.
-                Zusätzlich nutzen wir datenschutzfreundliches Analytics (Plausible),
-                das keine Cookies setzt und keine personenbezogenen Daten speichert.
-                <a
-                  href="/datenschutz#cookies"
-                  class="text-white text-decoration-underline"
-                  >Mehr erfahren</a
-                >
-              </p>
-            </div>
-            <div class="col-lg-4 text-lg-end">
-              <button
-                onclick="acceptAllCookies()"
-                class="btn btn-light btn-sm me-2 mb-2 mb-lg-0"
-              >
-                <i class="fas fa-check me-1"></i>Alle akzeptieren
-              </button>
-              <button
-                onclick="acceptOnlyNecessary()"
-                class="btn btn-outline-light btn-sm mb-2 mb-lg-0"
-              >
-                Nur notwendige
-              </button>
-            </div>
-          </div>
-        </div>
+    <!-- Dezenter Datenschutz-Hinweis (kein Opt-in nötig) -->
+    <div id="privacy-notice" class="privacy-notice" style="display: none">
+      <div class="container">
+        <span class="privacy-notice-text">
+          <i class="fas fa-shield-alt me-2"></i>
+          Wir nutzen nur technisch notwendige Cookies. Für Statistiken verwenden wir Plausible – ohne Cookies, ohne persönliche Daten.
+<br><a href="/datenschutz#plausible">Mehr erfahren</a>
+        </span>
+        <button onclick="dismissPrivacyNotice()" class="privacy-notice-close" aria-label="Schließen">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     </div>
 
     <style>
-      .cookie-banner {
+      .privacy-notice {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(135deg, #dd3333 0%, #c02a2a 100%);
-        color: white;
+        background-color: #fff5f5;
+        border-top: 1px solid #f0d0d0;
         z-index: 9999;
-        box-shadow: 0 -4px 20px rgba(221, 51, 51, 0.3);
-        animation: slideUp 0.5s ease-out;
-        border-top: 3px solid rgba(255, 255, 255, 0.3);
+        animation: slideUp 0.4s ease-out;
+        padding: 0.6rem 0;
       }
 
-      .cookie-banner-content {
-        padding: 1.5rem 0;
+      .privacy-notice .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .privacy-notice-text {
+        font-size: 0.95rem;
+        color: #666;
+      }
+
+      .privacy-notice-text i {
+        color: #999;
+      }
+
+      .privacy-notice-text a {
+        color: #8b5a5a;
+        text-decoration: underline;
+        margin-left: 0.25rem;
+      }
+
+      .privacy-notice-text a:hover {
+        color: #6a4444;
+      }
+
+      .privacy-notice-close {
+        background: none;
+        border: none;
+        color: #999;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+
+      .privacy-notice-close:hover {
+        color: #666;
       }
 
       @keyframes slideUp {
@@ -510,70 +520,52 @@
         }
       }
 
-      .cookie-banner a {
-        color: white;
-        font-weight: 500;
-        border-bottom: 1px dotted rgba(255, 255, 255, 0.5);
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; transform: translateY(10px); }
       }
 
-      .cookie-banner a:hover {
-        border-bottom-color: white;
+      .privacy-notice.hiding {
+        animation: fadeOut 0.3s ease-out forwards;
       }
 
-      .cookie-banner .btn-light {
-        background-color: white;
-        color: #dd3333;
-        border: none;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      .cookie-banner .btn-light:hover {
-        background-color: #f8f9fa;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      }
-
-      .cookie-banner .btn-outline-light {
-        border-color: rgba(255, 255, 255, 0.8);
-        color: white;
-      }
-
-      .cookie-banner .btn-outline-light:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-        border-color: white;
+      @media (max-width: 768px) {
+        .privacy-notice-text {
+          font-size: 0.85rem;
+        }
       }
     </style>
 
     <script>
-      // Cookie-Banner-Verwaltung
-      function checkCookieBanner() {
-        // Banner anzeigen, wenn noch keine Entscheidung getroffen wurde
-        if (!localStorage.getItem("ngu_cookie_consent_set")) {
-          document.getElementById("cookie-banner").style.display = "block";
+      // Dezenter Datenschutz-Hinweis (einmal pro Session, bleibt bis zum Wegklicken)
+      function showPrivacyNotice() {
+        if (!sessionStorage.getItem("ngu_privacy_notice_shown")) {
+          document.getElementById("privacy-notice").style.display = "block";
         }
       }
 
-      function acceptAllCookies() {
-        localStorage.setItem("ngu_cookie_consent_set", "true");
-        localStorage.setItem("ngu_analytics_consent", "true");
-        document.getElementById("cookie-banner").style.display = "none";
-
-        console.log("Cookie-Einstellungen gespeichert");
+      function dismissPrivacyNotice() {
+        const notice = document.getElementById("privacy-notice");
+        if (notice && notice.style.display !== "none") {
+          notice.classList.add("hiding");
+          sessionStorage.setItem("ngu_privacy_notice_shown", "true");
+          setTimeout(function() {
+            notice.style.display = "none";
+          }, 300);
+        }
       }
 
-      function acceptOnlyNecessary() {
-        localStorage.setItem("ngu_cookie_consent_set", "true");
-        localStorage.setItem("ngu_analytics_consent", "false");
-        document.getElementById("cookie-banner").style.display = "none";
-
-        console.log("Nur notwendige Cookies aktiviert");
-      }
-
-      // Cookie-Banner beim Laden prüfen
+      // Hinweis beim Laden anzeigen
       document.addEventListener("DOMContentLoaded", function () {
-        // Kurze Verzögerung für bessere UX
-        setTimeout(checkCookieBanner, 1500);
+        setTimeout(showPrivacyNotice, 1500);
+      });
+
+      // Bei Klick irgendwo auf der Seite schließen
+      document.addEventListener("click", function(e) {
+        const notice = document.getElementById("privacy-notice");
+        if (notice && notice.style.display !== "none" && !notice.contains(e.target)) {
+          dismissPrivacyNotice();
+        }
       });
     </script>
   </body>
