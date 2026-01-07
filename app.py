@@ -1576,6 +1576,7 @@ def _prepare_existing_pdfs_context(donation, session_id):
     )
 
     return {
+        'donation': donation,  # Für Analytics-Script im Template
         'user_email': user_email,
         'verse_reference': verse_reference,
         'verse_references': verse_references,

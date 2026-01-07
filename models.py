@@ -740,6 +740,7 @@ class PaymentTransaction(db.Model):
     provider_transaction_id = db.Column(db.String(100))
     stripe_payment_intent_id = db.Column(db.String(100))
     stripe_status = db.Column(db.String(20))
+    payment_method_type = db.Column(db.String(20))  # 'card', 'sepa_debit', etc.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def mark_confirmed(self):
@@ -748,8 +749,11 @@ class PaymentTransaction(db.Model):
         db.session.commit()
     
     def update_stripe_data(self, payment_intent):
-        """Update transaction with Stripe PaymentIntent data"""
-        # Handle both Stripe objects and webhook dictionaries
+        """Update transaction with Stripe PaymentIntent data
+
+        Note: payment_method_type is set at PaymentIntent creation time
+        in stripe_service.py, not extracted from webhooks.
+        """
         if isinstance(payment_intent, dict):
             self.stripe_payment_intent_id = payment_intent.get('id')
             self.stripe_status = payment_intent.get('status')
@@ -762,6 +766,16 @@ class PaymentTransaction(db.Model):
     def mark_failed(self, error_message=None):
         """Mark payment transaction as failed"""
         self.stripe_status = 'failed'
+
+    @property
+    def payment_method_display(self):
+        """Human-readable payment method name in German"""
+        mapping = {
+            'card': 'Kreditkarte',
+            'sepa_debit': 'SEPA-Lastschrift',
+            None: 'Unbekannt'
+        }
+        return mapping.get(self.payment_method_type, self.payment_method_type or 'Unbekannt')
 
 class Certificate(db.Model):
     """Generated certificates and receipts"""

@@ -158,12 +158,16 @@ class StripeService:
 
             logger.info(f"PaymentIntent created: {payment_intent.id} for amount: €{total_amount/100:.2f}")
 
-            # Store Payment Intent ID immediately in database
+            # Store Payment Intent ID and payment method type immediately in database
             if donations[0].payment:
                 donations[0].payment.stripe_payment_intent_id = payment_intent.id
                 donations[0].payment.provider_transaction_id = payment_intent.id
+                # Set payment method type from preferred method (first in list)
+                # This is more reliable than extracting from webhook later
+                if preferred_payment_methods:
+                    donations[0].payment.payment_method_type = preferred_payment_methods[0]
                 db.session.commit()
-                logger.info(f"Stored Payment Intent ID for donation {donations[0].id}")
+                logger.info(f"Stored Payment Intent ID for donation {donations[0].id} with payment method {preferred_payment_methods[0] if preferred_payment_methods else 'unknown'}")
 
             return {
                 'client_secret': payment_intent.client_secret,

@@ -42,6 +42,17 @@
                         {% endif %}
                     </dd>
 
+                    {% if donation.payment %}
+                    <dt class="col-sm-3">Zahlungsart</dt>
+                    <dd class="col-sm-9">
+                        {% if donation.payment.payment_method_type %}
+                            {{ donation.payment.payment_method_display }}
+                        {% else %}
+                            <span class="text-muted">Nicht verfügbar</span>
+                        {% endif %}
+                    </dd>
+                    {% endif %}
+
                     <dt class="col-sm-3">Stripe Payment Intent</dt>
                     <dd class="col-sm-9">
                         {% if donation.payment and donation.payment.stripe_payment_intent_id %}

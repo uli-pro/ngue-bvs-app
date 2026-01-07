@@ -32,6 +32,7 @@
                     <th>Spender</th>
                     <th>Verse</th>
                     <th>Betrag</th>
+                    <th>Zahlungsart</th>
                     <th>Status</th>
                     <th>Bescheinigung-Nr.</th>
                     <th>Datum</th>
@@ -55,6 +56,13 @@
                         {% endfor %}
                     </td>
                     <td>{{ donation.total_amount|currency }}</td>
+                    <td>
+                        {% if donation.payment and donation.payment.payment_method_type %}
+                            {{ donation.payment.payment_method_display }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <span class="badge bg-{{ 'success' if donation.payment_status == 'completed' else 'warning' if donation.payment_status == 'pending' else 'danger' }}">
                             {{ donation.payment_status }}

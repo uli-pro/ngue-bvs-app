@@ -262,9 +262,9 @@
   document.addEventListener('DOMContentLoaded', function() {
     if (window.NGUEAnalytics) {
       window.NGUEAnalytics.trackDonation(
-        '{{ donation.donation_type }}',
+        'einzelspende',
         {{ donation.total_amount }},
-        {{ donation.verses|length }}
+        {{ donation.verse_count }}
       );
     }
   });
