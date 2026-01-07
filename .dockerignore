@@ -116,9 +116,6 @@ app-deployment/backup_*.sql
 # certificates/ is mounted via docker-compose volume, no need to copy
 certificates/
 
-# Admin scripts (not needed in container)
-admin/
-
 # Database migrations (not needed in container)
 migrations/
 
