@@ -123,6 +123,7 @@ app-deployment/nginx/ssl/
 !vectorize.py
 !setup_db.py
 !send_daily_report.py
+!backfill_payment_methods.py
 !requirements.txt
 
 # Static and template files
