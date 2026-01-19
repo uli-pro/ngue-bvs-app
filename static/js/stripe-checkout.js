@@ -104,6 +104,17 @@ class StripeCheckout {
     
     async selectPaymentMethod(type) {
         try {
+            // Schweiz + SEPA Validierung (Fallback falls HTML disabled umgangen wird)
+            const countryCode = this.config.donorData?.address?.country || 'DE';
+
+            if (type === 'sepa' && countryCode === 'CH') {
+                this.showError(
+                    'SEPA-Lastschrift ist für Schweizer Bankkonten leider nicht verfügbar. ' +
+                    'Bitte wählen Sie die Zahlung per Kreditkarte.'
+                );
+                return; // Abbruch
+            }
+
             this.selectedPaymentType = type;
             this.debugLog(`Payment method selected: ${type}`);
 

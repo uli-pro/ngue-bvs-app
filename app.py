@@ -1292,6 +1292,14 @@ def create_payment_intent():
         data = request.get_json() or {}
         payment_type = data.get('payment_type')
 
+        # Backend-Validierung: Schweiz + SEPA blockieren
+        if payment_type == 'sepa' and person.country == 'CH':
+            app.logger.warning(f"SEPA payment blocked for Swiss donor: {person.email}")
+            return jsonify({
+                'success': False,
+                'error': 'SEPA-Lastschrift ist für Schweizer Bankkonten nicht verfügbar. Bitte wählen Sie die Zahlung per Kreditkarte.'
+            }), 400
+
         # Map frontend type to Stripe payment method types
         preferred_payment_methods = None
         if payment_type == 'sepa':

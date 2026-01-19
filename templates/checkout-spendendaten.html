@@ -155,6 +155,16 @@
                                     <input type="text" class="form-control" name="city"
                                            value="{{ form_data.get('city', '') }}">
                                 </div>
+
+                                <!-- Schweiz SEPA-Hinweis (volle Breite) -->
+                                <div class="col-12">
+                                    <div id="switzerland-sepa-warning" class="alert alert-warning mt-3 mb-0" style="display:none;">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Hinweis für Spender aus der Schweiz:</strong>
+                                        Die SEPA-Lastschrift wird von den meisten Schweizer Banken nicht unterstützt.
+                                        Bitte wählen Sie auf der nächsten Seite die Zahlung per Kreditkarte.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -276,23 +286,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('email');
     const receiptCheckbox = document.getElementById('wantsReceipt');
     const receiptForm = document.getElementById('receiptForm');
-    
+
     // Toggle receipt form
     if (receiptCheckbox) {
         receiptCheckbox.addEventListener('change', function() {
             receiptForm.style.display = this.checked ? 'block' : 'none';
-            
+
             // Make address fields required when shown
             const fields = receiptForm.querySelectorAll('input[name="street"], input[name="houseNumber"], input[name="postalCode"], input[name="city"]');
             fields.forEach(field => {
                 field.required = this.checked;
             });
         });
-        
+
         // Trigger change on page load to set initial state
         receiptCheckbox.dispatchEvent(new Event('change'));
     }
-    
+
+    // Schweiz SEPA-Warnung bei Länder-Auswahl
+    const countrySelect = document.getElementById('country');
+    const swissWarning = document.getElementById('switzerland-sepa-warning');
+
+    if (countrySelect && swissWarning) {
+        function updateSwissWarning() {
+            if (countrySelect.value === 'CH') {
+                swissWarning.style.display = 'block';
+            } else {
+                swissWarning.style.display = 'none';
+            }
+        }
+
+        countrySelect.addEventListener('change', updateSwissWarning);
+
+        // Initial-Check bei Seitenlade (falls CH vorausgewählt)
+        updateSwissWarning();
+    }
 });
 </script>
 {% endblock %}
