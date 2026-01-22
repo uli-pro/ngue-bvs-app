@@ -9,6 +9,7 @@
   ],
   "settings": {
     "zenMode.fullScreen": true,
-    "zenMode.restore": false
+    "zenMode.restore": false,
+    "liveServer.settings.multiRootWorkspaceName": "ngue-bvs-app"
   }
 }
