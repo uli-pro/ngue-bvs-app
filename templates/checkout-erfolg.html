@@ -13,17 +13,15 @@
       </div>
       <h1 class="display-4 mb-4">Vielen Dank für Ihre Spende!</h1>
       <p class="lead">
-        {% if verse_references and verse_references|length > 1 %} Sie haben
-        erfolgreich
+        {% if verse_references and verse_references|length > 1 %} Sie sind jetzt
+         Pate von
         <strong class="text-primary"
-          >{{ verse_references|length }} Verse</strong
+          >{{ verse_references|length }}</strong
         >
-        gesponsert<br />
-        und tragen zur Finanzierung der NGÜ bei. {% elif verse_references and
-        verse_references|length == 1 %} Sie haben erfolgreich den Vers
+        Versen! {% elif verse_references and
+        verse_references|length == 1 %} Sie sind jetzt Pate des Verses
         <strong class="text-primary">{{ verse_references[0] }}</strong>
-        gesponsert<br />
-        und tragen zur Finanzierung der NGÜ bei. {% else %}
+       ! {% else %}
         <span class="text-warning"
           >Es gab ein technisches Problem mit der Erstellung Ihrer
           Zertifikate.<br />
