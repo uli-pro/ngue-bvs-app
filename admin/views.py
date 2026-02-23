@@ -336,7 +336,7 @@ def regenerate_tax_receipt(donation_id):
     # Generate new tax receipt using the existing PDF service
     pdf_service = PDFGeneratorService()
     try:
-        tax_receipt = pdf_service.generate_tax_receipt(donation.id)
+        tax_receipt = pdf_service.generate_tax_receipt_atomic(donation.id)
         if tax_receipt:
             flash('Spendenbescheinigung wurde neu generiert.', 'success')
         else:
