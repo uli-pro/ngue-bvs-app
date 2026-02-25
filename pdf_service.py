@@ -754,7 +754,7 @@ class PDFGeneratorService:
             'verse_count': len(verses),
             'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             'amount_in_words': self._amount_to_words(donation.total_amount),
-            'formatted_date': format_date_german(donation.completed_at),
+            'formatted_date': format_date_german(donation.completed_at or donation.created_at),
             'issue_date': format_date_german(datetime.now()),
             'background_image_path': f'file://{background_image_path}',
 
