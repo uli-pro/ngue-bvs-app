@@ -75,10 +75,10 @@ services:
       EMAIL_PROVIDER: smtp
       SMTP_SERVER: ${SMTP_SERVER:-smtp.ionos.de}
       SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USERNAME: ${SMTP_USERNAME:-info@ngue-bvs.schoeffer.org}
+      SMTP_USERNAME: ${SMTP_USERNAME:-info@vers-patenschaft.de}
       SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP password required}
       SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
-      EMAIL_FROM: ${EMAIL_FROM:-info@ngue-bvs.schoeffer.org}
+      EMAIL_FROM: ${EMAIL_FROM:-info@vers-patenschaft.de}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-NGÜ Bibelvers-Sponsoring}
 
       # HubSpot CRM (Optional)
@@ -90,7 +90,7 @@ services:
       PLAUSIBLE_SCRIPT_URL: ${PLAUSIBLE_SCRIPT_URL:-}
 
       # Application Configuration
-      DOMAIN_NAME: ${DOMAIN_NAME:-ngue-bvs.schoeffer.org}
+      DOMAIN_NAME: ${DOMAIN_NAME:-vers-patenschaft.de}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
     volumes:

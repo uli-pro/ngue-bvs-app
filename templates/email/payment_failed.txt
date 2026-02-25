@@ -31,12 +31,12 @@ VERSE ERNEUT SPONSERN?
 ===========================================
 
 Besuchen Sie unsere Website, um die Verse erneut auszuwählen:
-https://ngue-bvs.schoeffer.org/vers-auswaehlen
+https://vers-patenschaft.de/vers-auswaehlen
 
 ===========================================
 
 Falls Sie Fragen haben, kontaktieren Sie uns gerne unter:
-info@ngue-bvs.schoeffer.org
+info@vers-patenschaft.de
 
 Mit freundlichen Grüßen
 
@@ -45,4 +45,4 @@ NGÜ Bibelvers-Sponsoring
 
 ---
 Diese Nachricht wurde automatisch generiert am {{ timestamp }}
-Weitere Informationen: https://ngue-bvs.schoeffer.org
+Weitere Informationen: https://vers-patenschaft.de

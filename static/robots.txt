@@ -10,4 +10,4 @@ Disallow: /stripe/
 Disallow: /download/
 
 # Sitemap
-Sitemap: https://ngue-bvs.schoeffer.org/sitemap.xml
+Sitemap: https://vers-patenschaft.de/sitemap.xml

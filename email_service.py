@@ -49,10 +49,10 @@ class SMTPProvider:
                 'name': 'IONOS',
                 'smtp_server': os.environ.get('SMTP_SERVER', 'smtp.ionos.de'),
                 'smtp_port': int(os.environ.get('SMTP_PORT', 587)),
-                'smtp_username': os.environ.get('SMTP_USERNAME', 'info@ngue-bvs.schoeffer.org'),
+                'smtp_username': os.environ.get('SMTP_USERNAME', 'info@vers-patenschaft.de'),
                 'smtp_password': os.environ.get('SMTP_PASSWORD'),
                 'smtp_use_tls': os.environ.get('SMTP_USE_TLS', 'true').lower() == 'true',
-                'from_email': os.environ.get('EMAIL_FROM', 'info@ngue-bvs.schoeffer.org'),
+                'from_email': os.environ.get('EMAIL_FROM', 'info@vers-patenschaft.de'),
                 'from_name': os.environ.get('EMAIL_FROM_NAME', 'NGUE Bibelvers-Sponsoring')
             }
             self.configs.append(ionos_config)
@@ -517,7 +517,7 @@ class EmailService:
                 timestamp=timestamp
             )
 
-            # Send to info@ngue-bvs.schoeffer.org (IONOS config)
+            # Send to info@vers-patenschaft.de (IONOS config)
             recipient_email = self.provider.active_config['from_email']
 
             success = self.provider.send_email(

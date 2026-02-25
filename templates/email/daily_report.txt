@@ -57,6 +57,6 @@ Gesamtbetrag:                 {{ format_currency(cumulative_amount) }}
 ---
 Peter-Schoeffer-Stiftung
 NGÜ Bibelvers-Sponsoring
-https://ngue-bvs.schoeffer.org
+https://vers-patenschaft.de
 
 Dieser Report wurde automatisch um {{ generated_at.strftime('%H:%M') }} Uhr generiert.

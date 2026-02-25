@@ -46,12 +46,12 @@ VERSE ERNEUT SPONSERN?
 ===========================================
 
 Falls Sie die Bibelverse erneut sponsern möchten, besuchen Sie:
-https://ngue-bvs.schoeffer.org/vers-auswaehlen
+https://vers-patenschaft.de/vers-auswaehlen
 
 ===========================================
 
 Bei Fragen stehen wir Ihnen gerne zur Verfügung unter:
-info@ngue-bvs.schoeffer.org
+info@vers-patenschaft.de
 
 Wir bedauern die Unannehmlichkeiten und danken für Ihr Verständnis.
 
@@ -63,4 +63,4 @@ NGÜ Bibelvers-Sponsoring
 ---
 Stornierung erstellt am {{ cancellation_date }}
 Referenz: {{ original_receipt_number }}
-Weitere Informationen: https://ngue-bvs.schoeffer.org
+Weitere Informationen: https://vers-patenschaft.de
