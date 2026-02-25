@@ -10,13 +10,17 @@ const Analytics = {
      * @param {object} props - Optional properties to send with the event
      */
     track(eventName, props = {}) {
-        if (typeof window.plausible === 'undefined') {
+        if (typeof window.plausible !== 'function') {
             console.warn('Plausible Analytics not loaded');
             return;
         }
 
-        window.plausible(eventName, { props });
-        console.log(`Analytics event tracked: ${eventName}`, props);
+        try {
+            window.plausible(eventName, { props });
+            console.log(`Analytics event tracked: ${eventName}`, props);
+        } catch (e) {
+            console.warn('Analytics tracking failed:', e);
+        }
     },
 
     /**
@@ -50,19 +54,26 @@ const Analytics = {
      * @param {number} verses - Number of verses sponsored
      */
     trackDonation(type, amount, verses) {
-        // Plausible revenue tracking
-        window.plausible('Donation', {
-            props: {
-                type: type,
-                verses: verses
-            },
-            revenue: {
-                amount: amount,
-                currency: 'EUR'
-            }
-        });
+        if (typeof window.plausible !== 'function') {
+            console.warn('Plausible Analytics not loaded');
+            return;
+        }
 
-        console.log(`Donation tracked: €${amount}, ${verses} verses, type: ${type}`);
+        try {
+            window.plausible('Donation', {
+                props: {
+                    type: type,
+                    verses: verses
+                },
+                revenue: {
+                    amount: amount,
+                    currency: 'EUR'
+                }
+            });
+            console.log(`Donation tracked: €${amount}, ${verses} verses, type: ${type}`);
+        } catch (e) {
+            console.warn('Analytics tracking failed:', e);
+        }
     }
 };
 
