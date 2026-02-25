@@ -17,7 +17,7 @@ SPENDEN-DETAILS
 Spenden-ID: {{ donation.id }}
 Datum: {{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}
 Spendenbetrag: {{ donation.total_amount|currency }}
-Verwendungszweck: NGÜ Bibelvers-Sponsoring
+Verwendungszweck: NGÜ Bibelvers-Patenschaft
 
 ===========================================
 STEUERLICHE ABSETZBARKEIT
