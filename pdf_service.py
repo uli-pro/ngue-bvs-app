@@ -723,7 +723,7 @@ class PDFGeneratorService:
             'background_image_path': f'file://{background_image_path}',
             'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             'formatted_date': format_date_german(cert_date),
-            'certificate_title': f"Sponsoring-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}"
+            'certificate_title': f"Patenschafts-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}"
         }
         
         return context

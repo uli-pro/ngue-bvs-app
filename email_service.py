@@ -53,7 +53,7 @@ class SMTPProvider:
                 'smtp_password': os.environ.get('SMTP_PASSWORD'),
                 'smtp_use_tls': os.environ.get('SMTP_USE_TLS', 'true').lower() == 'true',
                 'from_email': os.environ.get('EMAIL_FROM', 'info@vers-patenschaft.de'),
-                'from_name': os.environ.get('EMAIL_FROM_NAME', 'NGUE Bibelvers-Sponsoring')
+                'from_name': os.environ.get('EMAIL_FROM_NAME', 'NGUE Bibelvers-Patenschaft')
             }
             self.configs.append(ionos_config)
             self.logger.info("IONOS configuration loaded (primary)")
@@ -68,7 +68,7 @@ class SMTPProvider:
                 'smtp_password': os.environ.get('GMAIL_APP_PASSWORD'),
                 'smtp_use_tls': True,
                 'from_email': os.environ.get('GMAIL_USERNAME', 'ngueteam@gmail.com'),
-                'from_name': 'NGUE Bibelvers-Sponsoring'
+                'from_name': 'NGUE Bibelvers-Patenschaft'
             }
             self.configs.append(gmail_config)
             self.logger.info("Gmail configuration loaded (fallback)")
@@ -545,7 +545,7 @@ class EmailService:
 
                     confirmation_success = self.provider.send_email(
                         to_email=email,
-                        subject=f"Ihre Nachricht an NGÜ Bibelvers-Sponsoring",
+                        subject=f"Ihre Nachricht an NGÜ Bibelvers-Patenschaft",
                         html_body=confirm_html,
                         text_body=confirm_text
                     )
@@ -695,7 +695,7 @@ class EmailService:
                     {error_html}
                     <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                     <p style="color: #666; font-size: 12px;">
-                        Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert.
+                        Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Patenschaft System generiert.
                     </p>
                 </div>
             </div>
@@ -711,7 +711,7 @@ Nachricht:
 {message}
 {context_text}{error_text}
 ---
-Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Sponsoring System generiert.
+Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Patenschaft System generiert.
             """
 
             full_subject = f"[NGUE Alert] {subject}"
