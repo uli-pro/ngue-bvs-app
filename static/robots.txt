@@ -8,6 +8,8 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /stripe/
 Disallow: /download/
+Disallow: /vers-auswaehlen/keyword
+Disallow: /vers-auswaehlen/referenz
 
 # Sitemap
 Sitemap: https://vers-patenschaft.de/sitemap.xml
