@@ -764,7 +764,7 @@ class PDFGeneratorService:
 
             # Stiftungsdaten (konstant - basierend auf offiziellem Text)
             'foundation': {
-                'name': 'Peter-Schöffer-Stiftung',
+                'name': 'Peter-Schoeffer-Stiftung',
                 'street': 'Wormser Weg 17',
                 'postal_code': '67574',
                 'city': 'Osthofen',

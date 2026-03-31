@@ -244,7 +244,7 @@ class StripeCheckout {
 
             // Add payment type specific config
             if (paymentType === 'sepa') {
-                paymentConfig.business = { name: 'Peter-Schöffer-Stiftung' };
+                paymentConfig.business = { name: 'Peter-Schoeffer-Stiftung' };
                 paymentConfig.terms = { sepaDebit: 'always' };
                 // Only allow SEPA, no tabs
                 paymentConfig.paymentMethodOrder = ['sepa_debit'];

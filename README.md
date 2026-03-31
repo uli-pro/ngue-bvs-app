@@ -41,7 +41,7 @@ The application is containerized using Docker, with separate containers for the 
 
 ### Development Process
 
-The project required approximately 180-200 hours of development time over two months. Roughly 25% of this time was spent on non-coding activities: understanding legal requirements, coordinating with stakeholders at the Peter Schöffer Foundation and Brunnen Publishing House, and researching German nonprofit regulations.
+The project required approximately 180-200 hours of development time over two months. Roughly 25% of this time was spent on non-coding activities: understanding legal requirements, coordinating with stakeholders at the Peter Schoeffer Foundation and Brunnen Publishing House, and researching German nonprofit regulations.
 
 AI tools, particularly Claude, were used throughout development for code assistance, debugging, and content analysis. All AI-assisted code files are marked with appropriate comments as required by CS50's academic honesty policy. 
 
