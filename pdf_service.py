@@ -319,7 +319,14 @@ class PDFGeneratorService:
             # Idempotenz: Nur einmal generieren
             if donation.storno_generated:
                 self.logger.info(f"Storno already generated for donation {donation_id}")
-                # Versuche existierende Datei zu finden
+                # Versuche existierenden Certificate-Record zu finden
+                existing = Certificate.query.filter_by(
+                    donation_id=donation_id,
+                    certificate_type='storno'
+                ).order_by(Certificate.generated_at.desc()).first()
+                if existing and existing.exists_on_disk:
+                    return existing.file_path
+                # Fallback: Dateisuche (für alte Stornos ohne Certificate-Record)
                 existing_path = self._find_existing_storno(donation_id)
                 return existing_path
 
@@ -335,7 +342,16 @@ class PDFGeneratorService:
             # PDF generieren (nutzt eingebettetes CSS aus Template)
             self._generate_storno_pdf_from_html(html_content, file_path)
 
-            # Donation als storno_generated markieren
+            # Certificate-Record erstellen (konsistent mit anderen Zertifikatstypen)
+            certificate = Certificate(
+                donation_id=donation.id,
+                certificate_type='storno',
+                filename=filename,
+                file_path=file_path
+            )
+            db.session.add(certificate)
+
+            # Donation als storno_generated markieren (Backward-Kompatibilität)
             donation.storno_generated = True
             db.session.commit()
 
@@ -427,6 +443,8 @@ class PDFGeneratorService:
         if not cancellation_reason:
             if donation.payment_status == 'disputed':
                 cancellation_reason = "Lastschrift wurde vom Kontoinhaber widerrufen (Chargeback)"
+            elif donation.payment_status == 'refunded':
+                cancellation_reason = "Rückerstattung nach Absprache"
             else:
                 cancellation_reason = donation.failure_reason or "Zahlung fehlgeschlagen"
 

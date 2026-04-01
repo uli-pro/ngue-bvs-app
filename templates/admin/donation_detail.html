@@ -237,6 +237,60 @@
     </div>
 </div>
 
+{% if donation.payment_status in ['failed', 'disputed', 'refunded'] %}
+<div class="row mt-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Storno-Bescheinigung</h5>
+            </div>
+            <div class="card-body">
+                {% if storno_cert and storno_cert.exists_on_disk %}
+                    <p class="text-success">✓ Storno-Bescheinigung vorhanden</p>
+                    <p class="small text-muted">
+                        Generiert: {{ storno_cert.generated_at.strftime('%d.%m.%Y %H:%M') }}<br>
+                        Dateigröße: {{ storno_cert.file_size }} Bytes<br>
+                        Pfad: {{ storno_cert.filename }}
+                    </p>
+                    {% if donation.storno_sent_at %}
+                    <p class="small text-muted">
+                        Versendet: {{ donation.storno_sent_at.strftime('%d.%m.%Y %H:%M') }}
+                    </p>
+                    {% else %}
+                    <p class="small text-warning">
+                        Noch nicht per E-Mail versendet
+                    </p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-warning">⚠ Keine Storno-Bescheinigung vorhanden</p>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('admin.regenerate_storno', donation_id=donation.id) }}" class="mb-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Storno-Bescheinigung {% if storno_cert and storno_cert.exists_on_disk %}neu {% endif %}generieren
+                    </button>
+                </form>
+
+                {% if storno_cert and storno_cert.exists_on_disk %}
+                <a href="{{ url_for('admin.view_storno', donation_id=donation.id) }}"
+                   target="_blank" class="btn btn-info w-100 mb-2">
+                    Storno-Bescheinigung anzeigen
+                </a>
+
+                <form method="POST" action="{{ url_for('admin.resend_storno', donation_id=donation.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success w-100">
+                        Per E-Mail versenden
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="mt-4">
     <a href="{{ url_for('admin.donations_list') }}" class="btn btn-secondary">← Zurück zur Liste</a>
 </div>

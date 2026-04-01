@@ -203,6 +203,12 @@ def donation_detail(donation_id):
         certificate_type='tax_receipt'
     ).order_by(Certificate.generated_at.desc()).first()
 
+    # Check if storno certificate exists
+    storno_cert = Certificate.query.filter_by(
+        donation_id=donation_id,
+        certificate_type='storno'
+    ).order_by(Certificate.generated_at.desc()).first()
+
     # Get Stripe account ID for correct dashboard links
     stripe_account_id = os.getenv('STRIPE_ACCOUNT_ID', 'acct_1QzchbLmJHIgYDey')
 
@@ -210,6 +216,7 @@ def donation_detail(donation_id):
                          donation=donation,
                          certificate=certificate,
                          tax_receipt=tax_receipt,
+                         storno_cert=storno_cert,
                          stripe_account_id=stripe_account_id)
 
 @admin_required
@@ -429,6 +436,103 @@ def view_tax_receipt(donation_id):
         download_name=tax_receipt.filename,
         mimetype='application/pdf'
     )
+
+
+@admin_required
+def view_storno(donation_id):
+    """View/Download storno certificate PDF"""
+    donation = Donation.query.get_or_404(donation_id)
+
+    storno_cert = Certificate.query.filter_by(
+        donation_id=donation_id,
+        certificate_type='storno'
+    ).order_by(Certificate.generated_at.desc()).first()
+
+    if not storno_cert or not storno_cert.exists_on_disk:
+        flash('Keine Storno-Bescheinigung vorhanden.', 'warning')
+        return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+    return send_file(
+        storno_cert.file_path,
+        as_attachment=False,
+        download_name=storno_cert.filename,
+        mimetype='application/pdf'
+    )
+
+
+@admin_required
+def regenerate_storno(donation_id):
+    """Regenerate storno certificate for donation"""
+    donation = Donation.query.get_or_404(donation_id)
+
+    if donation.payment_status not in ('failed', 'disputed', 'refunded'):
+        flash('Storno-Bescheinigung nur fuer fehlgeschlagene, angefochtene oder rueckerstattete Spenden moeglich.', 'warning')
+        return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+    # Reset storno_generated flag to allow regeneration
+    donation.storno_generated = False
+    db.session.commit()
+
+    pdf_service = PDFGeneratorService()
+    try:
+        storno_path = pdf_service.generate_storno_certificate(donation.id)
+        if storno_path:
+            flash('Storno-Bescheinigung wurde neu generiert.', 'success')
+        else:
+            flash('Fehler beim Generieren der Storno-Bescheinigung.', 'danger')
+    except Exception as e:
+        flash(f'Fehler: {str(e)}', 'danger')
+
+    return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+
+@admin_required
+def resend_storno(donation_id):
+    """Resend storno certificate email"""
+    donation = Donation.query.get_or_404(donation_id)
+
+    storno_cert = Certificate.query.filter_by(
+        donation_id=donation_id,
+        certificate_type='storno'
+    ).order_by(Certificate.generated_at.desc()).first()
+
+    if not storno_cert or not storno_cert.exists_on_disk:
+        flash('Keine Storno-Bescheinigung vorhanden. Bitte zuerst generieren.', 'warning')
+        return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+    # Prepare storno context for email
+    pdf_service = PDFGeneratorService()
+    storno_context = pdf_service._prepare_storno_context(donation)
+
+    # Prepare donation data dict (same pattern as resend_certificate)
+    donation_data = {
+        'id': donation.id,
+        'created_at': donation.created_at,
+        'total_amount': float(donation.total_amount),
+        'person': {
+            'email': donation.person.email,
+            'full_name': donation.person.full_name,
+            'first_name': donation.person.first_name,
+            'last_name': donation.person.last_name
+        },
+        'verses': [{'reference': v.verse.reference, 'text': v.verse.text}
+                  for v in donation.verse_associations]
+    }
+
+    success = email_service.send_storno_email(
+        donation_data,
+        storno_cert.file_path,
+        storno_context
+    )
+
+    if success:
+        donation.storno_sent_at = datetime.utcnow()
+        db.session.commit()
+        flash('Storno-Bescheinigung wurde per E-Mail versendet.', 'success')
+    else:
+        flash('Fehler beim Versenden der E-Mail.', 'danger')
+
+    return redirect(url_for('admin.donation_detail', donation_id=donation_id))
 
 
 # ==========================================
