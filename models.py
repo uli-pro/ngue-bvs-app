@@ -629,7 +629,33 @@ class Donation(db.Model):
             self.failure_reason = f"Dispute: {reason}"[:255]
 
         db.session.commit()
-    
+
+    def mark_refunded(self, reason=None):
+        """Mark donation as refunded and release verses"""
+        if self.payment_status == 'refunded':
+            return
+
+        self.payment_status = 'refunded'
+
+        # Mark all verses as available again and collect verse IDs
+        verse_ids = []
+        for verse_assoc in self.verse_associations:
+            verse_assoc.verse.is_sponsored = False
+            verse_assoc.verse.sponsored_at = None
+            verse_ids.append(verse_assoc.verse_id)
+
+        # Clean up any lingering reservations (verses are now free)
+        if verse_ids:
+            VerseReservation.query.filter(
+                VerseReservation.verse_id.in_(verse_ids)
+            ).delete(synchronize_session=False)
+
+        # Store refund reason
+        if reason:
+            self.failure_reason = f"Refund: {reason}"[:255]
+
+        db.session.commit()
+
     # Helper Methods for Many-to-Many verses
     def add_verse(self, verse, amount=100.00):
         """Add a verse to this donation"""

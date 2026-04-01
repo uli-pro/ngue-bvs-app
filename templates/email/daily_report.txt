@@ -30,13 +30,14 @@ GESAMTSPENDEN BIS {{ report_date.strftime('%d.%m.%Y') }}
 ----------------------------
 (ohne Bulk-Sponsorings)
 
-{{ completed_totals.count }} completed Spenden:   {{ format_currency(completed_totals.amount) }}
-{% if processing_totals.count > 0 %}{{ processing_totals.count }} processing Spenden:  {{ format_currency(processing_totals.amount) }}
-{% endif %}{% if disputed_totals.count > 0 %}{{ disputed_totals.count }} disputed Spenden:   -{{ format_currency(disputed_totals.amount) }}
+{{ completed_totals.count }} abgeschlossene Spenden:   {{ format_currency(completed_totals.amount) }}
+{% if processing_totals.count > 0 %}{{ processing_totals.count }} in Bearbeitung:  {{ format_currency(processing_totals.amount) }}
+{% endif %}{% if disputed_totals.count > 0 %}{{ disputed_totals.count }} angefochtene Spenden:   -{{ format_currency(disputed_totals.amount) }}
+{% endif %}{% if refunded_totals.count > 0 %}{{ refunded_totals.count }} rückerstattete Spenden: -{{ format_currency(refunded_totals.amount) }}
 {% endif %}------------------------------------------
 Gesamtbetrag:                 {{ format_currency(cumulative_amount) }}
 {% if failed_totals.count > 0 %}
-{{ failed_totals.count }} failed Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
+{{ failed_totals.count }} fehlgeschlagene Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
 {% endif %}
 {% else %}
 Keine Spenden am {{ report_date.strftime('%d.%m.%Y') }} eingegangen.
@@ -45,13 +46,14 @@ GESAMTSPENDEN BIS {{ report_date.strftime('%d.%m.%Y') }}
 ----------------------------
 (ohne Bulk-Sponsorings)
 
-{{ completed_totals.count }} completed Spenden:   {{ format_currency(completed_totals.amount) }}
-{% if processing_totals.count > 0 %}{{ processing_totals.count }} processing Spenden:  {{ format_currency(processing_totals.amount) }}
-{% endif %}{% if disputed_totals.count > 0 %}{{ disputed_totals.count }} disputed Spenden:   -{{ format_currency(disputed_totals.amount) }}
+{{ completed_totals.count }} abgeschlossene Spenden:   {{ format_currency(completed_totals.amount) }}
+{% if processing_totals.count > 0 %}{{ processing_totals.count }} in Bearbeitung:  {{ format_currency(processing_totals.amount) }}
+{% endif %}{% if disputed_totals.count > 0 %}{{ disputed_totals.count }} angefochtene Spenden:   -{{ format_currency(disputed_totals.amount) }}
+{% endif %}{% if refunded_totals.count > 0 %}{{ refunded_totals.count }} rückerstattete Spenden: -{{ format_currency(refunded_totals.amount) }}
 {% endif %}------------------------------------------
 Gesamtbetrag:                 {{ format_currency(cumulative_amount) }}
 {% if failed_totals.count > 0 %}
-{{ failed_totals.count }} failed Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
+{{ failed_totals.count }} fehlgeschlagene Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
 {% endif %}{% endif %}
 
 ---

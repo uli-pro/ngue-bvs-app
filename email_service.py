@@ -819,13 +819,15 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Patenschaft System generier
             completed_totals = get_status_totals('completed')
             processing_totals = get_status_totals('processing')
             disputed_totals = get_status_totals('disputed')
+            refunded_totals = get_status_totals('refunded')
             failed_totals = get_status_totals('failed')
 
-            # Calculate net total (completed + processing - disputed)
+            # Calculate net total (completed + processing - disputed - refunded)
             cumulative_amount = (
                 completed_totals['amount'] +
                 processing_totals['amount'] -
-                disputed_totals['amount']
+                disputed_totals['amount'] -
+                refunded_totals['amount']
             )
             cumulative_count = (
                 completed_totals['count'] +
@@ -852,8 +854,9 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Patenschaft System generier
                 'completed_totals': completed_totals,
                 'processing_totals': processing_totals,
                 'disputed_totals': disputed_totals,
+                'refunded_totals': refunded_totals,
                 'failed_totals': failed_totals,
-                # Net total (completed + processing - disputed)
+                # Net total (completed + processing - disputed - refunded)
                 'cumulative_amount': cumulative_amount,
                 'cumulative_count': cumulative_count,
                 'generated_at': generated_at,

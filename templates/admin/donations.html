@@ -14,6 +14,8 @@
                     <option value="completed" {% if filter_type == 'completed' %}selected{% endif %}>Abgeschlossen</option>
                     <option value="pending" {% if filter_type == 'pending' %}selected{% endif %}>Ausstehend</option>
                     <option value="failed" {% if filter_type == 'failed' %}selected{% endif %}>Fehlgeschlagen</option>
+                    <option value="disputed" {% if filter_type == 'disputed' %}selected{% endif %}>Angefochten</option>
+                    <option value="refunded" {% if filter_type == 'refunded' %}selected{% endif %}>Rückerstattet</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -64,9 +66,21 @@
                         {% endif %}
                     </td>
                     <td>
-                        <span class="badge bg-{{ 'success' if donation.payment_status == 'completed' else 'warning' if donation.payment_status == 'pending' else 'danger' }}">
-                            {{ donation.payment_status }}
-                        </span>
+                        {% if donation.payment_status == 'completed' %}
+                            <span class="badge bg-success">Abgeschlossen</span>
+                        {% elif donation.payment_status == 'pending' %}
+                            <span class="badge bg-warning">Ausstehend</span>
+                        {% elif donation.payment_status == 'processing' %}
+                            <span class="badge bg-info">In Bearbeitung</span>
+                        {% elif donation.payment_status == 'refunded' %}
+                            <span class="badge bg-secondary">Rückerstattet</span>
+                        {% elif donation.payment_status == 'disputed' %}
+                            <span class="badge bg-danger">Angefochten</span>
+                        {% elif donation.payment_status == 'failed' %}
+                            <span class="badge bg-danger">Fehlgeschlagen</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ donation.payment_status }}</span>
+                        {% endif %}
                     </td>
                     <td>
                         {% if donation.receipt_number %}

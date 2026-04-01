@@ -1016,7 +1016,11 @@ class StripeService:
         elif event_type == 'charge.dispute.created':
             # Handle SEPA chargeback/dispute
             return StripeService.handle_chargeback(event['data']['object'])
-        
+
+        elif event_type == 'charge.refunded':
+            # Handle Stripe Dashboard refund
+            return StripeService.handle_refund(event['data']['object'])
+
         else:
             logger.info(f"Unhandled webhook event type: {event_type}")
             return True
@@ -1116,6 +1120,190 @@ class StripeService:
         except Exception as e:
             logger.error(f"Error handling chargeback: {e}")
             return False
+
+    @staticmethod
+    def handle_refund(charge):
+        """
+        Handle a refund initiated via Stripe Dashboard.
+
+        Since the payment was previously successful, a certificate was already sent,
+        so we need to:
+        1. Release verses (mark as available)
+        2. Mark donation as 'refunded'
+        3. Set admin comment documenting the refund
+        4. Generate Storno-PDF
+        5. Send Storno-Email
+        6. Notify admin
+        """
+        try:
+            payment_intent_id = charge.get('payment_intent')
+            if not payment_intent_id:
+                logger.error("No payment_intent in charge object for refund")
+                return False
+
+            # Extract refund details
+            refund_amount = charge.get('amount_refunded', charge.get('amount', 0))
+            refunds = charge.get('refunds', {}).get('data', [])
+            refund_reason = (refunds[0].get('reason') or 'requested_by_customer') if refunds else 'unknown'
+
+            # Find payment transaction via PaymentIntent ID
+            payment = PaymentTransaction.query.filter_by(
+                stripe_payment_intent_id=payment_intent_id
+            ).first()
+
+            if not payment or not payment.donation:
+                logger.error(f"No donation found for refund PaymentIntent {payment_intent_id}")
+                return False
+
+            donation = payment.donation
+
+            # Idempotency: Already refunded? Just return success
+            if donation.payment_status == 'refunded':
+                logger.info(f"Donation {donation.id} already refunded, skipping")
+                return True
+
+            # Log verse references before releasing
+            verse_refs = [
+                va.verse.german_reference if va.verse else 'unknown'
+                for va in donation.verse_associations
+            ]
+
+            try:
+                # 1. Release all verses (mark as available again)
+                for verse_assoc in donation.verse_associations:
+                    if verse_assoc.verse:
+                        verse_assoc.verse.is_sponsored = False
+                        verse_assoc.verse.sponsored_at = None
+
+                # 2. Mark donation as refunded
+                donation.payment_status = 'refunded'
+                donation.failure_reason = f"Refund: {refund_reason}"[:255]
+
+                # 3. Set admin comment
+                refund_date = datetime.utcnow().strftime('%d.%m.%Y')
+                auto_comment = f"[Automatisch] Rückerstattung über Stripe Dashboard am {refund_date}."
+                if donation.admin_comment:
+                    donation.admin_comment = f"{donation.admin_comment}\n\n{auto_comment}"
+                else:
+                    donation.admin_comment = auto_comment
+
+                db.session.commit()
+                logger.warning(
+                    f"Refund processed for donation {donation.id}: "
+                    f"verses {', '.join(verse_refs)} released, reason: {refund_reason}"
+                )
+
+                # 4. Generate Storno-PDF and send Storno-Email
+                try:
+                    StripeService._handle_refund_notification(donation, refund_reason)
+                except Exception as e:
+                    logger.error(f"Error sending refund notification for donation {donation.id}: {e}")
+
+                # 5. Send admin alert
+                try:
+                    StripeService._send_admin_alert_for_refund(
+                        donation, refund_reason, refund_amount, verse_refs
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending admin alert for refund {donation.id}: {e}")
+
+                return True
+
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Database error processing refund: {e}")
+                raise
+
+        except Exception as e:
+            logger.error(f"Error handling refund: {e}")
+            return False
+
+    @staticmethod
+    def _handle_refund_notification(donation: Donation, refund_reason: str):
+        """
+        Generate Storno-PDF and send Storno-Email for refunds.
+
+        Refunds always occur after successful payment, so a certificate
+        was definitely sent. Storno is mandatory.
+        """
+        from pdf_service import PDFGeneratorService
+        from email_service import email_service
+
+        try:
+            # Use German cancellation reason for customer communication
+            cancellation_reason = "Rückerstattung nach Absprache"
+
+            # 1. Generate Storno-PDF
+            pdf_service = PDFGeneratorService(current_app._get_current_object())
+            storno_pdf_path = pdf_service.generate_storno_certificate(
+                donation.id,
+                cancellation_reason=cancellation_reason
+            )
+
+            if not storno_pdf_path:
+                logger.error(f"Failed to generate storno PDF for refund donation {donation.id}")
+                return
+
+            # 2. Get storno context for email
+            storno_context = pdf_service._prepare_storno_context(donation, cancellation_reason)
+
+            # 3. Send Storno-Email with PDF attachment
+            donation_data = StripeService._prepare_donation_data(donation)
+
+            email_sent = email_service.send_storno_email(
+                donation_data,
+                storno_pdf_path,
+                storno_context
+            )
+
+            if email_sent:
+                donation.storno_sent_at = datetime.utcnow()
+                db.session.commit()
+                logger.info(f"Storno email sent for refund donation {donation.id}")
+            else:
+                logger.error(f"Failed to send storno email for refund donation {donation.id}")
+
+        except Exception as e:
+            logger.error(f"Error in _handle_refund_notification for donation {donation.id}: {e}")
+            raise
+
+    @staticmethod
+    def _send_admin_alert_for_refund(donation: Donation, refund_reason: str,
+                                      refund_amount: int, verse_refs: list):
+        """Send admin alert for refund."""
+        from email_service import email_service
+
+        amount_eur = refund_amount / 100 if refund_amount else float(donation.total_amount)
+
+        try:
+            email_service.send_admin_alert(
+                subject=f"Rückerstattung: Spende #{donation.id} - €{amount_eur:.2f}",
+                message=(
+                    f"Eine Rückerstattung für Spende #{donation.id} wurde über das "
+                    f"Stripe Dashboard veranlasst. Die betroffenen Verse wurden freigegeben."
+                ),
+                error_details=f"Refund Reason: {refund_reason}",
+                context={
+                    'donation_id': donation.id,
+                    'payment_status': donation.payment_status,
+                    'refund_reason': refund_reason,
+                    'refund_amount_eur': f"€{amount_eur:.2f}",
+                    'user_email': donation.person.email if donation.person else 'unbekannt',
+                    'user_name': (
+                        f"{donation.person.first_name} {donation.person.last_name}"
+                        if donation.person else 'unbekannt'
+                    ),
+                    'affected_verses': ', '.join(verse_refs),
+                    'verse_count': len(verse_refs),
+                    'original_certificate_date': (
+                        donation.certificate_sent_at.strftime('%d.%m.%Y %H:%M')
+                        if donation.certificate_sent_at else 'unbekannt'
+                    ),
+                    'action_required': 'Storno-PDF wurde generiert und an Spender gesendet.'
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to send admin alert for refund {donation.id}: {e}")
 
     @staticmethod
     def _handle_chargeback_notification(donation: Donation, dispute_reason: str):

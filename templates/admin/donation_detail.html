@@ -16,9 +16,21 @@
                 <dl class="row">
                     <dt class="col-sm-3">Status</dt>
                     <dd class="col-sm-9">
-                        <span class="badge bg-{{ 'success' if donation.payment_status == 'completed' else 'warning' if donation.payment_status == 'pending' else 'danger' }}">
-                            {{ donation.payment_status }}
-                        </span>
+                        {% if donation.payment_status == 'completed' %}
+                            <span class="badge bg-success">Abgeschlossen</span>
+                        {% elif donation.payment_status == 'pending' %}
+                            <span class="badge bg-warning">Ausstehend</span>
+                        {% elif donation.payment_status == 'processing' %}
+                            <span class="badge bg-info">In Bearbeitung</span>
+                        {% elif donation.payment_status == 'refunded' %}
+                            <span class="badge bg-secondary">Rückerstattet</span>
+                        {% elif donation.payment_status == 'disputed' %}
+                            <span class="badge bg-danger">Angefochten</span>
+                        {% elif donation.payment_status == 'failed' %}
+                            <span class="badge bg-danger">Fehlgeschlagen</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ donation.payment_status }}</span>
+                        {% endif %}
                     </dd>
                     
                     <dt class="col-sm-3">Betrag</dt>
@@ -61,6 +73,9 @@
                                target="_blank" class="ms-2">
                                 Stripe Dashboard →
                             </a>
+                            <small class="text-muted d-block mt-1">
+                                Im Stripe Dashboard kann über den Button "Rückerstattung" eine Rückzahlung an den Spender veranlasst werden.
+                            </small>
                         {% else %}
                             <span class="text-muted">Nicht verfügbar</span>
                         {% endif %}

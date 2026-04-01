@@ -29,13 +29,15 @@
             </td>
             <td style="padding: 10px 8px; border: 1px solid #ddd; text-align: center;">
                 {% if donation.payment_status == 'completed' %}
-                <span style="color: #28a745;">{{ donation.payment_status }}</span>
+                <span style="color: #28a745;">abgeschlossen</span>
                 {% elif donation.payment_status == 'pending' %}
-                <span style="color: #ffc107;">{{ donation.payment_status }}</span>
+                <span style="color: #ffc107;">ausstehend</span>
                 {% elif donation.payment_status == 'failed' %}
-                <span style="color: #dc3545;">{{ donation.payment_status }}</span>
+                <span style="color: #dc3545;">fehlgeschlagen</span>
                 {% elif donation.payment_status == 'disputed' %}
-                <span style="color: #dc3545;">{{ donation.payment_status }}</span>
+                <span style="color: #dc3545;">angefochten</span>
+                {% elif donation.payment_status == 'refunded' %}
+                <span style="color: #dc3545;">rückerstattet</span>
                 {% else %}
                 {{ donation.payment_status }}
                 {% endif %}
@@ -68,19 +70,25 @@
     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
         <tbody>
             <tr>
-                <td style="padding: 5px 0;">{{ completed_totals.count }} completed Spenden:</td>
+                <td style="padding: 5px 0;">{{ completed_totals.count }} abgeschlossene Spenden:</td>
                 <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(completed_totals.amount) }}</td>
             </tr>
             {% if processing_totals.count > 0 %}
             <tr>
-                <td style="padding: 5px 0;">{{ processing_totals.count }} processing Spenden:</td>
+                <td style="padding: 5px 0;">{{ processing_totals.count }} in Bearbeitung:</td>
                 <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(processing_totals.amount) }}</td>
             </tr>
             {% endif %}
             {% if disputed_totals.count > 0 %}
             <tr style="color: #dc3545;">
-                <td style="padding: 5px 0;">{{ disputed_totals.count }} disputed Spenden:</td>
+                <td style="padding: 5px 0;">{{ disputed_totals.count }} angefochten{% if disputed_totals.count > 1 %}e{% endif %} Spenden:</td>
                 <td style="padding: 5px 0; text-align: right; font-family: monospace;">-{{ format_currency(disputed_totals.amount) }}</td>
+            </tr>
+            {% endif %}
+            {% if refunded_totals.count > 0 %}
+            <tr style="color: #dc3545;">
+                <td style="padding: 5px 0;">{{ refunded_totals.count }} rückerstattete Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">-{{ format_currency(refunded_totals.amount) }}</td>
             </tr>
             {% endif %}
             <tr style="border-top: 2px solid #28a745; font-weight: bold;">
@@ -91,7 +99,7 @@
     </table>
     {% if failed_totals.count > 0 %}
     <p style="margin-top: 10px; margin-bottom: 0; font-size: 13px; color: #999;">
-        {{ failed_totals.count }} failed Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
+        {{ failed_totals.count }} fehlgeschlagene Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
     </p>
     {% endif %}
 </div>
@@ -107,19 +115,25 @@
     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
         <tbody>
             <tr>
-                <td style="padding: 5px 0;">{{ completed_totals.count }} completed Spenden:</td>
+                <td style="padding: 5px 0;">{{ completed_totals.count }} abgeschlossene Spenden:</td>
                 <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(completed_totals.amount) }}</td>
             </tr>
             {% if processing_totals.count > 0 %}
             <tr>
-                <td style="padding: 5px 0;">{{ processing_totals.count }} processing Spenden:</td>
+                <td style="padding: 5px 0;">{{ processing_totals.count }} in Bearbeitung:</td>
                 <td style="padding: 5px 0; text-align: right; font-family: monospace;">{{ format_currency(processing_totals.amount) }}</td>
             </tr>
             {% endif %}
             {% if disputed_totals.count > 0 %}
             <tr style="color: #dc3545;">
-                <td style="padding: 5px 0;">{{ disputed_totals.count }} disputed Spenden:</td>
+                <td style="padding: 5px 0;">{{ disputed_totals.count }} angefochten{% if disputed_totals.count > 1 %}e{% endif %} Spenden:</td>
                 <td style="padding: 5px 0; text-align: right; font-family: monospace;">-{{ format_currency(disputed_totals.amount) }}</td>
+            </tr>
+            {% endif %}
+            {% if refunded_totals.count > 0 %}
+            <tr style="color: #dc3545;">
+                <td style="padding: 5px 0;">{{ refunded_totals.count }} rückerstattete Spenden:</td>
+                <td style="padding: 5px 0; text-align: right; font-family: monospace;">-{{ format_currency(refunded_totals.amount) }}</td>
             </tr>
             {% endif %}
             <tr style="border-top: 2px solid #28a745; font-weight: bold;">
@@ -130,7 +144,7 @@
     </table>
     {% if failed_totals.count > 0 %}
     <p style="margin-top: 10px; margin-bottom: 0; font-size: 13px; color: #999;">
-        {{ failed_totals.count }} failed Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
+        {{ failed_totals.count }} fehlgeschlagene Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
     </p>
     {% endif %}
 </div>

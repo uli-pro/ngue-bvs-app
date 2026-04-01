@@ -308,11 +308,11 @@ class PDFGeneratorService:
                 self.logger.error(f"Storno: Donation {donation_id} not found")
                 return None
 
-            # Nur für fehlgeschlagene/stornierte Spenden
-            if donation.payment_status not in ('failed', 'disputed'):
+            # Nur für fehlgeschlagene/stornierte/rückerstattete Spenden
+            if donation.payment_status not in ('failed', 'disputed', 'refunded'):
                 self.logger.warning(
                     f"Storno: Donation {donation_id} has status {donation.payment_status}, "
-                    f"expected 'failed' or 'disputed'"
+                    f"expected 'failed', 'disputed' or 'refunded'"
                 )
                 return None
 

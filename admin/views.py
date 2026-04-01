@@ -175,7 +175,11 @@ def donations_list():
         query = query.filter_by(payment_status='pending')
     elif filter_type == 'failed':
         query = query.filter_by(payment_status='failed')
-    
+    elif filter_type == 'disputed':
+        query = query.filter_by(payment_status='disputed')
+    elif filter_type == 'refunded':
+        query = query.filter_by(payment_status='refunded')
+
     donations = query.order_by(Donation.created_at.desc()).paginate(
         page=page, per_page=50, error_out=False
     )
