@@ -39,7 +39,6 @@ def login():
     
     email_service.send_admin_magic_link(email, magic_link)
     
-    flash('Ein Login-Link wurde an Ihre E-Mail-Adresse gesendet. Der Link ist 15 Minuten gueltig.', 'success')
     return render_template('admin/login_sent.html', email=email)
 
 def verify_token(token):
@@ -64,7 +63,6 @@ def verify_token(token):
     # Cleanup old tokens
     AdminToken.cleanup_expired()
     
-    flash(f'Willkommen, {admin_token.email}!', 'success')
     return redirect(url_for('admin.index'))
 
 def logout():
