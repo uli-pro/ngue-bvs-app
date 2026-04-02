@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, session
 from admin.decorators import admin_required
-from models import db, Person, Verse, Donation, VerseReservation, Certificate, BookPriority
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, BookPriority, CampaignUrl
 from sqlalchemy import or_, func
 from pdf_service import PDFGeneratorService
 from email_service import email_service
@@ -689,3 +689,389 @@ def book_priorities():
     except Exception as e:
         flash(f'Fehler beim Laden der Seite: {str(e)}', 'error')
         return redirect(url_for('admin.index'))
+
+
+# --- Campaign URL Management ---
+
+CAMPAIGN_PRESETS = {
+    'instagram': {'name': 'Instagram Post', 'utm_source': 'instagram', 'utm_medium': 'social', 'target_url': 'vers-patenschaft.de'},
+    'facebook': {'name': 'Facebook Post', 'utm_source': 'facebook', 'utm_medium': 'social', 'target_url': 'vers-patenschaft.de'},
+    'newsletter': {'name': 'Newsletter', 'utm_source': 'newsletter', 'utm_medium': 'email', 'target_url': 'vers-patenschaft.de'},
+}
+
+
+def _get_reserved_slugs():
+    """Get all registered Flask route prefixes as reserved slugs."""
+    from flask import current_app
+    reserved = set()
+    for rule in current_app.url_map.iter_rules():
+        parts = rule.rule.strip('/').split('/')
+        if parts and parts[0]:
+            reserved.add(parts[0])
+    return reserved
+
+
+def _sanitize_utm_value(value):
+    """Sanitize a UTM parameter value: lowercase, underscores, no special chars."""
+    if not value:
+        return value
+    value = value.strip().lower()
+    value = value.replace(' ', '_')
+    # Replace umlauts
+    for old, new in [('ä', 'ae'), ('ö', 'oe'), ('ü', 'ue'), ('ß', 'ss')]:
+        value = value.replace(old, new)
+    # Only allow alphanumeric + underscores
+    import re
+    value = re.sub(r'[^a-z0-9_]', '', value)
+    return value
+
+
+def _sanitize_slug(value):
+    """Sanitize a slug value: lowercase, hyphens, no special chars."""
+    if not value:
+        return value
+    value = value.strip().lower()
+    import re
+    value = re.sub(r'[^a-z0-9-]', '', value)
+    return value[:60]
+
+
+def _validate_target_url(url):
+    """Validate target_url is a safe HTTP(S) URL. Returns error message or None."""
+    if not url:
+        return None
+    # Strip protocol for check
+    lower = url.lower().strip()
+    if lower.startswith('javascript:') or lower.startswith('data:'):
+        return 'Ungültiges URL-Schema. Nur HTTP/HTTPS-URLs sind erlaubt.'
+    # Must look like a domain (contains at least one dot)
+    domain = lower.replace('https://', '').replace('http://', '').split('/')[0]
+    if '.' not in domain:
+        return 'Die Zielseite muss eine gültige Domain enthalten (z.B. vers-patenschaft.de).'
+    return None
+
+
+@admin_required
+def campaign_urls_list():
+    """List all campaign URLs with search and filter."""
+    search = request.args.get('search', '').strip()
+    filter_type = request.args.get('filter', 'active')
+    page = request.args.get('page', 1, type=int)
+
+    query = CampaignUrl.query
+
+    # Search
+    if search:
+        search_filter = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                CampaignUrl.name.ilike(search_filter),
+                CampaignUrl.utm_source.ilike(search_filter),
+                CampaignUrl.utm_campaign.ilike(search_filter),
+                CampaignUrl.slug.ilike(search_filter),
+            )
+        )
+
+    # Filter
+    if filter_type == 'online':
+        query = query.filter_by(url_type='online')
+    elif filter_type == 'offline':
+        query = query.filter_by(url_type='offline')
+    elif filter_type == 'active':
+        query = query.filter_by(is_active=True)
+    elif filter_type == 'archived':
+        query = query.filter_by(is_active=False)
+
+    campaigns = query.order_by(CampaignUrl.created_at.desc()).paginate(
+        page=page, per_page=50, error_out=False
+    )
+
+    return render_template(
+        'admin/campaign_urls.html',
+        campaigns=campaigns,
+        search=search,
+        filter_type=filter_type,
+        presets=CAMPAIGN_PRESETS,
+    )
+
+
+@admin_required
+def campaign_url_create():
+    """Create a new campaign URL."""
+    if request.method == 'POST':
+        # Sanitize inputs
+        name = request.form.get('name', '').strip()
+        url_type = request.form.get('url_type', 'online')
+        slug = _sanitize_slug(request.form.get('slug', ''))
+        target_url = request.form.get('target_url', 'vers-patenschaft.de').strip()
+        utm_source = _sanitize_utm_value(request.form.get('utm_source', ''))
+        utm_medium = request.form.get('utm_medium', '')
+        utm_campaign = _sanitize_utm_value(request.form.get('utm_campaign', ''))
+        utm_content = _sanitize_utm_value(request.form.get('utm_content', ''))
+        utm_term = _sanitize_utm_value(request.form.get('utm_term', ''))
+        notes = request.form.get('notes', '').strip()
+
+        # Validation
+        errors = []
+        if not name:
+            errors.append('Bezeichnung ist ein Pflichtfeld.')
+        if not utm_source:
+            errors.append('Quelle ist ein Pflichtfeld.')
+        if not utm_medium:
+            errors.append('Kanal-Typ ist ein Pflichtfeld.')
+        if utm_medium and utm_medium not in dict(CampaignUrl.MEDIUM_CHOICES):
+            errors.append('Ungültiger Kanal-Typ.')
+
+        url_error = _validate_target_url(target_url)
+        if url_error:
+            errors.append(url_error)
+
+        if url_type == 'offline':
+            if not slug:
+                errors.append('Kurzlink ist bei Offline-Links ein Pflichtfeld.')
+            elif not CampaignUrl.is_slug_available(slug):
+                errors.append('Dieser Kurzlink ist bereits vergeben.')
+            elif slug in _get_reserved_slugs():
+                errors.append(f'Der Kurzlink "{slug}" ist reserviert und kann nicht verwendet werden.')
+
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return render_template(
+                'admin/campaign_url_form.html',
+                campaign=None,
+                existing_sources=CampaignUrl.get_existing_sources(),
+                medium_choices=CampaignUrl.MEDIUM_CHOICES,
+                form_data=request.form,
+            )
+
+        campaign = CampaignUrl(
+            name=name,
+            url_type=url_type,
+            slug=slug if url_type == 'offline' else None,
+            target_url=target_url or 'vers-patenschaft.de',
+            utm_source=utm_source,
+            utm_medium=utm_medium,
+            utm_campaign=utm_campaign or None,
+            utm_content=utm_content or None,
+            utm_term=utm_term or None,
+            notes=notes or None,
+            created_by=session.get('admin_email'),
+        )
+        db.session.add(campaign)
+        db.session.commit()
+
+        flash(f'Kampagnen-URL "{name}" wurde erstellt.', 'success')
+        return redirect(url_for('admin.campaign_url_edit', campaign_id=campaign.id))
+
+    # GET: Show form
+    preset = request.args.get('preset')
+    duplicate_id = request.args.get('duplicate', type=int)
+
+    form_data = {}
+    if preset and preset in CAMPAIGN_PRESETS:
+        form_data = CAMPAIGN_PRESETS[preset]
+    elif duplicate_id:
+        source = db.session.get(CampaignUrl, duplicate_id)
+        if source:
+            form_data = {
+                'name': f'{source.name} (Kopie)',
+                'url_type': source.url_type,
+                'target_url': source.target_url,
+                'utm_source': source.utm_source,
+                'utm_medium': source.utm_medium,
+                'utm_campaign': source.utm_campaign or '',
+                'utm_content': source.utm_content or '',
+                'utm_term': source.utm_term or '',
+                'notes': source.notes or '',
+            }
+
+    return render_template(
+        'admin/campaign_url_form.html',
+        campaign=None,
+        existing_sources=CampaignUrl.get_existing_sources(),
+        medium_choices=CampaignUrl.MEDIUM_CHOICES,
+        form_data=form_data,
+    )
+
+
+@admin_required
+def campaign_url_edit(campaign_id):
+    """Edit an existing campaign URL."""
+    campaign = CampaignUrl.query.get_or_404(campaign_id)
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        url_type = request.form.get('url_type', 'online')
+        slug = _sanitize_slug(request.form.get('slug', ''))
+        target_url = request.form.get('target_url', 'vers-patenschaft.de').strip()
+        utm_source = _sanitize_utm_value(request.form.get('utm_source', ''))
+        utm_medium = request.form.get('utm_medium', '')
+        utm_campaign = _sanitize_utm_value(request.form.get('utm_campaign', ''))
+        utm_content = _sanitize_utm_value(request.form.get('utm_content', ''))
+        utm_term = _sanitize_utm_value(request.form.get('utm_term', ''))
+        notes = request.form.get('notes', '').strip()
+        is_active = 'is_active' in request.form
+
+        errors = []
+        if not name:
+            errors.append('Bezeichnung ist ein Pflichtfeld.')
+        if not utm_source:
+            errors.append('Quelle ist ein Pflichtfeld.')
+        if not utm_medium:
+            errors.append('Kanal-Typ ist ein Pflichtfeld.')
+        if utm_medium and utm_medium not in dict(CampaignUrl.MEDIUM_CHOICES):
+            errors.append('Ungültiger Kanal-Typ.')
+
+        url_error = _validate_target_url(target_url)
+        if url_error:
+            errors.append(url_error)
+
+        if url_type == 'offline':
+            if not slug:
+                errors.append('Kurzlink ist bei Offline-Links ein Pflichtfeld.')
+            elif not CampaignUrl.is_slug_available(slug, exclude_id=campaign.id):
+                errors.append('Dieser Kurzlink ist bereits vergeben.')
+            elif slug in _get_reserved_slugs():
+                errors.append(f'Der Kurzlink "{slug}" ist reserviert.')
+
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return render_template(
+                'admin/campaign_url_form.html',
+                campaign=campaign,
+                existing_sources=CampaignUrl.get_existing_sources(),
+                medium_choices=CampaignUrl.MEDIUM_CHOICES,
+                form_data=request.form,
+            )
+
+        campaign.name = name
+        campaign.url_type = url_type
+        campaign.slug = slug if url_type == 'offline' else None
+        campaign.target_url = target_url or 'vers-patenschaft.de'
+        campaign.utm_source = utm_source
+        campaign.utm_medium = utm_medium
+        campaign.utm_campaign = utm_campaign or None
+        campaign.utm_content = utm_content or None
+        campaign.utm_term = utm_term or None
+        campaign.notes = notes or None
+        campaign.is_active = is_active
+
+        db.session.commit()
+        flash(f'Kampagnen-URL "{name}" wurde gespeichert.', 'success')
+        return redirect(url_for('admin.campaign_url_edit', campaign_id=campaign.id))
+
+    return render_template(
+        'admin/campaign_url_form.html',
+        campaign=campaign,
+        existing_sources=CampaignUrl.get_existing_sources(),
+        medium_choices=CampaignUrl.MEDIUM_CHOICES,
+        form_data=None,
+    )
+
+
+@admin_required
+def campaign_url_delete(campaign_id):
+    """Delete a campaign URL permanently."""
+    campaign = CampaignUrl.query.get_or_404(campaign_id)
+    name = campaign.name
+    db.session.delete(campaign)
+    db.session.commit()
+    flash(f'Kampagnen-URL "{name}" wurde gelöscht.', 'success')
+    return redirect(url_for('admin.campaign_urls_list'))
+
+
+@admin_required
+def campaign_url_toggle(campaign_id):
+    """Toggle active/archived status."""
+    campaign = CampaignUrl.query.get_or_404(campaign_id)
+    campaign.is_active = not campaign.is_active
+    db.session.commit()
+    status = 'aktiviert' if campaign.is_active else 'archiviert'
+    flash(f'Kampagnen-URL "{campaign.name}" wurde {status}.', 'success')
+    return redirect(url_for('admin.campaign_urls_list'))
+
+
+@admin_required
+def campaign_url_qr_png(campaign_id):
+    """Generate QR code as PNG."""
+    campaign = CampaignUrl.query.get_or_404(campaign_id)
+    if campaign.url_type != 'offline' or not campaign.slug:
+        flash('QR-Codes sind nur für Offline-Links verfügbar.', 'error')
+        return redirect(url_for('admin.campaign_urls_list'))
+
+    import qrcode
+    from io import BytesIO
+
+    size = request.args.get('size', 300, type=int)
+    size = min(size, 2000)  # Cap at 2000px
+
+    qr = qrcode.QRCode(version=1, box_size=max(1, size // 30), border=4)
+    qr.add_data(campaign.short_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color='black', back_color='white')
+
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+
+    download = request.args.get('download', False, type=bool)
+    return send_file(
+        buffer,
+        mimetype='image/png',
+        as_attachment=download,
+        download_name=f'qr-{campaign.slug}.png',
+    )
+
+
+@admin_required
+def campaign_url_qr_svg(campaign_id):
+    """Generate QR code as SVG."""
+    campaign = CampaignUrl.query.get_or_404(campaign_id)
+    if campaign.url_type != 'offline' or not campaign.slug:
+        flash('QR-Codes sind nur für Offline-Links verfügbar.', 'error')
+        return redirect(url_for('admin.campaign_urls_list'))
+
+    import qrcode
+    import qrcode.image.svg
+    from io import BytesIO
+
+    factory = qrcode.image.svg.SvgPathImage
+    qr = qrcode.QRCode(version=1, box_size=10, border=4, image_factory=factory)
+    qr.add_data(campaign.short_url)
+    qr.make(fit=True)
+    img = qr.make_image()
+
+    buffer = BytesIO()
+    img.save(buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        mimetype='image/svg+xml',
+        as_attachment=True,
+        download_name=f'qr-{campaign.slug}.svg',
+    )
+
+
+@admin_required
+def check_slug(slug):
+    """AJAX endpoint: check if a slug is available."""
+    slug = _sanitize_slug(slug)
+    exclude_id = request.args.get('exclude', type=int)
+
+    if not slug:
+        return jsonify({'available': False, 'reason': 'Kurzlink darf nicht leer sein.'})
+
+    if slug in _get_reserved_slugs():
+        return jsonify({'available': False, 'reason': f'"{slug}" ist ein reservierter Pfad.'})
+
+    if CampaignUrl.is_slug_available(slug, exclude_id=exclude_id):
+        return jsonify({'available': True})
+
+    existing = CampaignUrl.query.filter_by(slug=slug).first()
+    return jsonify({
+        'available': False,
+        'reason': f'Bereits vergeben durch: {existing.name}' if existing else 'Bereits vergeben.',
+    })
