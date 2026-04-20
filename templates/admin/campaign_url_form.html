@@ -1,0 +1,451 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if campaign %}Kampagnen-URL bearbeiten{% else %}Neue Kampagnen-URL erstellen{% endif %} - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">{% if campaign %}Kampagnen-URL bearbeiten{% else %}Neue Kampagnen-URL erstellen{% endif %}</h2>
+
+{# Resolve form values: form_data (from POST validation or preset) > campaign (edit mode) > defaults #}
+{% set fd = form_data or {} %}
+
+<div class="row">
+    <!-- Left Column: Form -->
+    <div class="col-md-7">
+        <div class="stat-card">
+            <form method="POST" id="campaign-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- 1. Bezeichnung -->
+                <div class="mb-3">
+                    <label class="form-label" for="name">Bezeichnung</label>
+                    <input type="text" class="form-control" name="name" id="name" required
+                           placeholder="z.B. Instagram Bio Link, Oster-Newsletter 2026"
+                           value="{{ fd.get('name', '') or (campaign.name if campaign else '') }}">
+                    <div class="form-text">Ein beschreibender Name, damit die URL leicht wiederzufinden ist.</div>
+                </div>
+
+                <!-- 2. URL-Typ -->
+                <div class="mb-3">
+                    <label class="form-label">Link-Typ</label>
+                    {% set current_type = fd.get('url_type', '') or (campaign.url_type if campaign else 'online') %}
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="url_type" id="type-online"
+                               value="online" {% if current_type != 'offline' %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="type-online">Online-Link</label>
+                        <input type="radio" class="btn-check" name="url_type" id="type-offline"
+                               value="offline" {% if current_type == 'offline' %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="type-offline">Offline-Link (Kurzlink + QR)</label>
+                    </div>
+                    <div class="form-text" id="type-help">
+                        {% if current_type == 'offline' %}
+                        Für gedrucktes Material: Flyer, Zeitungsanzeigen. Erzeugt Kurzlink + QR-Code.
+                        {% else %}
+                        Für digitale Kanäle: Instagram, Facebook, Newsletter, Webseiten.
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 3. Kurzlink (nur Offline) -->
+                <div class="mb-3" id="slug-group" style="{% if current_type != 'offline' %}display: none;{% endif %}">
+                    <label class="form-label" for="slug-input">Kurzlink</label>
+                    <div class="input-group">
+                        <span class="input-group-text">vers-patenschaft.de/</span>
+                        <input type="text" class="form-control" name="slug" id="slug-input"
+                               pattern="[a-z0-9\-]+" maxlength="60"
+                               placeholder="z.B. antenne"
+                               value="{{ fd.get('slug', '') or (campaign.slug if campaign else '') }}">
+                    </div>
+                    <div class="form-text">Dieser kurze Link leitet automatisch auf die Tracking-URL weiter.</div>
+                    <div id="slug-feedback"></div>
+                </div>
+
+                <!-- 4. Zielseite -->
+                <div class="mb-3">
+                    <label class="form-label" for="target-url">Zielseite</label>
+                    <input type="text" class="form-control" name="target_url" id="target-url"
+                           list="target-url-suggestions"
+                           value="{{ fd.get('target_url', '') or (campaign.target_url if campaign else 'vers-patenschaft.de') }}">
+                    <datalist id="target-url-suggestions">
+                        <option value="vers-patenschaft.de">
+                        <option value="spende.schoeffer.org">
+                        <option value="spende.schoeffer.org/spenden">
+                    </datalist>
+                    <div class="form-text">Die Seite, auf die der Link führen soll.</div>
+                    <div id="target-url-warning" class="alert alert-warning py-1 px-2 mt-1 small" style="display: none;">
+                        ⚠️ Damit die Tracking-Daten erfasst werden, muss Plausible auf dieser Domain eingerichtet sein.
+                        → <a href="https://analytics.vers-patenschaft.de/sites" target="_blank">Plausible-Sites verwalten</a>
+                    </div>
+                </div>
+
+                <!-- 5. Kanal-Typ (utm_medium) -->
+                <div class="mb-3">
+                    <label class="form-label" for="utm-medium">Kanal-Typ</label>
+                    {% set current_medium = fd.get('utm_medium', '') or (campaign.utm_medium if campaign else '') %}
+                    <select class="form-select" name="utm_medium" id="utm-medium" required>
+                        <option value="">-- Bitte wählen --</option>
+                        {% for value, label in medium_choices %}
+                        <option value="{{ value }}" {% if current_medium == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 6. Quelle (utm_source) -->
+                <div class="mb-3">
+                    <label class="form-label" for="utm-source">Quelle</label>
+                    <input type="text" class="form-control utm-auto-transform" name="utm_source" id="utm-source"
+                           list="source-suggestions" required
+                           placeholder="z.B. instagram, facebook, newsletter_ostern"
+                           value="{{ fd.get('utm_source', '') or (campaign.utm_source if campaign else '') }}">
+                    <datalist id="source-suggestions">
+                        {% for source in existing_sources %}
+                        <option value="{{ source }}">
+                        {% endfor %}
+                    </datalist>
+                    <div id="source-warning" class="alert alert-warning py-1 px-2 mt-1 small" style="display: none;"></div>
+                </div>
+
+                <!-- 7. Kampagne (utm_campaign) -->
+                <div class="mb-3">
+                    <label class="form-label" for="utm-campaign">Kampagne</label>
+                    <input type="text" class="form-control utm-auto-transform" name="utm_campaign" id="utm-campaign"
+                           placeholder="z.B. ostern_2026, bio_link"
+                           value="{{ fd.get('utm_campaign', '') or (campaign.utm_campaign or '' if campaign else '') }}">
+                    <div class="form-text">Optional. Empfohlenes Format: beschreibung_JJJJ_MM</div>
+                </div>
+
+                <!-- 8. Erweiterte Optionen -->
+                {% set has_advanced = (fd.get('utm_content', '') or fd.get('utm_term', '') or
+                                       (campaign and (campaign.utm_content or campaign.utm_term))) %}
+                <div class="mb-3">
+                    <a data-bs-toggle="collapse" href="#advanced-options"
+                       class="text-decoration-none"
+                       {% if has_advanced %}aria-expanded="true"{% endif %}>
+                        Erweiterte Optionen ▾
+                    </a>
+                    <div class="collapse {% if has_advanced %}show{% endif %}" id="advanced-options">
+                        <div class="mt-3 mb-3">
+                            <label class="form-label" for="utm-content">Variante / Inhalt</label>
+                            <input type="text" class="form-control utm-auto-transform" name="utm_content" id="utm-content"
+                                   placeholder="z.B. header_button, bild_offene_bibel"
+                                   value="{{ fd.get('utm_content', '') or (campaign.utm_content or '' if campaign else '') }}">
+                            <div class="form-text">Optional. Für A/B-Tests oder verschiedene Platzierungen.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="utm-term">Suchbegriff / Zielgruppe</label>
+                            <input type="text" class="form-control utm-auto-transform" name="utm_term" id="utm-term"
+                                   placeholder="z.B. bibelvers_patenschaft, christliche_medien"
+                                   value="{{ fd.get('utm_term', '') or (campaign.utm_term or '' if campaign else '') }}">
+                            <div class="form-text">Optional. Nur für Suchmaschinenwerbung oder Zielgruppen-Tests relevant.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. Interne Notizen -->
+                <div class="mb-3">
+                    <label class="form-label" for="notes">Interne Notizen</label>
+                    <textarea class="form-control" name="notes" id="notes" rows="2"
+                              placeholder="z.B. Verwendet für Oster-Aktion in Gemeinde Bethel">{{ fd.get('notes', '') or (campaign.notes or '' if campaign else '') }}</textarea>
+                </div>
+
+                <!-- 10. Status (nur Edit) -->
+                {% if campaign %}
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is-active"
+                               {% if campaign.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is-active">Aktiv</label>
+                    </div>
+                    <div class="form-text">Deaktivierte URLs werden in der Liste ausgegraut. Offline-Redirects geben dann 404 zurück.</div>
+                </div>
+                {% endif %}
+
+                <!-- Buttons -->
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('admin.campaign_urls_list') }}" class="btn btn-outline-secondary">Zur Übersicht</a>
+                    <div>
+                        {% if campaign %}
+                        <a href="{{ url_for('admin.campaign_url_create', duplicate=campaign.id) }}"
+                           class="btn btn-outline-secondary me-2">Duplizieren</a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">Speichern</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Live Preview -->
+    <div class="col-md-5" style="position: sticky; top: 1rem; align-self: flex-start;">
+        <div class="stat-card" id="preview-card">
+            <h5 class="mb-3">Vorschau</h5>
+            <div id="preview-content">
+                <p class="text-muted" id="preview-empty">Felder ausfüllen, um eine Vorschau zu sehen.</p>
+
+                <div id="preview-url-section" style="display: none;">
+                    <p class="mb-1"><strong>Tracking-URL:</strong></p>
+                    <code class="d-block bg-light p-2 rounded mb-2" id="preview-url" style="word-break: break-all; font-size: 0.85rem;"></code>
+                    <button class="btn btn-sm btn-outline-secondary mb-3" id="preview-copy-full" onclick="copyPreviewUrl('full')">
+                        URL kopieren
+                    </button>
+
+                    <div id="preview-short-section" style="display: none;">
+                        <p class="mb-1"><strong>Kurzlink:</strong></p>
+                        <code class="d-block bg-light p-2 rounded mb-2" id="preview-short-url"></code>
+                        <button class="btn btn-sm btn-outline-secondary mb-3" id="preview-copy-short" onclick="copyPreviewUrl('short')">
+                            Kurzlink kopieren
+                        </button>
+                    </div>
+
+                    <div class="mt-2">
+                        <a href="#" target="_blank" id="preview-plausible-link"
+                           class="btn btn-sm btn-outline-primary">In Plausible öffnen →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if campaign and campaign.url_type == 'offline' and campaign.slug %}
+        <!-- QR-Code Card (nur Edit, nur Offline) -->
+        <div class="stat-card mt-4">
+            <h5 class="mb-3">QR-Code</h5>
+            <div class="text-center">
+                <img src="{{ url_for('admin.campaign_url_qr_png', campaign_id=campaign.id, size=300) }}"
+                     width="200" height="200" alt="QR-Code" class="mb-2">
+                <p class="text-muted small mb-3">{{ campaign.short_url }}</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{{ url_for('admin.campaign_url_qr_png', campaign_id=campaign.id, size=1200, download=1) }}"
+                       class="btn btn-sm btn-outline-primary" download>PNG herunterladen</a>
+                    <a href="{{ url_for('admin.campaign_url_qr_svg', campaign_id=campaign.id) }}"
+                       class="btn btn-sm btn-outline-primary" download>SVG herunterladen</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var existingSources = {{ existing_sources | tojson }};
+
+// --- Auto-Transform for UTM fields ---
+document.querySelectorAll('.utm-auto-transform').forEach(function(input) {
+    input.addEventListener('input', function() {
+        var pos = this.selectionStart;
+        var val = this.value;
+        val = val.toLowerCase();
+        val = val.replace(/\s+/g, '_');
+        val = val.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+        val = val.replace(/[^a-z0-9_]/g, '');
+        this.value = val;
+        this.setSelectionRange(pos, pos);
+        updatePreview();
+    });
+});
+
+// --- Slug auto-transform ---
+var slugInput = document.getElementById('slug-input');
+if (slugInput) {
+    slugInput.addEventListener('input', function() {
+        var pos = this.selectionStart;
+        var val = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        this.value = val;
+        this.setSelectionRange(pos, pos);
+        updatePreview();
+    });
+
+    // AJAX slug check on blur
+    slugInput.addEventListener('blur', function() {
+        var slug = this.value.trim();
+        var feedback = document.getElementById('slug-feedback');
+        if (!slug) {
+            feedback.innerHTML = '';
+            return;
+        }
+        var excludeParam = '{{ campaign.id if campaign else "" }}';
+        var url = '{{ url_for("admin.check_slug", slug="__SLUG__") }}'.replace('__SLUG__', slug);
+        if (excludeParam) url += '?exclude=' + excludeParam;
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.available) {
+                    feedback.innerHTML = '<small class="text-success">✓ Verfügbar</small>';
+                } else {
+                    feedback.innerHTML = '<small class="text-danger">✗ ' + data.reason + '</small>';
+                }
+            })
+            .catch(function() {
+                feedback.innerHTML = '';
+            });
+    });
+}
+
+// --- URL-Typ Toggle ---
+document.querySelectorAll('input[name="url_type"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        var slugGroup = document.getElementById('slug-group');
+        var typeHelp = document.getElementById('type-help');
+        var mediumSelect = document.getElementById('utm-medium');
+
+        if (this.value === 'offline') {
+            slugGroup.style.display = '';
+            typeHelp.textContent = 'Für gedrucktes Material: Flyer, Zeitungsanzeigen. Erzeugt Kurzlink + QR-Code.';
+            // Auto-select print medium
+            if (!mediumSelect.value) {
+                mediumSelect.value = 'print';
+            }
+        } else {
+            slugGroup.style.display = 'none';
+            typeHelp.textContent = 'Für digitale Kanäle: Instagram, Facebook, Newsletter, Webseiten.';
+        }
+        updatePreview();
+    });
+});
+
+// --- Target URL Domain Warning ---
+var targetUrlInput = document.getElementById('target-url');
+if (targetUrlInput) {
+    targetUrlInput.addEventListener('input', function() {
+        var warning = document.getElementById('target-url-warning');
+        var val = this.value.trim().toLowerCase();
+        // Extract domain
+        var domain = val.replace(/^https?:\/\//, '').split('/')[0];
+        if (domain && domain !== 'vers-patenschaft.de' && domain !== '') {
+            warning.style.display = '';
+        } else {
+            warning.style.display = 'none';
+        }
+        updatePreview();
+    });
+}
+
+// --- Source Warning ---
+var sourceInput = document.getElementById('utm-source');
+if (sourceInput) {
+    sourceInput.addEventListener('blur', function() {
+        var val = this.value.trim();
+        var warning = document.getElementById('source-warning');
+        if (!val || existingSources.indexOf(val) !== -1) {
+            warning.style.display = 'none';
+            return;
+        }
+        // Find similar existing sources
+        var similar = existingSources.filter(function(s) {
+            return s.indexOf(val.split('_')[0]) !== -1;
+        });
+        if (similar.length > 0) {
+            warning.innerHTML = '"' + val + '" ist eine neue Quelle. Existierende ähnliche: <strong>' + similar.join(', ') + '</strong>';
+        } else {
+            warning.innerHTML = '"' + val + '" ist eine neue Quelle. Bisher sind keine ähnlichen Quellen vorhanden.';
+        }
+        warning.style.display = '';
+    });
+}
+
+// --- Other inputs trigger preview ---
+['name', 'utm-medium', 'utm-campaign', 'utm-content', 'utm-term', 'target-url'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('input', updatePreview);
+        el.addEventListener('change', updatePreview);
+    }
+});
+
+// --- Live Preview ---
+function updatePreview() {
+    var targetUrl = (document.getElementById('target-url').value || 'vers-patenschaft.de').trim();
+    var source = document.getElementById('utm-source').value.trim();
+    var medium = document.getElementById('utm-medium').value;
+    var campaign = document.getElementById('utm-campaign').value.trim();
+    var content = document.getElementById('utm-content').value.trim();
+    var term = document.getElementById('utm-term').value.trim();
+    var urlType = document.querySelector('input[name="url_type"]:checked').value;
+    var slug = document.getElementById('slug-input').value.trim();
+
+    var previewEmpty = document.getElementById('preview-empty');
+    var previewSection = document.getElementById('preview-url-section');
+    var previewShort = document.getElementById('preview-short-section');
+
+    if (!source && !medium) {
+        previewEmpty.style.display = '';
+        previewSection.style.display = 'none';
+        return;
+    }
+
+    previewEmpty.style.display = 'none';
+    previewSection.style.display = '';
+
+    // Build full URL
+    var base = targetUrl;
+    if (base.indexOf('http') !== 0) base = 'https://' + base;
+    var params = [];
+    if (source) params.push('utm_source=' + source);
+    if (medium) params.push('utm_medium=' + medium);
+    if (campaign) params.push('utm_campaign=' + campaign);
+    if (content) params.push('utm_content=' + content);
+    if (term) params.push('utm_term=' + term);
+
+    var fullUrl = base;
+    if (params.length > 0) {
+        fullUrl += (base.indexOf('?') === -1 ? '?' : '&') + params.join('&');
+    }
+
+    // Display with line breaks for readability
+    var displayParts = [base];
+    params.forEach(function(p, i) {
+        displayParts.push((i === 0 ? '?' : '&') + p);
+    });
+    document.getElementById('preview-url').innerHTML = displayParts.join('<br>');
+
+    // Store full URL for copy
+    document.getElementById('preview-copy-full').setAttribute('data-url', fullUrl);
+
+    // Short URL
+    if (urlType === 'offline' && slug) {
+        previewShort.style.display = '';
+        var shortUrl = 'https://vers-patenschaft.de/' + slug;
+        document.getElementById('preview-short-url').textContent = shortUrl;
+        document.getElementById('preview-copy-short').setAttribute('data-url', shortUrl);
+    } else {
+        previewShort.style.display = 'none';
+    }
+
+    // Plausible link (f=is,param,value format)
+    var domain = targetUrl.replace(/^https?:\/\//, '').split('/')[0];
+    var plausibleUrl = 'https://analytics.vers-patenschaft.de/' + domain;
+    var plausibleParams = [];
+    if (source) plausibleParams.push('f=is,utm_source,' + encodeURIComponent(source));
+    if (medium) plausibleParams.push('f=is,utm_medium,' + encodeURIComponent(medium));
+    if (campaign) plausibleParams.push('f=is,utm_campaign,' + encodeURIComponent(campaign));
+    var content = document.getElementById('utm-content').value.trim();
+    var term = document.getElementById('utm-term').value.trim();
+    if (content) plausibleParams.push('f=is,utm_content,' + encodeURIComponent(content));
+    if (term) plausibleParams.push('f=is,utm_term,' + encodeURIComponent(term));
+    if (plausibleParams.length > 0) {
+        plausibleUrl += '?' + plausibleParams.join('&');
+    }
+    document.getElementById('preview-plausible-link').href = plausibleUrl;
+}
+
+function copyPreviewUrl(type) {
+    var btn = document.getElementById('preview-copy-' + type);
+    var url = btn.getAttribute('data-url');
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(function() {
+        var original = btn.textContent;
+        btn.textContent = 'Kopiert!';
+        btn.classList.replace('btn-outline-secondary', 'btn-success');
+        setTimeout(function() {
+            btn.textContent = original;
+            btn.classList.replace('btn-success', 'btn-outline-secondary');
+        }, 2000);
+    });
+}
+
+// Initialize preview on page load
+document.addEventListener('DOMContentLoaded', updatePreview);
+</script>
+{% endblock %}

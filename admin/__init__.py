@@ -59,6 +59,16 @@ def init_admin(app):
     # Book prioritization management
     admin_bp.add_url_rule('/book-priorities', 'book_priorities', views.book_priorities, methods=['GET', 'POST'])
 
+    # Campaign URL management
+    admin_bp.add_url_rule('/campaigns', 'campaign_urls_list', views.campaign_urls_list)
+    admin_bp.add_url_rule('/campaigns/new', 'campaign_url_create', views.campaign_url_create, methods=['GET', 'POST'])
+    admin_bp.add_url_rule('/campaigns/<int:campaign_id>/edit', 'campaign_url_edit', views.campaign_url_edit, methods=['GET', 'POST'])
+    admin_bp.add_url_rule('/campaigns/<int:campaign_id>/toggle', 'campaign_url_toggle', views.campaign_url_toggle, methods=['POST'])
+    admin_bp.add_url_rule('/campaigns/<int:campaign_id>/delete', 'campaign_url_delete', views.campaign_url_delete, methods=['POST'])
+    admin_bp.add_url_rule('/campaigns/<int:campaign_id>/qr.png', 'campaign_url_qr_png', views.campaign_url_qr_png)
+    admin_bp.add_url_rule('/campaigns/<int:campaign_id>/qr.svg', 'campaign_url_qr_svg', views.campaign_url_qr_svg)
+    admin_bp.add_url_rule('/api/check-slug/<slug>', 'check_slug', views.check_slug)
+
     # Apply rate limiting - skip for now as it requires route-specific setup
 
     return admin_bp

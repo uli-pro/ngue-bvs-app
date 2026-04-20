@@ -1,0 +1,230 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Kampagnen-URLs - Admin - NGÜ Bibelvers-Patenschaft{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Kampagnen-URLs</h2>
+<p class="text-muted">
+    Hier lassen sich Tracking-Links erstellen und verwalten, um zu sehen welche
+    Marketing-Kanäle Spender bringen.
+    → <a href="https://analytics.vers-patenschaft.de/vers-patenschaft.de" target="_blank">Plausible Analytics öffnen</a>
+</p>
+
+<!-- Schnell-Erstellung -->
+<div class="card mb-4">
+    <div class="card-body">
+        <strong>Schnell-Erstellung:</strong>
+        <div class="mt-2 d-flex flex-wrap gap-2">
+            {% for key, preset in presets.items() %}
+            <a href="{{ url_for('admin.campaign_url_create', preset=key) }}" class="btn btn-outline-secondary">
+                {{ preset.name }}
+            </a>
+            {% endfor %}
+            <a href="{{ url_for('admin.campaign_url_create') }}" class="btn btn-primary">
+                + Eigene URL erstellen
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter/Suche -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.campaign_urls_list') }}" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control" name="search"
+                       value="{{ search }}" placeholder="Name, Quelle oder Kurzlink suchen...">
+            </div>
+            <div class="col-md-4">
+                <select name="filter" class="form-select">
+                    <option value="active" {% if filter_type == 'active' %}selected{% endif %}>Aktive Kampagnen</option>
+                    <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Alle Kampagnen</option>
+                    <option value="online" {% if filter_type == 'online' %}selected{% endif %}>Online-Kampagnen</option>
+                    <option value="offline" {% if filter_type == 'offline' %}selected{% endif %}>Offline-Kampagnen</option>
+                    <option value="archived" {% if filter_type == 'archived' %}selected{% endif %}>Archivierte Kampagnen</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if campaigns.items %}
+<!-- URL-Tabelle -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Kanal</th>
+                    <th>Typ</th>
+                    <th style="min-width: 280px;">URL</th>
+                    <th>Erstellt</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in campaigns.items %}
+                <tr class="{% if not c.is_active %}table-secondary{% endif %}">
+                    <td>
+                        <strong {% if not c.is_active %}style="text-decoration: line-through;"{% endif %}>{{ c.name }}</strong>
+                        {% if c.utm_campaign %}
+                        <br><small class="text-muted">{{ c.utm_campaign }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ c.utm_source }}</span><br>
+                        <span class="badge {{ c.medium_badge_class }}" {% if c.utm_medium == 'paid_social' %}style="background-color: #6f42c1 !important;"{% elif c.utm_medium == 'referral' %}style="background-color: #6c757d !important;"{% endif %}>
+                            {{ c.medium_label }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if c.url_type == 'online' %}
+                        <span class="badge bg-info">Online</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Offline</span>
+                        {% if c.slug %}
+                        <br><small class="text-muted">/{{ c.slug }}</small>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control form-control-sm" value="{{ c.display_url }}" readonly
+                                   style="text-overflow: ellipsis; overflow: hidden;">
+                            <button class="btn btn-outline-secondary btn-sm copy-btn" data-url="{{ c.display_url }}">
+                                Kopieren
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <small>{{ c.created_at.strftime('%d.%m.%Y') }}</small>
+                    </td>
+                    <td>
+                        <a href="{{ c.plausible_url }}" target="_blank" class="btn btn-sm btn-outline-secondary me-1"
+                           title="In Plausible öffnen">Statistik</a>
+                        <a href="{{ url_for('admin.campaign_url_edit', campaign_id=c.id) }}"
+                           class="btn btn-sm btn-outline-primary me-1">Bearbeiten</a>
+                        {% if c.url_type == 'offline' and c.slug %}
+                        <button class="btn btn-sm btn-outline-dark me-1" data-bs-toggle="modal"
+                                data-bs-target="#qr-modal-{{ c.id }}" title="QR-Code">QR</button>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('admin.campaign_url_delete', campaign_id=c.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm({% if c.url_type == 'offline' and c.slug %}'Kampagnen-URL \'{{ c.name }}\' wirklich löschen?\n\nAchtung: Der Kurzlink {{ c.short_url }} und der QR-Code funktionieren danach nicht mehr!\n\nDie Tracking-Daten in Plausible bleiben erhalten.'{% else %}'Kampagnen-URL \'{{ c.name }}\' wirklich löschen?\n\nDie Tracking-Daten in Plausible bleiben erhalten.'{% endif %})">Löschen</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if campaigns.pages > 1 %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if campaigns.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.campaign_urls_list', page=campaigns.prev_num, search=search, filter=filter_type) }}">←</a>
+                </li>
+                {% endif %}
+                {% for page_num in campaigns.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == campaigns.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.campaign_urls_list', page=page_num, search=search, filter=filter_type) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                {% if campaigns.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.campaign_urls_list', page=campaigns.next_num, search=search, filter=filter_type) }}">→</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- QR-Code Modals -->
+{% for c in campaigns.items %}
+{% if c.url_type == 'offline' and c.slug %}
+<div class="modal fade" id="qr-modal-{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">QR-Code: {{ c.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="{{ url_for('admin.campaign_url_qr_png', campaign_id=c.id, size=300) }}"
+                     width="300" height="300" alt="QR-Code" class="mb-3">
+                <p class="text-muted">{{ c.short_url }}</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="{{ url_for('admin.campaign_url_qr_png', campaign_id=c.id, size=1200, download=1) }}"
+                   class="btn btn-outline-primary" download>PNG herunterladen</a>
+                <a href="{{ url_for('admin.campaign_url_qr_svg', campaign_id=c.id) }}"
+                   class="btn btn-outline-primary" download>SVG herunterladen</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% else %}
+<!-- Empty State -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <h4 class="text-muted mb-3">Noch keine Kampagnen-URLs vorhanden.</h4>
+        <p class="text-muted mb-4">
+            Mit Kampagnen-URLs lässt sich nachverfolgen, welche Marketing-Kanäle<br>
+            (Instagram, Newsletter, Flyer...) tatsächlich Spender bringen.
+        </p>
+        <p class="text-muted mb-4">
+            <strong>So funktioniert's:</strong><br>
+            1. Erstelle eine URL für jeden Marketing-Kanal<br>
+            2. Verwende diese URL statt des normalen Links<br>
+            3. In Plausible siehst du dann, welcher Kanal Spender bringt
+        </p>
+        <a href="{{ url_for('admin.campaign_url_create') }}" class="btn btn-primary btn-lg">
+            Erste Kampagnen-URL erstellen
+        </a>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .badge.bg-purple { background-color: #6f42c1 !important; }
+    .badge.bg-dark-gray { background-color: #6c757d !important; }
+</style>
+<script>
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+    var url = btn.getAttribute('data-url');
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(function() {
+        var original = btn.textContent;
+        var originalClass = btn.className;
+        btn.textContent = 'Kopiert!';
+        btn.className = btn.className.replace('btn-outline-secondary', 'btn-success').replace('btn-outline-success', 'btn-success');
+        setTimeout(function() {
+            btn.textContent = original;
+            btn.className = originalClass;
+        }, 2000);
+    });
+});
+</script>
+{% endblock %}

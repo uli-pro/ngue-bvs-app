@@ -1346,3 +1346,133 @@ class BookPriority(db.Model):
     def __repr__(self):
         active = "active" if self.is_active else "inactive"
         return f'<BookPriority {self.book_code} {self.boost_value:+d} ({active})>'
+
+
+class CampaignUrl(db.Model):
+    """Central UTM URL management for online and offline marketing campaigns."""
+    __tablename__ = 'campaign_urls'
+
+    # Valid utm_medium values (industry standard)
+    MEDIUM_CHOICES = [
+        ('social', 'Social Media (organisch)'),
+        ('paid_social', 'Social Media (bezahlt)'),
+        ('cpc', 'Suchmaschinenwerbung'),
+        ('email', 'E-Mail / Newsletter'),
+        ('referral', 'Empfehlung / Partner'),
+        ('print', 'Druck / Print'),
+        ('event', 'Veranstaltung / Event'),
+    ]
+
+    MEDIUM_BADGE_CLASSES = {
+        'social': 'bg-primary',
+        'paid_social': 'bg-purple',
+        'cpc': 'bg-danger',
+        'email': 'bg-info',
+        'referral': 'bg-dark-gray',
+        'print': 'bg-warning text-dark',
+        'event': 'bg-success',
+    }
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    url_type = db.Column(db.String(10), nullable=False, default='online')  # 'online' or 'offline'
+    slug = db.Column(db.String(60), unique=True, nullable=True, index=True)
+    target_url = db.Column(db.String(500), nullable=False, default='vers-patenschaft.de')
+    utm_source = db.Column(db.String(100), nullable=False)
+    utm_medium = db.Column(db.String(50), nullable=False)
+    utm_campaign = db.Column(db.String(200), nullable=True)
+    utm_content = db.Column(db.String(200), nullable=True)
+    utm_term = db.Column(db.String(200), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    click_count = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.String(200), nullable=True)
+
+    @property
+    def full_url(self):
+        """Full URL with all UTM parameters."""
+        base = self.target_url or 'vers-patenschaft.de'
+        if not base.startswith('http'):
+            base = f'https://{base}'
+        params = []
+        if self.utm_source:
+            params.append(f'utm_source={self.utm_source}')
+        if self.utm_medium:
+            params.append(f'utm_medium={self.utm_medium}')
+        if self.utm_campaign:
+            params.append(f'utm_campaign={self.utm_campaign}')
+        if self.utm_content:
+            params.append(f'utm_content={self.utm_content}')
+        if self.utm_term:
+            params.append(f'utm_term={self.utm_term}')
+        if params:
+            separator = '&' if '?' in base else '?'
+            return base + separator + '&'.join(params)
+        return base
+
+    @property
+    def short_url(self):
+        """Short URL for offline redirects."""
+        if self.url_type == 'offline' and self.slug:
+            return f'https://vers-patenschaft.de/{self.slug}'
+        return None
+
+    @property
+    def plausible_url(self):
+        """Deeplink to Plausible Analytics with matching filters."""
+        from urllib.parse import urlparse, quote
+        url = self.target_url if '://' in (self.target_url or '') else f'https://{self.target_url}'
+        domain = urlparse(url).netloc
+        base = f'https://analytics.vers-patenschaft.de/{domain}'
+        params = []
+        if self.utm_source:
+            params.append(f'f=is,utm_source,{quote(self.utm_source)}')
+        if self.utm_medium:
+            params.append(f'f=is,utm_medium,{quote(self.utm_medium)}')
+        if self.utm_campaign:
+            params.append(f'f=is,utm_campaign,{quote(self.utm_campaign)}')
+        if self.utm_content:
+            params.append(f'f=is,utm_content,{quote(self.utm_content)}')
+        if self.utm_term:
+            params.append(f'f=is,utm_term,{quote(self.utm_term)}')
+        if params:
+            return base + '?' + '&'.join(params)
+        return base
+
+    @property
+    def medium_label(self):
+        """Human-readable medium label."""
+        for value, label in self.MEDIUM_CHOICES:
+            if value == self.utm_medium:
+                return label
+        return self.utm_medium
+
+    @property
+    def medium_badge_class(self):
+        """CSS class for medium badge."""
+        return self.MEDIUM_BADGE_CLASSES.get(self.utm_medium, 'bg-secondary')
+
+    @property
+    def display_url(self):
+        """URL to show in the list (short_url for offline, full_url for online)."""
+        if self.url_type == 'offline' and self.slug:
+            return self.short_url
+        return self.full_url
+
+    @classmethod
+    def get_existing_sources(cls):
+        """Get all distinct utm_source values for datalist suggestions."""
+        results = db.session.query(cls.utm_source).distinct().order_by(cls.utm_source).all()
+        return [r[0] for r in results if r[0]]
+
+    @classmethod
+    def is_slug_available(cls, slug, exclude_id=None):
+        """Check if a slug is available (not taken by another campaign)."""
+        query = cls.query.filter_by(slug=slug)
+        if exclude_id:
+            query = query.filter(cls.id != exclude_id)
+        return query.first() is None
+
+    def __repr__(self):
+        return f'<CampaignUrl {self.id}: {self.name} ({self.url_type})>'

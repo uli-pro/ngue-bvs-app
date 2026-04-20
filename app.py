@@ -47,7 +47,7 @@ app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority, CampaignUrl
 from sqlalchemy import text
 from stripe_service import StripeService, StripeError
 from pdf_service import PDFGeneratorService, PDFGenerationError
@@ -2095,6 +2095,24 @@ def switch_email_provider():
             'status': 'error',
             'message': str(e)
         }), 500
+
+# Campaign URL redirect (catch-all, must be registered LAST)
+@app.route("/<slug>")
+def campaign_redirect(slug):
+    """Redirect short campaign URLs to full UTM URLs."""
+    campaign = CampaignUrl.query.filter_by(
+        slug=slug, url_type='offline', is_active=True
+    ).first()
+    if not campaign:
+        abort(404)
+    from sqlalchemy import update
+    db.session.execute(
+        update(CampaignUrl).where(CampaignUrl.id == campaign.id)
+        .values(click_count=CampaignUrl.click_count + 1)
+    )
+    db.session.commit()
+    return redirect(campaign.full_url, code=302)
+
 
 if __name__ == "__main__":
     # Run in debug mode for development
