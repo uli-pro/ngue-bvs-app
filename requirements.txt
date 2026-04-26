@@ -20,7 +20,9 @@ python-dotenv>=1.0.0
 Werkzeug>=3.0.1
 
 # Payment processing
-stripe>=12.4.0
+# Pin to 12.x — Stripe 13+ removed dict-style .get() on Event/PaymentIntent objects,
+# breaking webhook handlers (event.get('type') raises AttributeError).
+stripe>=12.4.0,<13.0.0
 
 # CRM Integration
 hubspot-api-client>=12.0.0
