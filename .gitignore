@@ -88,6 +88,8 @@ uploads/
 # Non-deployment files
 do_not_deploy/
 do-not-deploy/
+# Eingabe-Protokolle von bulk_sponsoring.py — enthalten personenbezogene Spenderdaten
+bulk-eingaben/
 # Runtime generated certificates (nur Root-Level, nicht templates/)
 /certificates/
 !certificates/.gitkeep

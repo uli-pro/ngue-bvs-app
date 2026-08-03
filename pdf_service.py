@@ -793,44 +793,63 @@ class PDFGeneratorService:
         
         return context
 
-    def _amount_to_words(self, amount: Decimal) -> str:
-        """Konvertiert Dezimalbetrag in deutsche Zahlwörter"""
-        
-        # Vereinfachte Implementierung für gängige Beträge (0-9999 Euro)
+    @staticmethod
+    def _below_thousand_to_words(value: int) -> str:
+        """Zahlwort für 0-999, kleingeschrieben. Leerstring bei 0."""
+
         ones = ['null', 'ein', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun']
-        teens = ['zehn', 'elf', 'zwölf', 'dreizehn', 'vierzehn', 'fünfzehn', 
+        teens = ['zehn', 'elf', 'zwölf', 'dreizehn', 'vierzehn', 'fünfzehn',
                  'sechzehn', 'siebzehn', 'achtzehn', 'neunzehn']
-        tens = ['', '', 'zwanzig', 'dreißig', 'vierzig', 'fünfzig', 'sechzig', 
+        tens = ['', '', 'zwanzig', 'dreißig', 'vierzig', 'fünfzig', 'sechzig',
                 'siebzig', 'achtzig', 'neunzig']
         hundreds = ['', 'einhundert', 'zweihundert', 'dreihundert', 'vierhundert',
                     'fünfhundert', 'sechshundert', 'siebenhundert', 'achthundert', 'neunhundert']
-        
+
+        h = value // 100
+        remainder = value % 100
+
+        result = hundreds[h] if h > 0 else ''
+
+        if 10 <= remainder < 20:
+            result += teens[remainder - 10]
+        elif remainder >= 20:
+            t = remainder // 10
+            o = remainder % 10
+            if o > 0:
+                result += ones[o] + 'und' + tens[t]
+            else:
+                result += tens[t]
+        elif remainder > 0:
+            result += ones[remainder]
+
+        return result
+
+    def _amount_to_words(self, amount: Decimal) -> str:
+        """Konvertiert Dezimalbetrag in deutsche Zahlwörter.
+
+        Deckt 0 bis 999.999 € ab — das ist der gesamte Wertebereich von
+        donations.total_amount (Numeric(8,2)). Nachkommastellen werden nicht
+        ausgeschrieben; das Feld auf der Spendenbescheinigung nennt nur den
+        vollen Eurobetrag.
+        """
+
         amount_int = int(amount)
-        
-        if amount_int == 100:
-            return "Einhundert"
-        elif amount_int < 1000:
-            # Für Beträge 100-999
-            h = amount_int // 100
-            remainder = amount_int % 100
-            
-            result = hundreds[h] if h > 0 else ''
-            
-            if remainder >= 10 and remainder < 20:
-                result += teens[remainder - 10]
-            elif remainder >= 20:
-                t = remainder // 10
-                o = remainder % 10
-                if o > 0:
-                    result += ones[o] + 'und' + tens[t]
-                else:
-                    result += tens[t]
-            elif remainder > 0:
-                result += ones[remainder]
-            
-            return result.capitalize()
-        
-        # Fallback für komplexere Beträge
+
+        if amount_int == 0:
+            return "Null"
+
+        if amount_int < 1000:
+            return self._below_thousand_to_words(amount_int).capitalize()
+
+        if amount_int < 1_000_000:
+            thousands = amount_int // 1000
+            remainder = amount_int % 1000
+            wort = (self._below_thousand_to_words(thousands)
+                    + 'tausend'
+                    + self._below_thousand_to_words(remainder))
+            return wort.capitalize()
+
+        # Über dem Wertebereich des Betragsfeldes — sollte nicht vorkommen
         return f"{amount_int}"
 
     def _generate_pdf_from_html(self, html_content: str, output_path: str):

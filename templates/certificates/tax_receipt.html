@@ -53,24 +53,34 @@
             color: #000;
         }
         
-        /* Amount in words */
+        /* Amount in words
+           Spalte im Hintergrund-PNG: 77,3mm bis 133,9mm.
+           Zentriert, damit lange Zahlwörter symmetrisch stehen; bei Überlänge
+           wird umbrochen statt in die Nachbarspalte zu laufen (Zelle reicht
+           bis 91mm, zwei Zeilen passen). */
         .amount-words {
             position: absolute;
             top: 82mm;
-            left: 85mm;
-            width: 50mm;
+            left: 79mm;
+            width: 53mm;
             font-size: 11pt;
             color: #000;
+            text-align: center;
+            line-height: 1.1;
+            overflow-wrap: anywhere;
         }
-        
-        /* Donation date */
+
+        /* Donation date
+           Spalte im Hintergrund-PNG: 133,9mm bis 194,7mm.
+           Rechtsbündig, damit links Luft für lange Zahlwörter bleibt. */
         .donation-date {
             position: absolute;
             top: 82mm;
-            left: 149mm;
-            width: 40mm;
+            left: 136mm;
+            width: 56mm;
             font-size: 11pt;
             color: #000;
+            text-align: right;
         }
         
         /* Donor name and address fields */

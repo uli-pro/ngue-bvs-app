@@ -119,6 +119,9 @@ certificates/
 # Database migrations (not needed in container)
 migrations/
 
+# Eingabe-Protokolle von bulk_sponsoring.py (personenbezogene Spenderdaten)
+bulk-eingaben/
+
 # -----------------------------------------------------------------------------
 # IMPORTANT: Files needed in container
 # -----------------------------------------------------------------------------
@@ -137,6 +140,7 @@ migrations/
 !vectorize.py
 !setup_db.py
 !send_daily_report.py
+!bulk_sponsoring.py
 !backfill_payment_methods.py
 !requirements.txt
 
