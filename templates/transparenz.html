@@ -359,14 +359,14 @@ NGÜ-Übersetzung.{% endblock %} {% block main %}
         </div>
       </div>
 
-      <!-- Aktueller Finanzierungsstand -->
+      <!-- Aktueller Stand der Vers-Patenschaften -->
       <div class="col-lg-6">
         <div class="card h-100">
           <div class="card-body p-4">
-            <h3 class="mb-4 text-center">Aktueller Finanzierungsstand</h3>
+            <h3 class="mb-4 text-center">Aktueller Stand der Vers-Patenschaften</h3>
 
             <div class="text-center mb-4">
-              <h4 class="text-primary">{{ stats.percentage }}% finanziert</h4>
+              <h4 class="text-primary">{{ stats.percentage }}% gesponsert</h4>
               <div class="progress mb-3" style="height: 30px">
                 <div
                   class="progress-bar bg-primary"
@@ -380,8 +380,7 @@ NGÜ-Übersetzung.{% endblock %} {% block main %}
                 </div>
               </div>
               <p class="lead">
-                <strong>{{ stats.total_amount|currency }}</strong> von
-                <strong>{{ stats.total_goal|currency }}</strong> finanziert
+                <strong>{{ stats.total_amount|currency }}</strong> gespendet
               </p>
             </div>
 

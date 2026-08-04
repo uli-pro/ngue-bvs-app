@@ -195,7 +195,29 @@ class Verse(db.Model):
             chapter=chapter,
             verse=verse_num
         ).first()
-    
+
+    @property
+    def is_sponsorable(self):
+        """Whether this verse can still be sponsored.
+
+        A verse leaves the offer for two reasons: it is already sponsored, or
+        its book has been published (see TRANSLATED_BOOKS in book_names.py).
+        """
+        return not self.is_sponsored and not self.is_translated
+
+    @classmethod
+    def sponsorable(cls):
+        """Base query for verses that can still be sponsored.
+
+        Use this instead of filtering on is_sponsored alone. Verses of
+        published books stay in the table because donation_verses references
+        them, but they must no longer be offered.
+        """
+        return cls.query.filter(
+            cls.is_sponsored == False,
+            cls.is_translated == False
+        )
+
     @classmethod
     def get_adaptive_featured_verses(cls, limit=3, exclude_ids=None):
         """Get top positive verses for homepage"""
@@ -205,8 +227,7 @@ class Verse(db.Model):
         min_pool_size = 20
         
         for min_score in [90, 80, 70, 60, 50, 40, 30, 20, 10, 0]:
-            pool = cls.query.filter(
-                cls.is_sponsored == False,
+            pool = cls.sponsorable().filter(
                 cls.positivity_score >= min_score,
                 ~cls.id.in_(exclude_ids) if exclude_ids else True
             ).limit(min_pool_size + 10).all()
@@ -233,10 +254,8 @@ class Verse(db.Model):
     def search_keyword(cls, query, limit=10):
         """Full-text search using PostgreSQL tsvector"""
         search_query = func.plainto_tsquery('german', query)
-        results = cls.query.filter(
+        results = cls.sponsorable().filter(
             cls.text_search.op('@@')(search_query)
-        ).filter(
-            cls.is_sponsored == False
         ).order_by(
             func.ts_rank(cls.text_search, search_query).desc()
         ).limit(limit).all()
@@ -248,9 +267,8 @@ class Verse(db.Model):
         if embedding is None:
             return []
         
-        results = cls.query.filter(
-            cls.text_embedding.isnot(None),
-            cls.is_sponsored == False
+        results = cls.sponsorable().filter(
+            cls.text_embedding.isnot(None)
         ).order_by(
             cls.text_embedding.cosine_distance(embedding)
         ).limit(limit).all()
@@ -283,9 +301,8 @@ class Verse(db.Model):
             # Keyword search only
             score = func.ts_rank(cls.text_search, search_query)
         
-        results = cls.query.filter(
-            cls.text_search.op('@@')(search_query),
-            cls.is_sponsored == False
+        results = cls.sponsorable().filter(
+            cls.text_search.op('@@')(search_query)
         ).order_by(
             score.desc()
         ).limit(limit).all()
@@ -309,8 +326,7 @@ class Verse(db.Model):
         min_score = max(0, self.positivity_score - positivity_tolerance)
         max_score = min(100, self.positivity_score + positivity_tolerance)
         
-        base_query = self.__class__.query.filter(
-            self.__class__.is_sponsored == False,
+        base_query = self.__class__.sponsorable().filter(
             self.__class__.id != self.id,
             self.__class__.positivity_score.between(min_score, max_score)
         )
@@ -324,8 +340,8 @@ class Verse(db.Model):
             )
             
             # Filter to match our criteria
-            filtered = [v for v in similar_verses 
-                       if not v.is_sponsored 
+            filtered = [v for v in similar_verses
+                       if v.is_sponsorable
                        and v.id != self.id
                        and min_score <= (v.positivity_score or 0) <= max_score]
             
@@ -346,8 +362,8 @@ class Verse(db.Model):
             )
             
             # Filter to match our criteria
-            filtered = [v for v in similar_verses 
-                       if not v.is_sponsored 
+            filtered = [v for v in similar_verses
+                       if v.is_sponsorable
                        and v.id != self.id
                        and min_score <= (v.positivity_score or 0) <= max_score]
             
@@ -1047,12 +1063,14 @@ class VerseReservation(db.Model):
     def create_or_update(cls, verse_id, session_id, minutes=15):
         """Create new reservation or update existing one with race condition protection"""
         try:
-            # Check if verse is already sponsored (race condition check)
+            # Check if verse is still available (race condition check)
             verse = Verse.query.filter_by(id=verse_id).with_for_update().first()
             if not verse:
                 raise ValueError("Verse not found")
             if verse.is_sponsored:
                 raise ValueError("Verse is already sponsored")
+            if verse.is_translated:
+                raise ValueError("Verse belongs to a published book")
             
             # Check if another session has an active reservation
             active_reservation = cls.query.filter(
@@ -1331,7 +1349,8 @@ class BookPriority(db.Model):
                 ).label('promoted')
             ).filter(
                 Verse.book == boost.book_code,
-                Verse.is_sponsored == False
+                Verse.is_sponsored == False,
+                Verse.is_translated == False
             ).first()
 
             stats[boost.book_code] = {

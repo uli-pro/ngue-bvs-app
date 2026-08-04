@@ -63,6 +63,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import after path setup
 from app import app
 from models import db, Person, Verse, Donation, PaymentTransaction, Certificate, TranslationNotification, VerseReservation, MagicLinkToken, DonationVerse, AdminToken
+from book_names import TRANSLATED_BOOKS
 from sqlalchemy import text
 
 def drop_database():
@@ -233,6 +234,12 @@ def import_verses():
         batch_size = 1000
         
         for verse_data in verses_data:
+            # Bücher aus bereits erschienenen Bänden sofort als übersetzt
+            # markieren. Ohne das würde ein Neuaufbau der Datenbank die
+            # Migration stillschweigend rückgängig machen und die Bücher
+            # wieder käuflich stellen (siehe migrations/007).
+            volume = TRANSLATED_BOOKS.get(verse_data['book'])
+
             verse = Verse(
                 book=verse_data['book'],
                 chapter=verse_data['chapter'],
@@ -240,7 +247,8 @@ def import_verses():
                 text=verse_data['text'],
                 positivity_score=verse_data.get('positivity_score'),
                 is_sponsored=False,
-                is_translated=False
+                is_translated=volume is not None,
+                translation_book_release=volume['release'] if volume else None
             )
             batch.append(verse)
             

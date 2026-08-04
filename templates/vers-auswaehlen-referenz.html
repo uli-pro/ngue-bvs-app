@@ -124,9 +124,9 @@
                             </footer>
                         </blockquote>
                         <div class="alert alert-warning">
-                            <i class="fas fa-heart me-2"></i>
-                            <strong>Dieser Vers wurde bereits gesponsert!</strong><br>
-                            Vielen Dank an alle, die dieses Projekt unterstützen.
+                            <i class="fas fa-heart me-2" id="unavailableIcon"></i>
+                            <strong id="unavailableHeadline">Dieser Vers wurde bereits gesponsert!</strong><br>
+                            <span id="unavailableText">Vielen Dank an alle, die dieses Projekt unterstützen.</span>
                         </div>
                     </div>
                 </div>
@@ -352,8 +352,8 @@
         displaySearchResult(data) {
             const verse = data.verse;
             
-            if (verse.is_sponsored) {
-                this.displaySponsoredVerse(verse, data.similar_verses || []);
+            if (verse.is_sponsorable === false) {
+                this.displayUnavailableVerse(verse, data.similar_verses || []);
             } else {
                 this.displayAvailableVerse(verse);
             }
@@ -370,10 +370,28 @@
             document.getElementById('searchResult').scrollIntoView({behavior: 'smooth'});
         }
         
-        displaySponsoredVerse(verse, similarVerses) {
+        displayUnavailableVerse(verse, similarVerses) {
             document.getElementById('sponsoredReference').textContent = verse.german_reference;
             document.getElementById('sponsoredText').textContent = `"${verse.text}"`;
-            
+
+            // Zwei Gründe, aus denen ein Vers nicht mehr zu haben ist:
+            // Er hat bereits einen Paten, oder sein Buch ist inzwischen erschienen.
+            const headline = document.getElementById('unavailableHeadline');
+            const text = document.getElementById('unavailableText');
+            const icon = document.getElementById('unavailableIcon');
+
+            if (verse.unavailable_reason === 'published') {
+                headline.textContent = 'Dieses Buch ist inzwischen erschienen!';
+                text.textContent = verse.unavailable_notice
+                    ? `${verse.unavailable_notice} Wählen Sie gern einen Vers aus einem der noch nicht übersetzten Bücher.`
+                    : 'Dieser Vers kann nicht mehr gesponsert werden.';
+                icon.className = 'fas fa-book me-2';
+            } else {
+                headline.textContent = 'Dieser Vers wurde bereits gesponsert!';
+                text.textContent = 'Vielen Dank an alle, die dieses Projekt unterstützen.';
+                icon.className = 'fas fa-heart me-2';
+            }
+
             this.displaySimilarVerses(similarVerses);
             
             document.getElementById('searchResult').style.display = 'none';

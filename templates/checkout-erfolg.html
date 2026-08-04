@@ -238,7 +238,7 @@
     <div class="text-center">
       <div class="row">
         <div class="col-md-4">
-          <h3 class="text-primary">{{ total_sponsored or '358' }}</h3>
+          <h3 class="text-primary">{{ "{:,}".format(total_sponsored).replace(",", ".") }}</h3>
           <p class="mb-0">Verse gesponsert</p>
         </div>
         <div class="col-md-4">
@@ -246,7 +246,7 @@
           <p class="mb-0">gespendet</p>
         </div>
         <div class="col-md-4">
-          <h3 class="text-secondary">{{ remaining_verses or '10.640' }}</h3>
+          <h3 class="text-secondary">{{ "{:,}".format(remaining_verses).replace(",", ".") }}</h3>
           <p class="mb-0">Verse verbleibend</p>
         </div>
       </div>

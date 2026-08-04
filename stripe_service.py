@@ -228,7 +228,7 @@ class StripeService:
             
             for item in cart_items:
                 verse = Verse.query.get(item['verse_id'])
-                if not verse or verse.is_sponsored:
+                if not verse or not verse.is_sponsorable:
                     continue
                 verses_to_add.append((verse, Decimal(str(item['amount']))))
                 total_amount += Decimal(str(item['amount']))

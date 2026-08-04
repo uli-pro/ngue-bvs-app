@@ -520,6 +520,21 @@ def main(dry_run, ladepfad):
                 "Bitte klären, bevor die Spende eingetragen wird."
             )
 
+        # Verse aus erschienenen Bänden werden im Shop nicht mehr angeboten.
+        # Eine Patenschaft darauf ist nicht grundsätzlich falsch — sie kann
+        # vor dem Erscheinen zugesagt worden sein —, muss aber eine bewusste
+        # Entscheidung bleiben, deshalb hier nur eine Warnung.
+        erschienen = [v for v in verse if v.is_translated]
+        if erschienen:
+            referenzen = ", ".join(v.german_reference for v in erschienen[:8])
+            weitere = " ..." if len(erschienen) > 8 else ""
+            print(
+                f"\nWARNUNG: {len(erschienen)} der {len(verse)} Verse gehören zu einem "
+                f"bereits erschienenen Band und werden nicht mehr angeboten:\n"
+                f"  {referenzen}{weitere}\n"
+                "Nur fortfahren, wenn die Patenschaft trotzdem so gewollt ist."
+            )
+
         betraege = verteile_betrag(daten["gesamtbetrag"], len(verse))
 
         # --- Person -------------------------------------------------------

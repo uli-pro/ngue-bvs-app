@@ -48,7 +48,8 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
 from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority, CampaignUrl
-from sqlalchemy import text
+from book_names import get_publication_notice
+from sqlalchemy import text, func
 from stripe_service import StripeService, StripeError
 from pdf_service import PDFGeneratorService, PDFGenerationError
 from hubspot_service import HubSpotService
@@ -199,6 +200,26 @@ def sanitize_cart(cart):
     return valid_items
 
 
+def flash_verse_unavailable(verse):
+    """Explain why a verse can no longer be sponsored.
+
+    Two reasons: someone else got there first, or the verse's book has been
+    published in the meantime. The second case needs its own wording — telling
+    a visitor the verse is "already sponsored" would be plain wrong.
+    """
+    if verse.is_translated:
+        flash(
+            f"{get_publication_notice(verse.book)} "
+            "Bitte wählen Sie einen Vers aus einem der noch nicht übersetzten Bücher.",
+            "warning"
+        )
+    else:
+        flash(
+            "Dieser Vers wurde inzwischen gesponsert. Bitte wählen Sie einen anderen.",
+            "warning"
+        )
+
+
 def handle_corrupted_session():
     """Handle corrupted session data gracefully."""
     
@@ -226,62 +247,85 @@ def handle_corrupted_session():
 
 
 # ==========================================
+# SPONSORING STATISTICS
+# ==========================================
+
+# Feste Verszahlen der Bibel (Zählung der Schlachter 1951)
+NT_VERSES = 7958                              # Neues Testament, vollständig übersetzt
+AT_VERSES = 23186                             # Altes Testament, gesamt
+TOTAL_BIBLE_VERSES = NT_VERSES + AT_VERSES    # 31.144
+
+
+def get_sponsoring_stats():
+    """Kennzahlen für Startseite, Transparenzseite und Erfolgsseite.
+
+    Bezugsgröße ist nicht die gesamte Verstabelle, sondern was überhaupt je
+    gesponsert werden konnte: die noch verfügbaren Verse plus alle bereits
+    gesponserten. Verse erschienener Bücher fallen so aus dem Angebot, ohne
+    dass die dort schon übernommenen Patenschaften aus der Zählung
+    verschwinden.
+
+    Der Betrag stammt aus den tatsächlichen Spenden, nicht aus
+    "gesponserte Verse × 100 €" — seit den Bulk-Spenden zu Sonderpreisen
+    stimmen die beiden nicht mehr überein.
+
+    Returns:
+        tuple: (stats, bible_stats) für die Templates
+    """
+    available_verses = Verse.sponsorable().count()
+    sponsored_verses = Verse.query.filter_by(is_sponsored=True).count()
+    total_verses = available_verses + sponsored_verses
+
+    total_amount = db.session.query(
+        func.sum(Donation.total_amount)
+    ).filter_by(payment_status='completed').scalar() or 0
+
+    stats = {
+        'total_verses': total_verses,
+        'sponsored_verses': sponsored_verses,
+        'available_verses': available_verses,
+        'percentage': round(sponsored_verses / total_verses * 100, 1) if total_verses else 0,
+        'total_amount': total_amount
+    }
+
+    # Noch zu übersetzen ist alles, was nicht als erschienen markiert ist —
+    # auch die bereits gesponserten Verse, denn eine Patenschaft ersetzt die
+    # Übersetzungsarbeit nicht.
+    #
+    # Was gar nicht in der Tabelle steht, gilt damit als übersetzt: Genesis
+    # bis Ester, Psalmen und Sprüche. Einzige Ausnahme ist Jona — fertig
+    # übersetzt, aber noch nicht veröffentlicht und nie Teil des
+    # Datenbestands. Seine 48 Verse zählen hier zu Unrecht als übersetzt,
+    # was 0,2 Prozentpunkte ausmacht und bewusst so belassen wurde. Sobald
+    # Jona erscheint, stimmt die Zahl von selbst wieder.
+    at_still_to_translate = Verse.query.filter_by(is_translated=False).count()
+    at_already_translated = AT_VERSES - at_still_to_translate
+    total_translated = NT_VERSES + at_already_translated
+
+    bible_stats = {
+        'total_bible_verses': TOTAL_BIBLE_VERSES,
+        'total_translated': total_translated,
+        'total_remaining': at_still_to_translate,
+        'bible_percentage': round(total_translated / TOTAL_BIBLE_VERSES * 100, 1),
+        'nt_verses': NT_VERSES,
+        'at_verses': AT_VERSES,
+        'at_already_translated': at_already_translated,
+        'at_still_to_translate': at_still_to_translate,
+        'at_percentage': round(at_already_translated / AT_VERSES * 100, 1)
+    }
+
+    return stats, bible_stats
+
+
+# ==========================================
 # INDEX PAGE ROUTES
 # ==========================================
 
 @app.route("/")
 def index():
     """Show homepage"""
-    # Get real statistics from database
-    total_verses = Verse.query.count()
-    sponsored_verses = Verse.query.filter_by(is_sponsored=True).count()
-    available_verses = total_verses - sponsored_verses
-    percentage = round((sponsored_verses / total_verses * 100), 1) if total_verses > 0 else 0
-    
-    # Bible translation progress calculations
-    # Constants for complete Bible
-    NT_VERSES = 7958  # New Testament - completely translated
-    AT_VERSES = 23186  # Old Testament - total verses
-    AT_ALREADY_TRANSLATED = 12139  # AT verses already translated (not in our DB)
-    TOTAL_BIBLE_VERSES = NT_VERSES + AT_VERSES  # 31,144 verses total
-    
-    # Current translation status
-    # NT is complete (7958), AT has 12139 already translated
-    # Our database contains the remaining AT verses that need sponsoring
-    at_remaining_to_translate = total_verses  # Verses in DB = verses still to translate
-    
-    # Overall Bible progress
-    total_translated = NT_VERSES + AT_ALREADY_TRANSLATED  # 7958 + 12139 = 20097
-    total_remaining = at_remaining_to_translate  # Verses in our database
-    bible_percentage = round((total_translated / TOTAL_BIBLE_VERSES * 100), 1)
-    
-    # AT-specific progress
-    at_percentage = round((AT_ALREADY_TRANSLATED / AT_VERSES * 100), 1)
-    
-    # Calculate total amount donated (each verse costs €100)
-    total_amount = sponsored_verses * 100
+    stats, bible_stats = get_sponsoring_stats()
 
-    stats = {
-        'total_verses': total_verses,
-        'sponsored_verses': sponsored_verses,
-        'available_verses': available_verses,
-        'percentage': percentage,
-        'total_amount': total_amount
-    }
-    
-    # Bible translation progress stats
-    bible_stats = {
-        'total_bible_verses': TOTAL_BIBLE_VERSES,
-        'total_translated': total_translated,
-        'total_remaining': total_remaining,
-        'bible_percentage': bible_percentage,
-        'nt_verses': NT_VERSES,
-        'at_verses': AT_VERSES,
-        'at_already_translated': AT_ALREADY_TRANSLATED,
-        'at_still_to_translate': at_remaining_to_translate,
-        'at_percentage': at_percentage
-    }
-    
     return render_template("index.html", stats=stats, bible_stats=bible_stats)
 
 # ==========================================
@@ -301,7 +345,9 @@ def ueber_partner():
 @app.route("/faq")
 def faq():
     """FAQ page"""
-    return render_template("faq.html")
+    stats, bible_stats = get_sponsoring_stats()
+
+    return render_template("faq.html", stats=stats, bible_stats=bible_stats)
 
 # ==========================================
 # VERS-AUSWAEHLEN-ROUTES
@@ -354,7 +400,7 @@ def vers_auswaehlen():
         if 'cart' in session:
             cart_verse_ids = [item['verse_id'] for item in session['cart']]
         
-        available_verses = [v for v in featured_verses if not v.is_sponsored and v.id not in cart_verse_ids]
+        available_verses = [v for v in featured_verses if v.is_sponsorable and v.id not in cart_verse_ids]
         
         if len(available_verses) < len(featured_verses):
             # Ersetze gesponserte/bereits im Korb befindliche Verse
@@ -425,7 +471,15 @@ def api_verse_by_reference(book, chapter, verse_num):
                 'suggestion': 'Please check the book name, chapter and verse numbers'
             }, 404
         
-        # If verse is sponsored, include similar verses
+        # A verse can be unavailable for two reasons: it already has a sponsor,
+        # or its book has been published. Both get alternatives offered.
+        if verse.is_sponsored:
+            unavailable_reason = 'sponsored'
+        elif verse.is_translated:
+            unavailable_reason = 'published'
+        else:
+            unavailable_reason = None
+
         response_data = {
             'success': True,
             'verse': {
@@ -438,12 +492,15 @@ def api_verse_by_reference(book, chapter, verse_num):
                 'german_reference': verse.german_reference,
                 'positivity_score': verse.positivity_score,
                 'is_sponsored': verse.is_sponsored,
+                'is_sponsorable': verse.is_sponsorable,
+                'unavailable_reason': unavailable_reason,
+                'unavailable_notice': get_publication_notice(verse.book),
                 'url_slug': verse.url_slug
             }
         }
-        
-        # Add similar verses if this one is sponsored
-        if verse.is_sponsored:
+
+        # Add similar verses if this one can no longer be sponsored
+        if not verse.is_sponsorable:
             similar_verses = verse.find_similar_verses(limit=3, positivity_tolerance=10)
             response_data['similar_verses'] = [
                 {
@@ -515,7 +572,11 @@ def api_verse_books():
     """Get list of all available books in biblical order"""
     try:
         # Get all available books from database
-        available_books_query = db.session.query(Verse.book.distinct()).all()
+        # Only books that still have sponsorable verses — published books drop
+        # out of the reference search entirely.
+        available_books_query = db.session.query(Verse.book.distinct()).filter(
+            Verse.is_translated == False
+        ).all()
         available_books = {book[0] for book in available_books_query if book[0]}
         
         # Biblical order for Old Testament books
@@ -579,7 +640,8 @@ def api_verse_chapters(book):
     try:
         book_upper = book.upper()
         chapters = db.session.query(Verse.chapter.distinct()).filter(
-            Verse.book == book_upper
+            Verse.book == book_upper,
+            Verse.is_translated == False
         ).order_by(Verse.chapter).all()
         
         chapter_list = [chapter[0] for chapter in chapters if chapter[0]]
@@ -602,7 +664,8 @@ def api_verse_verses(book, chapter):
         book_upper = book.upper()
         verses = db.session.query(Verse.verse.distinct()).filter(
             Verse.book == book_upper,
-            Verse.chapter == chapter
+            Verse.chapter == chapter,
+            Verse.is_translated == False
         ).order_by(Verse.verse).all()
         
         verse_list = [verse[0] for verse in verses if verse[0]]
@@ -671,7 +734,7 @@ def api_keyword_search():
             # Nach kombiniertem Score sortieren (Positivity + Search Score)
             scored_results = []
             for verse in all_results:
-                if not verse.is_sponsored:  # Nur ungesponserte Verse
+                if verse.is_sponsorable:  # Nur noch sponsorbare Verse
                     # Kombinierter Score: 40% Search relevance + 60% Positivity
                     search_relevance = 1.0  # Placeholder - alle Hybrid-Ergebnisse sind relevant
                     positivity_normalized = (verse.positivity_score or 0) / 100.0
@@ -770,9 +833,9 @@ def vers_spendenart(verse_id):
         flash("Dieser Vers wurde nicht gefunden.", "error")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Check if already sponsored
-    if verse.is_sponsored:
-        flash(f"Dieser Vers wurde inzwischen gesponsert. Bitte wählen Sie einen anderen.", "warning")
+    # Check if still available
+    if not verse.is_sponsorable:
+        flash_verse_unavailable(verse)
         return redirect(url_for("vers_auswaehlen"))
     
     # Create or extend reservation
@@ -800,9 +863,9 @@ def vers_spendenart_by_id(verse_id):
         flash("Dieser Vers wurde nicht gefunden.", "error")
         return redirect(url_for("vers_auswaehlen"))
     
-    # Check if already sponsored
-    if verse.is_sponsored:
-        flash(f"Dieser Vers wurde inzwischen gesponsert. Bitte wählen Sie einen anderen.", "warning")
+    # Check if still available
+    if not verse.is_sponsorable:
+        flash_verse_unavailable(verse)
         return redirect(url_for("vers_auswaehlen"))
     
     # Create or extend reservation
@@ -1040,21 +1103,8 @@ def datenschutz():
 @app.route("/transparenz")
 def transparenz():
     """Transparency page"""
-    # Get statistics for transparency display
-    total_verses = Verse.query.count()
-    sponsored_verses = Verse.query.filter_by(is_sponsored=True).count()
-    available_verses = total_verses - sponsored_verses
-    percentage = round((sponsored_verses / total_verses * 100), 1) if total_verses > 0 else 0
-    
-    stats = {
-        'total_verses': total_verses,
-        'sponsored_verses': sponsored_verses,
-        'available_verses': available_verses,
-        'percentage': percentage,
-        'total_amount': sponsored_verses * 100,  # Total amount raised
-        'total_goal': total_verses * 100  # Total funding goal
-    }
-    
+    stats, _ = get_sponsoring_stats()
+
     return render_template("transparenz.html", stats=stats)
 
 
@@ -1222,11 +1272,11 @@ def checkout_zahlung():
     
     for item in cart_items:
         verse = Verse.query.get(item['verse_id'])
-        if not verse or verse.is_sponsored:
+        if not verse or not verse.is_sponsorable:
             unavailable_count += 1
-    
+
     if unavailable_count > 0:
-        flash(f"Achtung: {unavailable_count} Vers(e) in Ihrem Korb sind zwischenzeitlich gesponsert worden. Bitte aktualisieren Sie Ihren Warenkorb.", "danger")
+        flash(f"Achtung: {unavailable_count} Vers(e) in Ihrem Korb sind zwischenzeitlich nicht mehr verfügbar. Bitte aktualisieren Sie Ihren Warenkorb.", "danger")
         return redirect(url_for("spendenkorb"))
     
     # Calculate totals
@@ -1279,7 +1329,7 @@ def create_payment_intent():
         # Validate all verses are still available
         for item in cart_items:
             verse = Verse.query.get(item['verse_id'])
-            if not verse or verse.is_sponsored:
+            if not verse or not verse.is_sponsorable:
                 return jsonify({'error': f'Verse {item["verse_id"]} is no longer available'}), 400
         
         # Get person data and create PaymentIntent
@@ -1546,8 +1596,6 @@ def _prepare_existing_pdfs_context(donation, session_id):
     Returns:
         dict: Template-Context mit existierenden PDF-Links
     """
-    from sqlalchemy import func
-
     # Lade existierende Certificates aus der DB
     existing_certs = Certificate.query.filter_by(donation_id=donation.id).all()
 
@@ -1585,6 +1633,8 @@ def _prepare_existing_pdfs_context(donation, session_id):
         f"for donation {donation.id} (existing PDFs from webhook)"
     )
 
+    stats, _ = get_sponsoring_stats()
+
     return {
         'donation': donation,  # Für Analytics-Script im Template
         'user_email': user_email,
@@ -1595,9 +1645,9 @@ def _prepare_existing_pdfs_context(donation, session_id):
         'total_donations': 1,
         'pdfs_available': len(certificate_links) > 0 or len(tax_receipt_links) > 0,
         'pdfs_from_webhook': True,  # Flag für Template (optional)
-        'total_sponsored': Verse.query.filter_by(is_sponsored=True).count(),
-        'total_amount': db.session.query(func.sum(Donation.total_amount)).filter_by(payment_status='completed').scalar() or 0,
-        'remaining_verses': Verse.query.filter_by(is_sponsored=False).count()
+        'total_sponsored': stats['sponsored_verses'],
+        'total_amount': stats['total_amount'],
+        'remaining_verses': stats['available_verses']
     }
 
 
@@ -1778,6 +1828,12 @@ def api_cart_add():
         
         if verse.is_sponsored:
             return jsonify({'success': False, 'error': 'Vers bereits gesponsert'}), 400
+
+        if verse.is_translated:
+            return jsonify({
+                'success': False,
+                'error': get_publication_notice(verse.book)
+            }), 400
         
         # Check if verse is reserved by someone else
         existing_reservation = VerseReservation.get_active_for_verse(

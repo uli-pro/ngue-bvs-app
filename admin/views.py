@@ -108,7 +108,11 @@ def verses_list():
     if filter_type == 'sponsored':
         query = query.filter_by(is_sponsored=True)
     elif filter_type == 'available':
-        query = query.filter_by(is_sponsored=False)
+        # Nur was tatsächlich angeboten wird. Verse erschienener Buecher sind
+        # zwar nicht gesponsert, aber auch nicht mehr verfuegbar.
+        query = query.filter_by(is_sponsored=False, is_translated=False)
+    elif filter_type == 'translated':
+        query = query.filter_by(is_translated=True)
     elif filter_type == 'reserved':
         query = query.join(VerseReservation).filter(
             VerseReservation.expires_at > datetime.utcnow()
