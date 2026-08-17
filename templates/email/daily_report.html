@@ -150,6 +150,32 @@
 </div>
 {% endif %}
 
+{% if server_status %}
+<div class="highlight" style="margin-top: 15px; background-color: #f8f9fa; border-left-color: #6c757d;">
+    <h3 style="margin-top: 0;">Server-Status</h3>
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tbody>
+            <tr{% if server_status.disk_warning %} style="color: #dc3545; font-weight: bold;"{% endif %}>
+                <td style="padding: 5px 0; width: 130px;">Festplatte:</td>
+                <td style="padding: 5px 0;">{% if server_status.disk_warning %}&#9888; WARNUNG: {% endif %}{{ server_status.disk_display }}</td>
+            </tr>
+            <tr{% if server_status.ram_warning %} style="color: #dc3545; font-weight: bold;"{% endif %}>
+                <td style="padding: 5px 0;">RAM:</td>
+                <td style="padding: 5px 0;">{% if server_status.ram_warning %}&#9888; WARNUNG: {% endif %}{{ server_status.ram_display }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px 0;">Systemlast:</td>
+                <td style="padding: 5px 0;">{{ server_status.load_display }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px 0;">Datenbank:</td>
+                <td style="padding: 5px 0;">{{ server_status.db_display }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block footer_text %}

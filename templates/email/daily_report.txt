@@ -55,6 +55,14 @@ Gesamtbetrag:                 {{ format_currency(cumulative_amount) }}
 {% if failed_totals.count > 0 %}
 {{ failed_totals.count }} fehlgeschlagene Spenden (nicht im Gesamtbetrag): {{ format_currency(failed_totals.amount) }}
 {% endif %}{% endif %}
+{% if server_status %}
+SERVER-STATUS
+-------------
+Festplatte: {% if server_status.disk_warning %}!! WARNUNG: {% endif %}{{ server_status.disk_display }}
+RAM:        {% if server_status.ram_warning %}!! WARNUNG: {% endif %}{{ server_status.ram_display }}
+Systemlast: {{ server_status.load_display }}
+Datenbank:  {{ server_status.db_display }}
+{% endif %}
 
 ---
 Peter-Schoeffer-Stiftung

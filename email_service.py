@@ -860,7 +860,8 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Patenschaft System generier
                 'cumulative_amount': cumulative_amount,
                 'cumulative_count': cumulative_count,
                 'generated_at': generated_at,
-                'format_currency': format_currency
+                'format_currency': format_currency,
+                'server_status': self._collect_server_status()
             }
 
             # Render HTML template
@@ -960,6 +961,79 @@ Diese Nachricht wurde automatisch vom NGÜ Bibelvers-Patenschaft System generier
                 # Different books
                 last_book = get_german_book_name(last_v.book)
                 return f"{first_book} - {last_book} ({verse_count} Verse)"
+
+    def _collect_server_status(self) -> dict:
+        """Collect server health metrics for the daily report.
+
+        Runs inside the app container: disk/RAM/load are read from /proc and
+        the overlay filesystem, which both reflect the host values. Each metric
+        fails independently to 'nicht verfügbar' so the report never breaks.
+
+        Returns dict with display strings and warning flags per metric.
+        """
+        status = {
+            'disk_display': 'nicht verfügbar', 'disk_warning': False,
+            'ram_display': 'nicht verfügbar', 'ram_warning': False,
+            'load_display': 'nicht verfügbar',
+            'db_display': 'nicht verfügbar',
+        }
+
+        def fmt_de(value: float, decimals: int = 1) -> str:
+            return f"{value:.{decimals}f}".replace('.', ',')
+
+        try:
+            import shutil
+            usage = shutil.disk_usage('/')
+            percent = usage.used / usage.total * 100
+            gb = 1024 ** 3
+            status['disk_display'] = (
+                f"{fmt_de(usage.used / gb)} GB von {fmt_de(usage.total / gb)} GB belegt "
+                f"({percent:.0f} %)"
+            )
+            status['disk_warning'] = percent >= 85
+        except Exception as e:
+            self.logger.warning(f"Server status: disk usage failed: {e}")
+
+        try:
+            meminfo = {}
+            with open('/proc/meminfo') as f:
+                for line in f:
+                    key, _, rest = line.partition(':')
+                    meminfo[key] = int(rest.strip().split()[0])  # kB
+            total_kb = meminfo['MemTotal']
+            used_kb = total_kb - meminfo['MemAvailable']
+            percent = used_kb / total_kb * 100
+            mb = 1024
+            status['ram_display'] = (
+                f"{used_kb // mb} MB von {total_kb // mb} MB belegt ({percent:.0f} %)"
+            )
+            status['ram_warning'] = percent >= 90
+        except Exception as e:
+            self.logger.warning(f"Server status: RAM usage failed: {e}")
+
+        try:
+            import os
+            with open('/proc/loadavg') as f:
+                load1, load5, load15 = f.read().split()[:3]
+            cpus = os.cpu_count() or 1
+            status['load_display'] = (
+                f"{load1.replace('.', ',')} / {load5.replace('.', ',')} / "
+                f"{load15.replace('.', ',')} (bei {cpus} CPUs)"
+            )
+        except Exception as e:
+            self.logger.warning(f"Server status: load average failed: {e}")
+
+        try:
+            from sqlalchemy import text
+            from models import db
+            size_pretty = db.session.execute(
+                text("SELECT pg_size_pretty(pg_database_size(current_database()))")
+            ).scalar()
+            status['db_display'] = size_pretty
+        except Exception as e:
+            self.logger.warning(f"Server status: database size failed: {e}")
+
+        return status
 
 
 # Global instance
