@@ -88,6 +88,9 @@ uploads/
 # Non-deployment files
 do_not_deploy/
 do-not-deploy/
+# Templates des einmaligen Dankesmail-Versands (siehe projektwissen/dankesmail-an-paten-versenden.md)
+templates/email/dankesmail_band.html
+templates/email/dankesmail_band.txt
 # Eingabe-Protokolle von bulk_sponsoring.py — enthalten personenbezogene Spenderdaten
 bulk-eingaben/
 # Runtime generated certificates (nur Root-Level, nicht templates/)
