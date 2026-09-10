@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Anfrage {{ req.organization }} - Admin - NGÜ Bibelvers-Patenschaft{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">{{ req.organization }}, {{ req.location }}</h2>
+    <a href="{{ url_for('admin.speaker_requests_list') }}" class="btn btn-outline-secondary">← Zur Liste</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Ansprechperson</strong></div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ req.contact_name }}</strong></p>
+                <p class="mb-1"><a href="mailto:{{ req.email }}?subject=Ihre%20Anfrage%20an%20Ulrich%20Probst%20(NG%C3%9C)">{{ req.email }}</a></p>
+                {% if req.phone %}<p class="mb-1">{{ req.phone }}</p>{% endif %}
+                <p class="text-muted mb-0"><small>Eingegangen am {{ req.created_at.strftime('%d.%m.%Y um %H:%M') }} UTC (Nr. {{ req.id }})</small></p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><strong>Veranstaltung</strong></div>
+            <div class="card-body">
+                <table class="table table-sm mb-3">
+                    <tr><th style="width: 40%;">Art</th><td>{{ req.event_type_label }}</td></tr>
+                    <tr><th>Ort</th><td>{{ req.location }}</td></tr>
+                    <tr><th>Wunschtermin</th><td>{{ req.date_display or '–' }}</td></tr>
+                    <tr><th>Teilnehmer</th><td>{{ req.participants or '–' }}</td></tr>
+                    <tr><th>Zielgruppe</th><td>{{ req.audience or '–' }}</td></tr>
+                    <tr><th>Beamer und Ton</th><td>{{ req.tech_available or '–' }}</td></tr>
+                    <tr><th>Fotos für Social Media</th><td>{{ req.photo_consent_label or '–' }}</td></tr>
+                    <tr><th>Aufmerksam geworden durch</th><td>{{ req.referral_source or '–' }}</td></tr>
+                </table>
+                <strong>Themenwunsch / Anliegen</strong>
+                <div class="p-3 bg-light rounded mt-2" style="white-space: pre-wrap;">{{ req.topic }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Bearbeitung</strong></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.speaker_request_detail', request_id=req.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if req.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="admin_notes" class="form-label">Interne Notizen</label>
+                        <textarea class="form-control" id="admin_notes" name="admin_notes" rows="8"
+                                  placeholder="Telefonate, Absprachen, vereinbarter Termin, Fahrt, Kollekte ...">{{ req.admin_notes or '' }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Speichern</button>
+                </form>
+                {% if req.updated_at %}
+                <p class="text-muted mt-3 mb-0"><small>Zuletzt geändert: {{ req.updated_at.strftime('%d.%m.%Y %H:%M') }} UTC</small></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-body">
+                <p class="mb-2"><small class="text-muted">Löschen entfernt die Anfrage endgültig aus der Datenbank. Die Mail an info@ bleibt bestehen.</small></p>
+                <form method="POST" action="{{ url_for('admin.speaker_request_delete', request_id=req.id) }}"
+                      onsubmit="return confirm('Anfrage von {{ req.organization|e }} wirklich endgültig löschen?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Anfrage löschen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

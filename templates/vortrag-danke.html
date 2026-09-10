@@ -1,0 +1,62 @@
+<!-- This template was developed with assistance from Claude Code (Anthropic) -->
+<!-- Core design and user experience decisions are original work -->
+
+{% extends "layout.html" %}
+
+{% block title %}Anfrage gesendet{% endblock %}
+{% block meta_description %}Ihre Anfrage für einen Vortrag oder eine Predigt ist angekommen.{% endblock %}
+
+{% block main %}
+<section class="hero-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto text-center">
+        <div class="mb-4"><i class="fas fa-check-circle fa-4x text-success"></i></div>
+        <h1 class="hero-title mb-4">Vielen Dank für Ihre Anfrage</h1>
+        <p class="hero-subtitle">
+          Ihre Anfrage ist angekommen. Sie erhalten in Kürze eine Bestätigung per E-Mail. Ich melde mich in der Regel innerhalb einer Woche bei Ihnen, um Termin und Inhalt abzusprechen.
+        </p>
+        <p class="text-secondary">Keine E-Mail erhalten? Prüfen Sie bitte den Spam-Ordner oder schreiben Sie an <a href="mailto:info@vers-patenschaft.de">info@vers-patenschaft.de</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-padding">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-5">
+        <div class="card h-100 text-center">
+          <div class="card-body p-4">
+            <i class="fas fa-hand-holding-heart fa-3x text-primary mb-3"></i>
+            <h5>Die Übersetzung schon jetzt unterstützen</h5>
+            <p class="text-secondary">Mit einer Vers-Patenschaft für 100 € ermöglichen Sie einen Vers des Alten Testaments.</p>
+            <a href="/vers-auswaehlen" class="btn btn-outline-primary">Vers auswählen</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="card h-100 text-center">
+          <div class="card-body p-4">
+            <i class="fab fa-instagram fa-3x text-primary mb-3"></i>
+            <h5>Einblicke in die Übersetzungswerkstatt</h5>
+            <p class="text-secondary">Kurze Videos zu einzelnen Übersetzungsentscheidungen, regelmäßig auf Instagram.</p>
+            <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary">@ngue2029 folgen</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Plausible-Ziel: Anfrage abgeschickt (Ziel „Vortragsanfrage" in Plausible anlegen)
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.plausible === 'function') {
+      window.plausible('Vortragsanfrage');
+    }
+  });
+</script>
+{% endblock %}

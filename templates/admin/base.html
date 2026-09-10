@@ -38,6 +38,7 @@
                 <a href="{{ url_for('admin.donations_list') }}" {% if 'donation' in request.endpoint %}class="active"{% endif %}>Spenden</a>
                 <a href="{{ url_for('admin.campaign_urls_list') }}" {% if 'campaign' in request.endpoint %}class="active"{% endif %}>Kampagnen-URLs</a>
                 <a href="{{ url_for('admin.book_priorities') }}" {% if request.endpoint == 'admin.book_priorities' %}class="active"{% endif %}>Buch-Priorisierung</a>
+                <a href="{{ url_for('admin.speaker_requests_list') }}" {% if 'speaker_request' in request.endpoint %}class="active"{% endif %}>Vortragsanfragen</a>
             </nav>
         </div>
     </div>

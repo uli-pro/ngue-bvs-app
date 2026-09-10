@@ -1,0 +1,429 @@
+<!-- This template was developed with assistance from Claude Code (Anthropic) -->
+<!-- Core design and user experience decisions are original work -->
+
+{% extends "layout.html" %}
+
+{% block title %}Vortrag oder Predigt anfragen{% endblock %}
+{% block meta_description %}Ulrich Probst, Bibelübersetzer der Neuen Genfer Übersetzung, kommt für Vortrag, Predigt oder Gemeindeabend in Ihre Gemeinde. Kein Honorar, nur eine Kollekte für die NGÜ.{% endblock %}
+{% block og_title %}Ulrich Probst als Referent einladen{% endblock %}
+{% block og_description %}Vortrag, Predigt oder Gemeindeabend zur Bibelübersetzung. Kein Honorar, nur eine Kollekte für die Neue Genfer Übersetzung.{% endblock %}
+{% block twitter_title %}Ulrich Probst als Referent einladen{% endblock %}
+{% block twitter_description %}Vortrag, Predigt oder Gemeindeabend zur Bibelübersetzung.{% endblock %}
+
+{% block main %}
+<style>
+  .yt-embed {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .yt-embed img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.85;
+  }
+  .yt-embed iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .yt-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 72px;
+    height: 72px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 1.75rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+  .yt-play:hover,
+  .yt-play:focus {
+    background: var(--color-primary-hover);
+  }
+  .yt-note {
+    font-size: 0.8rem;
+    color: var(--color-neutral);
+  }
+  .reel-video {
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 9 / 16;
+    border-radius: 12px;
+    background: #000;
+    display: block;
+    margin: 0 auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .hero-split {
+    text-align: left;
+  }
+  .hero-split .hero-title {
+    font-size: 2.5rem;
+  }
+  @media (max-width: 991.98px) {
+    .hero-split .hero-title {
+      font-size: 2rem;
+    }
+  }
+  .conditions-list li {
+    margin-bottom: 0.75rem;
+  }
+  .conditions-list i {
+    width: 1.5rem;
+  }
+</style>
+
+<!-- Hero: Text links, Reel rechts -->
+<section class="hero-section hero-split">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="{% if reel_available %}col-lg-7 text-center text-lg-start{% else %}col-lg-8 mx-auto text-center{% endif %}">
+        <h1 class="hero-title mb-4">Ulrich Probst in Ihre Gemeinde einladen<br><small class="text-primary">Vortrag, Predigt oder Gemeindeabend zur Bibelübersetzung</small></h1>
+        <p class="hero-subtitle">
+          Seit 2016 übersetze ich das Alte Testament für die Neue Genfer Übersetzung. Ich komme gern zu Ihnen, um von dieser Arbeit zu erzählen oder zu predigen. Ein Honorar erwarte ich nicht, nur die Gelegenheit, für die NGÜ um Spenden zu bitten.
+        </p>
+        <a href="#anfrage" class="btn btn-primary btn-lg">
+          <i class="fas fa-envelope me-2"></i>Jetzt anfragen
+        </a>
+      </div>
+      {% if reel_available %}
+      <div class="col-lg-5">
+        <video class="reel-video" controls autoplay muted playsinline preload="auto" poster="/static/img/vortrag-reel-poster.jpg">
+          <source src="/static/video/vortrag-reel.mp4" type="video/mp4">
+          Ihr Browser kann dieses Video nicht abspielen.
+        </video>
+        <p class="yt-note mt-2 mb-0 text-center"><i class="fas fa-volume-mute me-1"></i>Startet ohne Ton, zum Anhören auf das Lautsprechersymbol tippen. Jeremia 1,11: Einblick eines Bibelübersetzers, eines der kurzen Videos von <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- Formate -->
+<section class="section-padding">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2>Was ich anbiete</h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card h-100 text-center">
+          <div class="card-body p-4">
+            <div class="mb-3"><i class="fas fa-church fa-3x text-primary"></i></div>
+            <h4>Gottesdienst und Predigt</h4>
+            <p class="mb-2">Predigt über einen Text aus dem Alten Testament, gern nach Ihrem Predigtplan, mit einem kurzen Einblick in die Übersetzungsarbeit.</p>
+            <p class="text-secondary mb-0"><small>25 bis 30 Minuten</small></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 text-center">
+          <div class="card-body p-4">
+            <div class="mb-3"><i class="fas fa-chalkboard-teacher fa-3x text-primary"></i></div>
+            <h4>Vortrag und Gemeindeabend</h4>
+            <p class="mb-2">Ein Abend über die Bibel und ihre Übersetzungen: Wie aus hebräischen Sätzen verständliches Deutsch wird, und was dabei auf dem Spiel steht.</p>
+            <p class="text-secondary mb-0"><small>60 bis 90 Minuten mit Fragerunde</small></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 text-center">
+          <div class="card-body p-4">
+            <div class="mb-3"><i class="fas fa-book-open fa-3x text-primary"></i></div>
+            <h4>Seminar und Bibeltag</h4>
+            <p class="mb-2">Vertiefte Arbeit an einem biblischen Buch oder an Übersetzungsfragen, mit Gruppenarbeit und Gespräch.</p>
+            <p class="text-secondary mb-0"><small>Halber oder ganzer Tag</small></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Themen -->
+<section class="bg-light-custom section-padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <h2 class="text-center mb-4">Themen</h2>
+        <ul class="list-unstyled conditions-list mb-4">
+          <li><i class="fas fa-check text-success me-2"></i><strong>Gottes Wort in unsere Sprache: die Bibel und ihre Übersetzungen.</strong> Warum es so viele Übersetzungen gibt, worin sie sich unterscheiden und wie man eine gute erkennt.</li>
+          <li><i class="fas fa-check text-success me-2"></i><strong>Wie entsteht eine Bibelübersetzung? Ein Blick in die Werkstatt der NGÜ.</strong> Vom hebräischen Text bis zum gedruckten Buch, mit Beispielen aus der laufenden Arbeit.</li>
+          <li><i class="fas fa-check text-success me-2"></i><strong>Warum das Alte Testament für Christen unverzichtbar ist.</strong> Was verloren geht, wenn wir nur das Neue Testament lesen.</li>
+          <li><i class="fas fa-check text-success me-2"></i><strong>Ein Wunschthema nach Absprache.</strong> Sie haben eine Bibelstelle, ein Buch oder eine Frage im Blick? Schreiben Sie es ins Formular.</li>
+        </ul>
+        <p class="text-center text-secondary mb-0">Auf Instagram zeige ich in kurzen Videos, worum es bei einzelnen Übersetzungsentscheidungen geht: <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Videos -->
+<section class="section-padding">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2>Hören und sehen</h2>
+      <p class="lead text-secondary">Ein Vortrag in voller Länge und ein Fernsehbeitrag über meine Arbeit</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+      <div class="col-lg-6">
+        <div class="yt-embed" data-yt-id="8N5WuDm6PKM">
+          <img src="/static/img/yt-vortrag-gottes-wort.jpg" alt="Vorschaubild des Vortrags „Gottes Wort in unsere Sprache“" loading="lazy">
+          <button type="button" class="yt-play" aria-label="Video „Gottes Wort in unsere Sprache“ von YouTube laden und abspielen"><i class="fas fa-play"></i></button>
+        </div>
+        <h5 class="mt-3 mb-1">Gottes Wort in unsere Sprache: die Bibel und ihre Übersetzungen</h5>
+        <p class="yt-note mb-0">Vortrag von Ulrich Probst. Beim Klick wird das Video von YouTube geladen; dabei werden Daten an Google übertragen. <a href="/datenschutz#youtube">Mehr erfahren</a></p>
+      </div>
+      <div class="col-lg-6">
+        <div class="yt-embed" data-yt-id="ut7253tIvV8">
+          <img src="/static/img/yt-fenster-zum-sonntag.jpg" alt="Vorschaubild des Beitrags „Fasziniert von Sprache und der Bibel“" loading="lazy">
+          <button type="button" class="yt-play" aria-label="Beitrag „Fasziniert von Sprache und der Bibel“ von YouTube laden und abspielen"><i class="fas fa-play"></i></button>
+        </div>
+        <h5 class="mt-3 mb-1">Fasziniert von Sprache und der Bibel</h5>
+        <p class="yt-note mb-0">Beitrag des Schweizer Magazins „Fenster zum Sonntag“ aus der Sendung „Bibel mal anders“, 9 Minuten. Beim Klick wird das Video von YouTube geladen; dabei werden Daten an Google übertragen. <a href="/datenschutz#youtube">Mehr erfahren</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Über Ulrich Probst -->
+<section class="bg-light-custom section-padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <div class="card">
+          <div class="card-body p-4 p-md-5">
+            <h2 class="mb-4">Zur Person</h2>
+            <p>Ulrich Probst hat Theologie an der Freien Theologischen Hochschule Gießen studiert und eine Ausbildung in Linguistik an der Sommerakademie der Wycliff-Bibelübersetzer absolviert. Mit Wycliff war er als Soziolinguist und Verwaltungsleiter in der Zentralafrikanischen Republik tätig. Nach fünfzehn Jahren als Pastor arbeitet er seit 2016 an der Neuen Genfer Übersetzung, seit einigen Jahren an den Büchern des Alten Testaments.</p>
+            <p class="mb-0">Er ist verheiratet, Vater von drei erwachsenen Söhnen und lebt in Pohlheim bei Gießen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Rahmenbedingungen -->
+<section class="section-padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <h2 class="text-center mb-4">Was Sie wissen sollten</h2>
+        <ul class="list-unstyled conditions-list">
+          <li><i class="fas fa-hand-holding-heart text-primary me-2"></i><strong>Kein Honorar.</strong> Ich bitte stattdessen um eine Kollekte für die Neue Genfer Übersetzung oder um die Möglichkeit, während der Veranstaltung für die NGÜ um Spenden zu bitten.</li>
+          <li><i class="fas fa-train text-primary me-2"></i><strong>Fahrtkosten</strong> übernimmt die Gemeinde: Bahn 2. Klasse oder 0,30 € pro Kilometer ab Pohlheim bei Gießen. Bei weiter Anreise ist eine Übernachtung nötig, gern privat in der Gemeinde.</li>
+          <li><i class="fas fa-map-marked-alt text-primary me-2"></i><strong>Einsatzgebiet:</strong> Deutschland, auf Anfrage auch Schweiz und Österreich.</li>
+          <li><i class="fas fa-calendar-alt text-primary me-2"></i><strong>Vorlauf:</strong> möglichst vier Wochen, kürzer nach Absprache. Termine nach Verfügbarkeit, Anfragen werden in der Reihenfolge des Eingangs bearbeitet.</li>
+          <li><i class="fas fa-video text-primary me-2"></i><strong>Technik:</strong> Beamer und Ton vor Ort, Laptop und Präsentation bringe ich mit.</li>
+          <li><i class="fas fa-book text-primary me-2"></i><strong>Büchertisch</strong> mit NGÜ-Ausgaben und Informationen zur Vers-Patenschaft, wenn Sie das möchten.</li>
+          <li><i class="fas fa-camera text-primary me-2"></i><strong>Fotos und kurze Videoausschnitte</strong> für unseren Instagram-Kanal mache ich nur, wenn Sie einverstanden sind. Sie entscheiden das im Formular.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Formular -->
+<section id="anfrage" class="bg-light-custom section-padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <h2 class="text-center mb-2">Anfrage senden</h2>
+        <p class="text-center text-secondary mb-4">Ich antworte in der Regel innerhalb einer Woche. Felder mit * sind Pflichtfelder.</p>
+
+        {% if errors %}
+        <div class="alert alert-danger" role="alert">
+          <ul class="mb-0">
+            {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <div class="card">
+          <div class="card-body p-4">
+            <form method="POST" action="/vortrag#anfrage" class="needs-validation" novalidate>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+              <!-- Honeypot: für Menschen unsichtbar, Bots füllen es aus -->
+              <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                <label for="website">Website (do not fill)</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <h5 class="mb-3">Ihre Gemeinde</h5>
+              <div class="row mb-3">
+                <div class="col-md-6 mb-3 mb-md-0">
+                  <label for="organization" class="form-label">Gemeinde oder Organisation *</label>
+                  <input type="text" class="form-control" id="organization" name="organization" maxlength="200" required value="{{ form_data.organization or '' }}">
+                  <div class="invalid-feedback">Bitte geben Sie Ihre Gemeinde oder Organisation an.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="contact_name" class="form-label">Ansprechperson *</label>
+                  <input type="text" class="form-control" id="contact_name" name="contact_name" maxlength="200" required value="{{ form_data.contact_name or '' }}">
+                  <div class="invalid-feedback">Bitte geben Sie eine Ansprechperson an.</div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6 mb-3 mb-md-0">
+                  <label for="email" class="form-label">E-Mail *</label>
+                  <input type="email" class="form-control" id="email" name="email" maxlength="255" required value="{{ form_data.email or '' }}">
+                  <div class="invalid-feedback">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="phone" class="form-label">Telefon</label>
+                  <input type="tel" class="form-control" id="phone" name="phone" maxlength="50" value="{{ form_data.phone or '' }}">
+                </div>
+              </div>
+              <div class="row mb-4">
+                <div class="col-md-3 mb-3 mb-md-0">
+                  <label for="postal_code" class="form-label">PLZ</label>
+                  <input type="text" class="form-control" id="postal_code" name="postal_code" maxlength="10" value="{{ form_data.postal_code or '' }}">
+                </div>
+                <div class="col-md-5 mb-3 mb-md-0">
+                  <label for="city" class="form-label">Ort der Veranstaltung *</label>
+                  <input type="text" class="form-control" id="city" name="city" maxlength="100" required value="{{ form_data.city or '' }}">
+                  <div class="invalid-feedback">Bitte geben Sie den Ort an.</div>
+                </div>
+                <div class="col-md-4">
+                  <label for="country" class="form-label">Land</label>
+                  <select class="form-select" id="country" name="country">
+                    {% for value, label in countries %}
+                    <option value="{{ value }}" {% if (form_data.country or 'DE') == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <h5 class="mb-3">Die Veranstaltung</h5>
+              <div class="row mb-3">
+                <div class="col-md-6 mb-3 mb-md-0">
+                  <label for="event_type" class="form-label">Art der Veranstaltung *</label>
+                  <select class="form-select" id="event_type" name="event_type" required>
+                    <option value="" {% if not form_data.event_type %}selected{% endif %}>Bitte wählen</option>
+                    {% for value, label in event_types %}
+                    <option value="{{ value }}" {% if form_data.event_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="invalid-feedback">Bitte wählen Sie die Art der Veranstaltung.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="event_date" class="form-label">Wunschtermin</label>
+                  <input type="date" class="form-control" id="event_date" name="event_date" min="{{ today }}" value="{{ form_data.event_date or '' }}">
+                  <div class="form-text">Noch kein fester Tag? Dann leer lassen und unten einen Zeitraum nennen.</div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="preferred_date" class="form-label">Zeitraum oder Alternativtermine</label>
+                <input type="text" class="form-control" id="preferred_date" name="preferred_date" maxlength="200" placeholder="z. B. „Frühjahr 2027“, „ein Sonntag im Oktober“ oder „15. oder 22. März“" value="{{ form_data.preferred_date or '' }}">
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-4 mb-3 mb-md-0">
+                  <label for="participants" class="form-label">Erwartete Teilnehmerzahl</label>
+                  <input type="text" class="form-control" id="participants" name="participants" maxlength="50" placeholder="z. B. 40 bis 60" value="{{ form_data.participants or '' }}">
+                </div>
+                <div class="col-md-8">
+                  <label for="audience" class="form-label">Zielgruppe</label>
+                  <input type="text" class="form-control" id="audience" name="audience" maxlength="200" placeholder="z. B. ganze Gemeinde, Hauskreisleiter, Jugend, Seniorenkreis" value="{{ form_data.audience or '' }}">
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="topic" class="form-label">Themenwunsch oder Anliegen *</label>
+                <textarea class="form-control" id="topic" name="topic" rows="5" maxlength="5000" required placeholder="Was soll im Mittelpunkt stehen? Gibt es einen Anlass, ein Bibelbuch, eine Predigtreihe?">{{ form_data.topic or '' }}</textarea>
+                <div class="invalid-feedback">Bitte beschreiben Sie kurz Ihr Anliegen.</div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6 mb-3 mb-md-0">
+                  <label class="form-label d-block">Beamer und Ton vorhanden?</label>
+                  {% for value, label in [('ja', 'Ja'), ('nein', 'Nein'), ('unklar', 'Noch unklar')] %}
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="tech_available" id="tech_{{ value }}" value="{{ value }}" {% if form_data.tech_available == value %}checked{% endif %}>
+                    <label class="form-check-label" for="tech_{{ value }}">{{ label }}</label>
+                  </div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label d-block">Dürfen wir bei der Veranstaltung Fotos oder kurze Videos für unseren Instagram-Kanal aufnehmen?</label>
+                  {% for value, label in photo_choices %}
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="photo_consent" id="photo_{{ value }}" value="{{ value }}" {% if form_data.photo_consent == value %}checked{% endif %}>
+                    <label class="form-check-label" for="photo_{{ value }}">{{ label }}</label>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="mb-4">
+                <label for="referral_source" class="form-label">Wie sind Sie auf dieses Angebot aufmerksam geworden?</label>
+                <input type="text" class="form-control" id="referral_source" name="referral_source" maxlength="200" placeholder="z. B. Instagram, Empfehlung, Newsletter, Vortrag in einer anderen Gemeinde" value="{{ form_data.referral_source or '' }}">
+              </div>
+
+              <div class="mb-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="privacy" name="privacy" value="1" required {% if form_data.privacy %}checked{% endif %}>
+                  <label class="form-check-label" for="privacy">
+                    Ich habe die <a href="/datenschutz#formulare" target="_blank">Datenschutzerklärung</a> gelesen. Meine Angaben werden zur Bearbeitung der Anfrage gespeichert. *
+                  </label>
+                  <div class="invalid-feedback">Bitte akzeptieren Sie die Datenschutzerklärung.</div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="fas fa-paper-plane me-2"></i>Anfrage senden
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <p class="text-center text-secondary mt-4 mb-0"><small>Lieber direkt schreiben? <a href="/kontakt">Zum allgemeinen Kontaktformular</a></small></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Zwei-Klick-Lösung für YouTube: Player erst nach Klick laden (youtube-nocookie.com)
+  document.querySelectorAll('.yt-embed').forEach(function (box) {
+    var button = box.querySelector('.yt-play');
+    if (!button) return;
+    button.addEventListener('click', function () {
+      var id = box.getAttribute('data-yt-id');
+      var iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0';
+      iframe.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('title', 'YouTube-Video');
+      box.innerHTML = '';
+      box.appendChild(iframe);
+    });
+  });
+
+  // Bootstrap-Validierung
+  document.querySelectorAll('.needs-validation').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+
+  // Nach einem Fehler direkt zum Formular springen
+  {% if errors %}
+  document.getElementById('anfrage').scrollIntoView();
+  {% endif %}
+</script>
+{% endblock %}

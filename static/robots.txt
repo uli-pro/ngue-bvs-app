@@ -13,3 +13,4 @@ Disallow: /vers-auswaehlen/referenz
 
 # Sitemap
 Sitemap: https://vers-patenschaft.de/sitemap.xml
+Disallow: /vortrag/danke

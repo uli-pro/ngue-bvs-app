@@ -1,0 +1,93 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Vortragsanfragen - Admin - NGÜ Bibelvers-Patenschaft{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Vortragsanfragen</h2>
+<p class="text-muted">
+    Anfragen von Gemeinden über das Formular <a href="/vortrag" target="_blank">/vortrag</a>.
+    Jede Anfrage geht zusätzlich per Mail an info@vers-patenschaft.de.
+</p>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.speaker_requests_list') }}" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control" name="search"
+                       value="{{ search }}" placeholder="Gemeinde, Ansprechperson, E-Mail oder Ort suchen...">
+            </div>
+            <div class="col-md-4">
+                <select name="status" class="form-select">
+                    <option value="offen" {% if status_filter == 'offen' %}selected{% endif %}>Offen (neu, in Kontakt, Termin)</option>
+                    <option value="alle" {% if status_filter == 'alle' %}selected{% endif %}>Alle</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if requests.items %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Eingang</th>
+                    <th>Gemeinde / Ort</th>
+                    <th>Ansprechperson</th>
+                    <th>Art</th>
+                    <th>Wunschtermin</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in requests.items %}
+                <tr>
+                    <td><small>{{ r.created_at.strftime('%d.%m.%Y') }}</small></td>
+                    <td>
+                        <strong>{{ r.organization }}</strong><br>
+                        <small class="text-muted">{{ r.location }}</small>
+                    </td>
+                    <td>
+                        {{ r.contact_name }}<br>
+                        <small><a href="mailto:{{ r.email }}">{{ r.email }}</a></small>
+                    </td>
+                    <td>{{ r.event_type_label }}</td>
+                    <td><small>{{ r.date_display or '–' }}</small></td>
+                    <td><span class="badge {{ r.status_badge_class }}">{{ r.status_label }}</span></td>
+                    <td>
+                        <a href="{{ url_for('admin.speaker_request_detail', request_id=r.id) }}"
+                           class="btn btn-sm btn-outline-primary">Öffnen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if requests.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if requests.has_prev %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('admin.speaker_requests_list', page=requests.prev_num, status=status_filter, search=search) }}">Zurück</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Seite {{ requests.page }} von {{ requests.pages }}</span></li>
+        {% if requests.has_next %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('admin.speaker_requests_list', page=requests.next_num, status=status_filter, search=search) }}">Weiter</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">Keine Anfragen für diesen Filter.</div>
+{% endif %}
+{% endblock %}

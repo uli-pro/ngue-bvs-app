@@ -1,0 +1,34 @@
+================================================================================
+NGÜ BIBELVERS-PATENSCHAFT - Anfrage erhalten
+================================================================================
+
+Liebe/r {{ req.contact_name }},
+
+vielen Dank für Ihre Anfrage! Sie ist für {{ req.organization }} in {{ req.city }}
+bei mir angekommen. Ich melde mich in der Regel innerhalb von einer Woche bei
+Ihnen, um Termin und Inhalt abzusprechen.
+
+Ihre Angaben:
+-------------
+Art der Veranstaltung: {{ req.event_type_label }}
+Wunschtermin:          {{ req.date_display or 'noch offen' }}
+Eingegangen am:        {{ timestamp }}
+
+Ihr Themenwunsch:
+{{ req.topic }}
+
+--------------------------------------------------------------------------------
+
+Falls Sie in der Zwischenzeit Fragen haben, antworten Sie einfach auf diese
+E-Mail.
+
+Herzliche Grüße
+Ulrich Probst
+Bibelübersetzer der Neuen Genfer Übersetzung
+Peter-Schoeffer-Stiftung
+
+================================================================================
+Peter-Schoeffer-Stiftung
+NGÜ Bibelvers-Patenschaft
+https://vers-patenschaft.de
+================================================================================

@@ -1,0 +1,40 @@
+{% extends "email/base.html" %}
+
+{% block title %}Neue Referenten-Anfrage{% endblock %}
+{% block header %}Neue Referenten-Anfrage{% endblock %}
+
+{% block content %}
+<h2>{{ req.organization }}, {{ req.location }}</h2>
+
+<div class="highlight">
+    <h3>📧 Ansprechperson</h3>
+    <p><strong>Name:</strong> {{ req.contact_name }}<br>
+    <strong>E-Mail:</strong> <a href="mailto:{{ req.email }}" style="color: #2c5aa0;">{{ req.email }}</a><br>
+    {% if req.phone %}<strong>Telefon:</strong> {{ req.phone }}<br>{% endif %}
+    <strong>Eingegangen:</strong> {{ timestamp }}</p>
+</div>
+
+<h3>Veranstaltung</h3>
+<table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="padding: 4px 8px 4px 0; color: #666;">Art</td><td style="padding: 4px 0;">{{ req.event_type_label }}</td></tr>
+    <tr><td style="padding: 4px 8px 4px 0; color: #666;">Wunschtermin</td><td style="padding: 4px 0;">{{ req.date_display or '–' }}</td></tr>
+    <tr><td style="padding: 4px 8px 4px 0; color: #666;">Teilnehmer</td><td style="padding: 4px 0;">{{ req.participants or '–' }}</td></tr>
+    <tr><td style="padding: 4px 8px 4px 0; color: #666;">Zielgruppe</td><td style="padding: 4px 0;">{{ req.audience or '–' }}</td></tr>
+    <tr><td style="padding: 4px 8px 4px 0; color: #666;">Technik (Beamer, Ton)</td><td style="padding: 4px 0;">{{ req.tech_available or '–' }}</td></tr>
+    <tr><td style="padding: 4px 8px 4px 0; color: #666;">Fotos für Social Media</td><td style="padding: 4px 0;">{{ req.photo_consent_label or '–' }}</td></tr>
+    <tr><td style="padding: 4px 8px 4px 0; color: #666;">Aufmerksam geworden durch</td><td style="padding: 4px 0;">{{ req.referral_source or '–' }}</td></tr>
+</table>
+
+<h3>Themenwunsch / Anliegen</h3>
+<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p style="white-space: pre-wrap; margin: 0;">{{ req.topic }}</p>
+</div>
+
+<p><a href="{{ admin_url }}" style="color: #2c5aa0;">Anfrage im Admin öffnen</a> (Anfrage Nr. {{ req.id }})</p>
+
+<p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; color: #666; font-size: 14px;">
+    <strong>Hinweis:</strong> Diese E-Mail wurde automatisch über das Formular „Vortrag anfragen" auf vers-patenschaft.de versendet.
+</p>
+{% endblock %}
+
+{% block footer_text %}Automatisch generierte Referenten-Anfrage{% endblock %}
