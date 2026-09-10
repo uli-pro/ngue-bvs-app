@@ -1,0 +1,30 @@
+{% extends "email/base.html" %}
+
+{% block title %}Ihre Anfrage ist angekommen{% endblock %}
+{% block header %}Anfrage erhalten{% endblock %}
+
+{% block content %}
+<h2>Vielen Dank für Ihre Anfrage!</h2>
+
+<p>Liebe/r {{ req.contact_name }},</p>
+
+<p>Ihre Anfrage für {{ req.organization }} in {{ req.city }} ist bei mir angekommen. Ich melde mich in der Regel innerhalb von einer Woche bei Ihnen, um Termin und Inhalt abzusprechen.</p>
+
+<div class="highlight">
+    <h3>📬 Ihre Angaben</h3>
+    <p><strong>Art der Veranstaltung:</strong> {{ req.event_type_label }}<br>
+    <strong>Wunschtermin:</strong> {{ req.date_display or 'noch offen' }}<br>
+    <strong>Eingegangen am:</strong> {{ timestamp }}</p>
+    <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #c3ddf5;"><strong>Ihr Themenwunsch:</strong></p>
+    <p style="white-space: pre-wrap; font-size: 14px; color: #555;">{{ req.topic }}</p>
+</div>
+
+<p>Falls Sie in der Zwischenzeit Fragen haben, antworten Sie einfach auf diese E-Mail.</p>
+
+<p>Herzliche Grüße<br>
+Ulrich Probst<br>
+Bibelübersetzer der Neuen Genfer Übersetzung<br>
+Peter-Schoeffer-Stiftung</p>
+{% endblock %}
+
+{% block footer_text %}Automatische Eingangsbestätigung{% endblock %}

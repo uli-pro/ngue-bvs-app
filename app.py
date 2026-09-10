@@ -47,7 +47,7 @@ app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority, CampaignUrl
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority, CampaignUrl, SpeakerRequest
 from book_names import get_publication_notice
 from sqlalchemy import text, func
 from stripe_service import StripeService, StripeError
@@ -1085,6 +1085,125 @@ def kontakt():
             return render_template("kontakt.html")
 
     return render_template("kontakt.html")
+
+# ==========================================
+# REFERENTEN-ANFRAGE (Vortrag / Predigt buchen)
+# ==========================================
+
+SPEAKER_REEL_PATH = os.path.join('video', 'vortrag-reel.mp4')
+
+
+def _speaker_form_context(form_data=None):
+    """Gemeinsamer Template-Kontext für die Vortragsseite."""
+    reel_path = os.path.join(app.static_folder, SPEAKER_REEL_PATH)
+    return {
+        'event_types': SpeakerRequest.EVENT_TYPES,
+        'countries': SpeakerRequest.COUNTRIES,
+        'photo_choices': SpeakerRequest.PHOTO_CONSENT_CHOICES,
+        'form_data': form_data or {},
+        'reel_available': os.path.isfile(reel_path),
+        'today': datetime.now().strftime('%Y-%m-%d'),
+    }
+
+
+@app.route("/vortrag", methods=["GET", "POST"])
+@limiter.limit("3 per minute", methods=["POST"])
+def vortrag():
+    """Landingpage und Anfrageformular: Ulrich Probst als Referent oder Prediger einladen."""
+    if request.method == "GET":
+        return render_template("vortrag.html", **_speaker_form_context())
+
+    # Honeypot: Bots füllen das versteckte Feld aus. Erfolg vortäuschen, nichts speichern.
+    if request.form.get("website"):
+        app.logger.warning(f"Honeypot triggered on /vortrag from IP {request.remote_addr}")
+        return redirect(url_for("vortrag_danke"))
+
+    f = {k: (request.form.get(k) or "").strip() for k in [
+        "organization", "contact_name", "email", "phone", "postal_code", "city",
+        "country", "event_type", "event_date", "preferred_date", "participants", "audience",
+        "topic", "tech_available", "photo_consent", "referral_source",
+    ]}
+    f["privacy"] = bool(request.form.get("privacy"))
+
+    errors = []
+    if not f["organization"]:
+        errors.append("Bitte geben Sie Ihre Gemeinde oder Organisation an.")
+    if not f["contact_name"]:
+        errors.append("Bitte geben Sie eine Ansprechperson an.")
+    if "@" not in f["email"] or "." not in f["email"].split("@")[-1]:
+        errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+    if not f["city"]:
+        errors.append("Bitte geben Sie den Ort der Veranstaltung an.")
+    if f["country"] not in dict(SpeakerRequest.COUNTRIES):
+        f["country"] = "DE"
+    if f["event_type"] not in dict(SpeakerRequest.EVENT_TYPES):
+        errors.append("Bitte wählen Sie die Art der Veranstaltung.")
+    if not f["topic"]:
+        errors.append("Bitte beschreiben Sie kurz Ihr Anliegen oder Themenwunsch.")
+    if f["photo_consent"] not in dict(SpeakerRequest.PHOTO_CONSENT_CHOICES):
+        f["photo_consent"] = None
+    if f["tech_available"] not in ("ja", "nein", "unklar"):
+        f["tech_available"] = None
+    if not f["privacy"]:
+        errors.append("Bitte akzeptieren Sie die Datenschutzerklärung.")
+    if len(f["topic"]) > 5000:
+        errors.append("Der Themenwunsch ist zu lang (maximal 5000 Zeichen).")
+    event_date = None
+    if f["event_date"]:
+        try:
+            event_date = datetime.strptime(f["event_date"], "%Y-%m-%d").date()
+        except ValueError:
+            errors.append("Der Wunschtermin ist kein gültiges Datum.")
+
+    if errors:
+        return render_template("vortrag.html", errors=errors, **_speaker_form_context(f)), 400
+
+    try:
+        req = SpeakerRequest(
+            organization=f["organization"][:200],
+            contact_name=f["contact_name"][:200],
+            email=f["email"][:255].lower(),
+            phone=f["phone"][:50] or None,
+            postal_code=f["postal_code"][:10] or None,
+            city=f["city"][:100],
+            country=f["country"],
+            event_type=f["event_type"],
+            event_date=event_date,
+            preferred_date=f["preferred_date"][:200] or None,
+            participants=f["participants"][:50] or None,
+            audience=f["audience"][:200] or None,
+            topic=f["topic"],
+            tech_available=f["tech_available"],
+            photo_consent=f["photo_consent"],
+            referral_source=f["referral_source"][:200] or None,
+            privacy_consent=True,
+            status='neu',
+        )
+        db.session.add(req)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Speaker request could not be saved: {e}")
+        errors = ["Es gab ein Problem beim Speichern Ihrer Anfrage. Bitte versuchen Sie es später erneut oder schreiben Sie an info@vers-patenschaft.de."]
+        return render_template("vortrag.html", errors=errors, **_speaker_form_context(f)), 500
+
+    # Die Anfrage ist gespeichert. Ein Mailfehler darf sie nicht mehr verlieren:
+    # nur loggen, der Admin sieht sie in der Liste.
+    try:
+        admin_url = url_for("admin.speaker_request_detail", request_id=req.id, _external=True)
+        email_service.send_speaker_request_email(req, admin_url=admin_url)
+    except Exception as e:
+        app.logger.error(f"Speaker request #{req.id} saved, but email failed: {e}")
+
+    app.logger.info(f"Speaker request #{req.id} submitted by {req.organization} ({req.email})")
+    return redirect(url_for("vortrag_danke"))
+
+
+@app.route("/vortrag/danke")
+def vortrag_danke():
+    """Bestätigungsseite nach der Anfrage (löst das Plausible-Ziel 'Vortragsanfrage' aus)."""
+    return render_template("vortrag-danke.html")
+
 
 # ==========================================
 # LEGAL ROUTES

@@ -69,6 +69,11 @@ def init_admin(app):
     admin_bp.add_url_rule('/campaigns/<int:campaign_id>/qr.svg', 'campaign_url_qr_svg', views.campaign_url_qr_svg)
     admin_bp.add_url_rule('/api/check-slug/<slug>', 'check_slug', views.check_slug)
 
+    # Referenten-Anfragen (Formular /vortrag)
+    admin_bp.add_url_rule('/vortragsanfragen', 'speaker_requests_list', views.speaker_requests_list)
+    admin_bp.add_url_rule('/vortragsanfragen/<int:request_id>', 'speaker_request_detail', views.speaker_request_detail, methods=['GET', 'POST'])
+    admin_bp.add_url_rule('/vortragsanfragen/<int:request_id>/delete', 'speaker_request_delete', views.speaker_request_delete, methods=['POST'])
+
     # Apply rate limiting - skip for now as it requires route-specific setup
 
     return admin_bp

@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, session
 from admin.decorators import admin_required
-from models import db, Person, Verse, Donation, VerseReservation, Certificate, BookPriority, CampaignUrl
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, BookPriority, CampaignUrl, SpeakerRequest
 from sqlalchemy import or_, func
 from pdf_service import PDFGeneratorService
 from email_service import email_service
@@ -1079,3 +1079,75 @@ def check_slug(slug):
         'available': False,
         'reason': f'Bereits vergeben durch: {existing.name}' if existing else 'Bereits vergeben.',
     })
+
+# ==========================================
+# Referenten-Anfragen (Formular /vortrag)
+# ==========================================
+
+@admin_required
+def speaker_requests_list():
+    """Referenten-Anfragen auflisten, nach Status filtern und durchsuchen."""
+    status_filter = request.args.get('status', 'offen')
+    search = request.args.get('search', '').strip()
+    page = request.args.get('page', 1, type=int)
+
+    query = SpeakerRequest.query
+    if status_filter == 'offen':
+        query = query.filter(SpeakerRequest.status.in_(['neu', 'kontakt', 'termin']))
+    elif status_filter != 'alle':
+        query = query.filter_by(status=status_filter)
+
+    if search:
+        like = f'%{search}%'
+        query = query.filter(or_(
+            SpeakerRequest.organization.ilike(like),
+            SpeakerRequest.contact_name.ilike(like),
+            SpeakerRequest.email.ilike(like),
+            SpeakerRequest.city.ilike(like),
+        ))
+
+    requests_page = query.order_by(SpeakerRequest.created_at.desc()).paginate(
+        page=page, per_page=50, error_out=False
+    )
+    return render_template(
+        'admin/speaker_requests.html',
+        requests=requests_page,
+        status_filter=status_filter,
+        search=search,
+        status_choices=SpeakerRequest.STATUS_CHOICES,
+    )
+
+
+@admin_required
+def speaker_request_detail(request_id):
+    """Eine Anfrage anzeigen, Status und interne Notizen ändern."""
+    req = SpeakerRequest.query.get_or_404(request_id)
+
+    if request.method == 'POST':
+        new_status = request.form.get('status', '').strip()
+        if new_status not in dict(SpeakerRequest.STATUS_CHOICES):
+            flash('Ungültiger Status.', 'error')
+            return redirect(url_for('admin.speaker_request_detail', request_id=req.id))
+        req.status = new_status
+        req.admin_notes = request.form.get('admin_notes', '').strip() or None
+        req.updated_at = datetime.utcnow()
+        db.session.commit()
+        flash('Anfrage gespeichert.', 'success')
+        return redirect(url_for('admin.speaker_request_detail', request_id=req.id))
+
+    return render_template(
+        'admin/speaker_request_detail.html',
+        req=req,
+        status_choices=SpeakerRequest.STATUS_CHOICES,
+    )
+
+
+@admin_required
+def speaker_request_delete(request_id):
+    """Anfrage endgültig löschen (z. B. nach Abschluss oder auf Wunsch des Absenders)."""
+    req = SpeakerRequest.query.get_or_404(request_id)
+    label = f'{req.organization}, {req.city}'
+    db.session.delete(req)
+    db.session.commit()
+    flash(f'Anfrage „{label}" gelöscht.', 'success')
+    return redirect(url_for('admin.speaker_requests_list'))

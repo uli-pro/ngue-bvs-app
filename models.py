@@ -1495,3 +1495,116 @@ class CampaignUrl(db.Model):
 
     def __repr__(self):
         return f'<CampaignUrl {self.id}: {self.name} ({self.url_type})>'
+
+class SpeakerRequest(db.Model):
+    """Anfrage einer Gemeinde, Uli als Referenten oder Prediger einzuladen (Formular /vortrag)."""
+    __tablename__ = 'speaker_requests'
+
+    EVENT_TYPES = [
+        ('gottesdienst', 'Gottesdienst / Predigt'),
+        ('vortrag', 'Vortrag / Gemeindeabend'),
+        ('seminar', 'Seminar / Bibeltag'),
+        ('sonstiges', 'Sonstiges'),
+    ]
+
+    COUNTRIES = [
+        ('DE', 'Deutschland'),
+        ('AT', 'Österreich'),
+        ('CH', 'Schweiz'),
+        ('other', 'Anderes Land'),
+    ]
+
+    PHOTO_CONSENT_CHOICES = [
+        ('yes', 'Ja, gerne'),
+        ('ask', 'Bitte vorher absprechen'),
+        ('no', 'Nein'),
+    ]
+
+    STATUS_CHOICES = [
+        ('neu', 'Neu'),
+        ('kontakt', 'In Kontakt'),
+        ('termin', 'Termin vereinbart'),
+        ('abgeschlossen', 'Abgeschlossen'),
+        ('abgesagt', 'Abgesagt'),
+    ]
+
+    STATUS_BADGE_CLASSES = {
+        'neu': 'bg-danger',
+        'kontakt': 'bg-warning text-dark',
+        'termin': 'bg-primary',
+        'abgeschlossen': 'bg-success',
+        'abgesagt': 'bg-secondary',
+    }
+
+    id = db.Column(db.Integer, primary_key=True)
+    organization = db.Column(db.String(200), nullable=False)
+    contact_name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(50))
+    postal_code = db.Column(db.String(10))
+    city = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(10), nullable=False, default='DE')
+    event_type = db.Column(db.String(20), nullable=False)
+    event_date = db.Column(db.Date)                     # konkreter Wunschtermin (Kalenderfeld)
+    preferred_date = db.Column(db.String(200))          # Freitext: Zeitraum oder Alternativtermine
+    participants = db.Column(db.String(50))             # Freitext: erwartete Teilnehmerzahl
+    audience = db.Column(db.String(200))                # Zielgruppe
+    topic = db.Column(db.Text, nullable=False)          # Themenwunsch / Anliegen
+    tech_available = db.Column(db.String(20))           # 'ja', 'nein', 'unklar'
+    photo_consent = db.Column(db.String(10))            # 'yes', 'ask', 'no'
+    referral_source = db.Column(db.String(200))         # Wie aufmerksam geworden
+    privacy_consent = db.Column(db.Boolean, nullable=False, default=False)
+    status = db.Column(db.String(20), nullable=False, default='neu', index=True)
+    admin_notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @staticmethod
+    def _label(choices, value):
+        for key, label in choices:
+            if key == value:
+                return label
+        return value or ''
+
+    @property
+    def event_type_label(self):
+        return self._label(self.EVENT_TYPES, self.event_type)
+
+    @property
+    def country_label(self):
+        return self._label(self.COUNTRIES, self.country)
+
+    @property
+    def photo_consent_label(self):
+        return self._label(self.PHOTO_CONSENT_CHOICES, self.photo_consent)
+
+    @property
+    def status_label(self):
+        return self._label(self.STATUS_CHOICES, self.status)
+
+    @property
+    def status_badge_class(self):
+        return self.STATUS_BADGE_CLASSES.get(self.status, 'bg-secondary')
+
+    @property
+    def date_display(self):
+        """Wunschtermin für Mails und Admin: Datum, Freitext oder beides."""
+        parts = []
+        if self.event_date:
+            parts.append(self.event_date.strftime('%d.%m.%Y'))
+        if self.preferred_date:
+            parts.append(self.preferred_date)
+        return ', '.join(parts)
+
+    @property
+    def location(self):
+        parts = [p for p in [self.postal_code, self.city] if p]
+        loc = ' '.join(parts)
+        if self.country and self.country != 'DE':
+            loc = f'{loc} ({self.country_label})'
+        return loc
+
+    @classmethod
+    def count_open(cls):
+        """Anzahl der Anfragen, die noch Bearbeitung brauchen (neu oder in Kontakt)."""
+        return cls.query.filter(cls.status.in_(['neu', 'kontakt'])).count()

@@ -568,6 +568,64 @@ class EmailService:
             self.logger.error(f"Contact form email failed: {e}")
             raise EmailServiceError(f"Failed to send contact form email: {e}")
 
+    def send_speaker_request_email(self, req, admin_url: str) -> bool:
+        """Referenten-Anfrage (Formular /vortrag) an info@ senden und Eingangsbestätigung an den Absender.
+
+        Args:
+            req: SpeakerRequest-Objekt (bereits gespeichert, hat eine id)
+            admin_url: Absoluter Link zur Anfrage im Admin
+
+        Returns:
+            bool: True, wenn die Benachrichtigung an das Team verschickt wurde.
+            Die Bestätigung an den Absender darf fehlschlagen, ohne dass die Anfrage verloren geht.
+
+        Raises:
+            EmailServiceError: wenn die Benachrichtigung an das Team nicht verschickt werden kann
+        """
+        try:
+            timestamp = datetime.now().strftime('%d.%m.%Y %H:%M')
+
+            html_body, text_body = self._render_template(
+                'speaker_request', req=req, timestamp=timestamp, admin_url=admin_url
+            )
+            recipient_email = self.provider.active_config['from_email']
+            success = self.provider.send_email(
+                to_email=recipient_email,
+                subject=f"Referenten-Anfrage: {req.organization}, {req.city}",
+                html_body=html_body,
+                text_body=text_body
+            )
+            if not success:
+                raise EmailServiceError("Failed to send speaker request notification to team")
+            self.logger.info(f"Speaker request #{req.id} sent to {recipient_email} from {req.email}")
+
+            try:
+                confirm_html, confirm_text = self._render_template(
+                    'speaker_request_confirmation', req=req, timestamp=timestamp
+                )
+                if self.provider.send_email(
+                    to_email=req.email,
+                    subject="Ihre Anfrage an Ulrich Probst (NGÜ)",
+                    html_body=confirm_html,
+                    text_body=confirm_text
+                ):
+                    self.logger.info(f"Speaker request confirmation sent to {req.email}")
+                else:
+                    self.logger.warning(f"Speaker request confirmation to {req.email} failed (notification sent)")
+            except Exception as e:
+                self.logger.warning(f"Failed to send speaker request confirmation to {req.email}: {e}")
+
+            return True
+
+        except EmailTemplateError as e:
+            self.logger.error(f"Speaker request template error: {e}")
+            raise EmailServiceError(f"Template rendering failed: {e}")
+        except EmailServiceError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Speaker request email failed: {e}")
+            raise EmailServiceError(f"Failed to send speaker request email: {e}")
+
     def generate_magic_link_token(self, email: str, expiry_minutes: int = 15) -> str:
         """Generate secure token for magic link authentication"""
         token = secrets.token_urlsafe(32)

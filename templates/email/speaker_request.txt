@@ -1,0 +1,28 @@
+================================================================================
+NGÜ BIBELVERS-PATENSCHAFT - Neue Referenten-Anfrage (Nr. {{ req.id }})
+================================================================================
+
+Gemeinde/Organisation: {{ req.organization }}
+Ort:                   {{ req.location }}
+Ansprechperson:        {{ req.contact_name }}
+E-Mail:                {{ req.email }}
+Telefon:               {{ req.phone or '–' }}
+Eingegangen:           {{ timestamp }}
+
+Veranstaltung
+-------------
+Art:                   {{ req.event_type_label }}
+Wunschtermin:          {{ req.date_display or '–' }}
+Teilnehmer:            {{ req.participants or '–' }}
+Zielgruppe:            {{ req.audience or '–' }}
+Technik (Beamer, Ton): {{ req.tech_available or '–' }}
+Fotos Social Media:    {{ req.photo_consent_label or '–' }}
+Aufmerksam durch:      {{ req.referral_source or '–' }}
+
+Themenwunsch / Anliegen
+-----------------------
+{{ req.topic }}
+
+--------------------------------------------------------------------------------
+Im Admin öffnen: {{ admin_url }}
+================================================================================
