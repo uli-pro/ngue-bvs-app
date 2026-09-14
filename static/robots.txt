@@ -10,7 +10,7 @@ Disallow: /stripe/
 Disallow: /download/
 Disallow: /vers-auswaehlen/keyword
 Disallow: /vers-auswaehlen/referenz
+Disallow: /vortrag/danke
 
 # Sitemap
 Sitemap: https://vers-patenschaft.de/sitemap.xml
-Disallow: /vortrag/danke
