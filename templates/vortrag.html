@@ -10,6 +10,39 @@
 {% block twitter_title %}Ulrich Probst als Referent einladen{% endblock %}
 {% block twitter_description %}Vortrag, Predigt oder Gemeindeabend zur Bibelübersetzung.{% endblock %}
 
+{% block schema_org %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Ulrich Probst",
+  "jobTitle": "Bibelübersetzer",
+  "description": "Übersetzer der Neuen Genfer Übersetzung (NGÜ), Theologe und Linguist. Hält Vorträge, Predigten und Gemeindeabende zur Bibelübersetzung.",
+  "url": "https://vers-patenschaft.de/vortrag",
+  "homeLocation": {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Pohlheim",
+      "addressRegion": "Hessen",
+      "addressCountry": "DE"
+    }
+  },
+  "worksFor": {
+    "@type": "Organization",
+    "name": "Neue Genfer Übersetzung",
+    "url": "https://neuegenferuebersetzung.de/"
+  },
+  "knowsAbout": ["Bibelübersetzung", "Neue Genfer Übersetzung", "Altes Testament", "Linguistik"],
+  "sameAs": [
+    "https://www.youtube.com/watch?v=8N5WuDm6PKM",
+    "https://www.youtube.com/watch?v=ut7253tIvV8",
+    "https://www.instagram.com/ngue2029/"
+  ]
+}
+</script>
+{% endblock %}
+
 {% block main %}
 <style>
   .yt-embed {
