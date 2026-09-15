@@ -1394,7 +1394,7 @@ class CampaignUrl(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    url_type = db.Column(db.String(10), nullable=False, default='online')  # 'online' or 'offline'
+    url_type = db.Column(db.String(10), nullable=False, default='online')  # 'online' = Direktlink (volle UTM-URL), 'offline' = Kurzlink mit Redirect (Admin-Beschriftung)
     slug = db.Column(db.String(60), unique=True, nullable=True, index=True)
     target_url = db.Column(db.String(500), nullable=False, default='vers-patenschaft.de')
     utm_source = db.Column(db.String(100), nullable=False)

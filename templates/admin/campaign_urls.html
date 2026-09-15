@@ -39,8 +39,8 @@
                 <select name="filter" class="form-select">
                     <option value="active" {% if filter_type == 'active' %}selected{% endif %}>Aktive Kampagnen</option>
                     <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Alle Kampagnen</option>
-                    <option value="online" {% if filter_type == 'online' %}selected{% endif %}>Online-Kampagnen</option>
-                    <option value="offline" {% if filter_type == 'offline' %}selected{% endif %}>Offline-Kampagnen</option>
+                    <option value="online" {% if filter_type == 'online' %}selected{% endif %}>Direktlinks</option>
+                    <option value="offline" {% if filter_type == 'offline' %}selected{% endif %}>Kurzlinks</option>
                     <option value="archived" {% if filter_type == 'archived' %}selected{% endif %}>Archivierte Kampagnen</option>
                 </select>
             </div>
@@ -83,9 +83,9 @@
                     </td>
                     <td>
                         {% if c.url_type == 'online' %}
-                        <span class="badge bg-info">Online</span>
+                        <span class="badge bg-info">Direktlink</span>
                         {% else %}
-                        <span class="badge bg-warning text-dark">Offline</span>
+                        <span class="badge bg-warning text-dark">Kurzlink</span>
                         {% if c.slug %}
                         <br><small class="text-muted">/{{ c.slug }}</small>
                         {% endif %}
