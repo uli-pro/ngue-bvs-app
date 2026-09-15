@@ -31,21 +31,21 @@
                     <div class="btn-group w-100" role="group">
                         <input type="radio" class="btn-check" name="url_type" id="type-online"
                                value="online" {% if current_type != 'offline' %}checked{% endif %}>
-                        <label class="btn btn-outline-primary" for="type-online">Online-Link</label>
+                        <label class="btn btn-outline-primary" for="type-online">Direktlink (volle URL)</label>
                         <input type="radio" class="btn-check" name="url_type" id="type-offline"
                                value="offline" {% if current_type == 'offline' %}checked{% endif %}>
-                        <label class="btn btn-outline-primary" for="type-offline">Offline-Link (Kurzlink + QR)</label>
+                        <label class="btn btn-outline-primary" for="type-offline">Kurzlink (Redirect + QR)</label>
                     </div>
                     <div class="form-text" id="type-help">
                         {% if current_type == 'offline' %}
-                        Für gedrucktes Material: Flyer, Zeitungsanzeigen. Erzeugt Kurzlink + QR-Code.
+                        Kurze, tippbare Adresse wie vers-patenschaft.de/name, die auf die volle URL mit UTM-Parametern weiterleitet. Für alles ohne klickbaren Link: Shorts, Reels, Videos, Flyer, Anzeigen. Erzeugt auch einen QR-Code.
                         {% else %}
-                        Für digitale Kanäle: Instagram, Facebook, Newsletter, Webseiten.
+                        Volle URL mit UTM-Parametern zum direkten Einfügen, wo ein Link anklickbar ist: Newsletter, Webseiten, YouTube-Beschreibung.
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- 3. Kurzlink (nur Offline) -->
+                <!-- 3. Kurzlink (nur Typ Kurzlink) -->
                 <div class="mb-3" id="slug-group" style="{% if current_type != 'offline' %}display: none;{% endif %}">
                     <label class="form-label" for="slug-input">Kurzlink</label>
                     <div class="input-group">
@@ -155,7 +155,7 @@
                                {% if campaign.is_active %}checked{% endif %}>
                         <label class="form-check-label" for="is-active">Aktiv</label>
                     </div>
-                    <div class="form-text">Deaktivierte URLs werden in der Liste ausgegraut. Offline-Redirects geben dann 404 zurück.</div>
+                    <div class="form-text">Deaktivierte URLs werden in der Liste ausgegraut. Kurzlinks geben dann 404 zurück.</div>
                 </div>
                 {% endif %}
 
@@ -206,7 +206,7 @@
         </div>
 
         {% if campaign and campaign.url_type == 'offline' and campaign.slug %}
-        <!-- QR-Code Card (nur Edit, nur Offline) -->
+        <!-- QR-Code Card (nur Edit, nur Kurzlink) -->
         <div class="stat-card mt-4">
             <h5 class="mb-3">QR-Code</h5>
             <div class="text-center">
@@ -292,14 +292,14 @@ document.querySelectorAll('input[name="url_type"]').forEach(function(radio) {
 
         if (this.value === 'offline') {
             slugGroup.style.display = '';
-            typeHelp.textContent = 'Für gedrucktes Material: Flyer, Zeitungsanzeigen. Erzeugt Kurzlink + QR-Code.';
+            typeHelp.textContent = 'Kurze, tippbare Adresse wie vers-patenschaft.de/name, die auf die volle URL mit UTM-Parametern weiterleitet. Für alles ohne klickbaren Link: Shorts, Reels, Videos, Flyer, Anzeigen. Erzeugt auch einen QR-Code.';
             // Auto-select print medium
             if (!mediumSelect.value) {
                 mediumSelect.value = 'print';
             }
         } else {
             slugGroup.style.display = 'none';
-            typeHelp.textContent = 'Für digitale Kanäle: Instagram, Facebook, Newsletter, Webseiten.';
+            typeHelp.textContent = 'Volle URL mit UTM-Parametern zum direkten Einfügen, wo ein Link anklickbar ist: Newsletter, Webseiten, YouTube-Beschreibung.';
         }
         updatePreview();
     });

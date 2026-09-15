@@ -832,7 +832,7 @@ def campaign_url_create():
 
         if url_type == 'offline':
             if not slug:
-                errors.append('Kurzlink ist bei Offline-Links ein Pflichtfeld.')
+                errors.append('Der Kurzlink-Name ist beim Typ Kurzlink ein Pflichtfeld.')
             elif not CampaignUrl.is_slug_available(slug):
                 errors.append('Dieser Kurzlink ist bereits vergeben.')
             elif slug in _get_reserved_slugs():
@@ -933,7 +933,7 @@ def campaign_url_edit(campaign_id):
 
         if url_type == 'offline':
             if not slug:
-                errors.append('Kurzlink ist bei Offline-Links ein Pflichtfeld.')
+                errors.append('Der Kurzlink-Name ist beim Typ Kurzlink ein Pflichtfeld.')
             elif not CampaignUrl.is_slug_available(slug, exclude_id=campaign.id):
                 errors.append('Dieser Kurzlink ist bereits vergeben.')
             elif slug in _get_reserved_slugs():
@@ -1002,7 +1002,7 @@ def campaign_url_qr_png(campaign_id):
     """Generate QR code as PNG."""
     campaign = CampaignUrl.query.get_or_404(campaign_id)
     if campaign.url_type != 'offline' or not campaign.slug:
-        flash('QR-Codes sind nur für Offline-Links verfügbar.', 'error')
+        flash('QR-Codes sind nur für Kurzlinks verfügbar.', 'error')
         return redirect(url_for('admin.campaign_urls_list'))
 
     import qrcode
@@ -1034,7 +1034,7 @@ def campaign_url_qr_svg(campaign_id):
     """Generate QR code as SVG."""
     campaign = CampaignUrl.query.get_or_404(campaign_id)
     if campaign.url_type != 'offline' or not campaign.slug:
-        flash('QR-Codes sind nur für Offline-Links verfügbar.', 'error')
+        flash('QR-Codes sind nur für Kurzlinks verfügbar.', 'error')
         return redirect(url_for('admin.campaign_urls_list'))
 
     import qrcode
