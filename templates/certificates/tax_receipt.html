@@ -67,10 +67,12 @@
             color: #000;
             text-align: center;
             line-height: 1.1;
-            overflow-wrap: anywhere;
+            /* Kein Umbruch mitten im Wort. Lange Zahlwörter tragen weiche
+               Trennstellen (&shy;) nach "tausend"/"hundert", die Striche
+               hängen per &nbsp; am Wort. Ab 27 Zeichen kleinere Schrift,
+               damit zwei Zeilen reichen. */
+            hyphens: manual;
         }
-        /* Lange Zahlwörter (ab ca. 1.700 €, z.B. "Eintausendsiebenhundertfünfzig")
-           würden mitten im Wort umbrechen — stattdessen kleinere Schrift. */
         .amount-words.long { font-size: 9pt; }
         .amount-words.very-long { font-size: 8pt; }
 
@@ -129,7 +131,7 @@
         
         <!-- Amount in words -->
         <div class="amount-words{% if amount_in_words|length > 32 %} very-long{% elif amount_in_words|length > 26 %} long{% endif %}">
-            --- {{ amount_in_words }} ---
+            ---&nbsp;{{ amount_in_words|replace('tausend', 'tausend\u00ad')|replace('hundert', 'hundert\u00ad')|trim('\u00ad') }}&nbsp;---
         </div>
         
         <!-- Donation date -->
