@@ -1,10 +1,11 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, session
 from admin.decorators import admin_required
-from models import db, Person, Verse, Donation, VerseReservation, Certificate, BookPriority, CampaignUrl, SpeakerRequest
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, BookPriority, CampaignUrl, SpeakerRequest, CardCampaign, CardRequest
 from sqlalchemy import or_, func
 from pdf_service import PDFGeneratorService
 from email_service import email_service
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import os
 
 @admin_required
@@ -1158,6 +1159,302 @@ def speaker_request_delete(request_id):
     db.session.commit()
     flash(f'Anfrage „{label}" gelöscht.', 'success')
     return redirect(url_for('admin.speaker_requests_list'))
+
+
+# ==========================================
+# Weihnachtskarten-Aktion (Formular /weihnachtskarten, eigene Datenbank)
+# ==========================================
+
+BERLIN = ZoneInfo('Europe/Berlin')
+
+
+def _card_db_available():
+    from flask import current_app
+    return bool(current_app.config.get('KARTEN_DB_AVAILABLE'))
+
+
+def _csv_cell(value):
+    """CSV-Zelle für LibreOffice: Formel-Injection entschärfen (=, +, -, @, Tab, CR am Anfang)."""
+    if value is None:
+        return ''
+    s = str(value)
+    if s and s[0] in ('=', '+', '-', '@', '\t', '\r'):
+        s = "'" + s
+    return s
+
+
+def _csv_response(rows, filename):
+    """Semikolon-getrennt mit UTF-8-BOM, damit LibreOffice Umlaute und Spalten sofort erkennt."""
+    import csv
+    import io
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=';', quoting=csv.QUOTE_ALL, lineterminator='\r\n')
+    for row in rows:
+        writer.writerow([_csv_cell(v) for v in row])
+    data = '\ufeff' + buf.getvalue()
+    from flask import Response
+    return Response(
+        data.encode('utf-8'),
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
+    )
+
+
+def _utc_to_berlin_input(dt):
+    if not dt:
+        return ''
+    return dt.replace(tzinfo=timezone.utc).astimezone(BERLIN).strftime('%Y-%m-%dT%H:%M')
+
+
+def _berlin_input_to_utc(value):
+    """'2026-11-27T23:59' (Berlin) → naives UTC-datetime; leer → None; ungültig → ValueError."""
+    value = (value or '').strip()
+    if not value:
+        return None
+    local = datetime.strptime(value, '%Y-%m-%dT%H:%M').replace(tzinfo=BERLIN)
+    return local.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+@admin_required
+def card_requests_list():
+    """Übersicht: Einstellungen, Zähler, Liste der Bestellungen, Export und Löschen."""
+    if not _card_db_available():
+        flash('KARTEN_DATABASE_URI ist nicht gesetzt. Die Karten-Datenbank ist nicht angebunden.', 'error')
+        return render_template('admin/card_requests.html', campaign=None, requests=[], stats={})
+    campaign = CardCampaign.get()
+    requests_all = CardRequest.query.order_by(CardRequest.created_at.desc()).all()
+    stats = {
+        'count': len(requests_all),
+        'newsletter': sum(1 for r in requests_all if r.newsletter),
+        'with_email': sum(1 for r in requests_all if r.email),
+        'possible_duplicates': sum(1 for r in requests_all if r.possible_duplicate_of),
+        'by_country': {code: sum(1 for r in requests_all if r.country == code) for code, _ in CardRequest.COUNTRIES},
+    }
+    return render_template(
+        'admin/card_requests.html',
+        campaign=campaign,
+        requests=requests_all,
+        stats=stats,
+        closes_at_input=_utc_to_berlin_input(campaign.closes_at) if campaign else '',
+        default_sender=DEFAULT_LABEL_SENDER,
+        countries=dict(CardRequest.COUNTRIES),
+    )
+
+
+@admin_required
+def card_campaign_settings():
+    """Öffnen/Schließen, Obergrenze und automatisches Ende speichern."""
+    campaign = CardCampaign.get()
+    if campaign is None:
+        flash('Einstellungszeile fehlt in der Karten-Datenbank (Migration ausführen).', 'error')
+        return redirect(url_for('admin.card_requests_list'))
+    try:
+        max_households = int(request.form.get('max_households', '').strip())
+        if not 1 <= max_households <= 10000:
+            raise ValueError
+    except ValueError:
+        flash('Die Obergrenze muss eine Zahl zwischen 1 und 10000 sein.', 'error')
+        return redirect(url_for('admin.card_requests_list'))
+    try:
+        closes_at = _berlin_input_to_utc(request.form.get('closes_at'))
+    except ValueError:
+        flash('Das Enddatum ist ungültig.', 'error')
+        return redirect(url_for('admin.card_requests_list'))
+
+    campaign.is_open = bool(request.form.get('is_open'))
+    campaign.max_households = max_households
+    campaign.closes_at = closes_at
+    db.session.commit()
+    flash('Einstellungen gespeichert. Formular ist jetzt ' + ('geöffnet' if campaign.is_accepting() else 'geschlossen') + '.', 'success')
+    return redirect(url_for('admin.card_requests_list'))
+
+
+@admin_required
+def card_request_delete(request_id):
+    """Einzelnen Eintrag löschen (Müll, Doppelmeldung, Bitte des Absenders). Der Platz wird wieder frei."""
+    req = CardRequest.query.get_or_404(request_id)
+    label = f'{req.name}, {req.postal_code} {req.city}'
+    db.session.delete(req)
+    db.session.commit()
+    flash(f'Eintrag „{label}" gelöscht.', 'success')
+    return redirect(url_for('admin.card_requests_list'))
+
+
+@admin_required
+def card_requests_export():
+    """CSV für den LibreOffice-Serienbrief (Adressetiketten)."""
+    rows = [['Nr', 'Name', 'Adresszusatz', 'Strasse', 'PLZ', 'Ort', 'Landzeile', 'Land', 'E-Mail', 'Newsletter', 'Eingang']]
+    for i, r in enumerate(CardRequest.query.order_by(CardRequest.created_at.asc()).all(), start=1):
+        rows.append([
+            i, r.name, r.address_extra or '', r.street, r.postal_code, r.city, r.country_line, r.country,
+            r.email or '', 'ja' if r.newsletter else 'nein',
+            r.created_at.replace(tzinfo=timezone.utc).astimezone(BERLIN).strftime('%d.%m.%Y %H:%M'),
+        ])
+    return _csv_response(rows, f'weihnachtskarten-adressen-{datetime.now(BERLIN).strftime("%Y%m%d")}.csv')
+
+
+DEFAULT_LABEL_SENDER = '@ngue2029 · U. Probst · Sudetenlandstr. 18 · D-35415 Pohlheim'
+
+
+def build_label_pdf(entries, skip=0, sender=DEFAULT_LABEL_SENDER):
+    """Adressetiketten als PDF für Avery Zweckform 3475 (70 x 36 mm, 3 x 8 = 24 je A4).
+
+    Bogen: kein Seitenrand links/rechts, 4,5 mm oben und unten, keine Stege.
+    `skip` lässt auf dem ersten Bogen so viele Etiketten frei (angebrochener Bogen).
+    `sender`: Absenderzeile oben im Etikett, klein und unterstrichen; ein führendes
+    „@handle" wird fett gesetzt. Zu lange Absender werden an „ · " umbrochen (max. 2 Zeilen).
+    Gibt die PDF-Bytes zurück.
+    """
+    import io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    from reportlab.pdfgen import canvas
+
+    label_w, label_h = 70 * mm, 36 * mm
+    cols, rows = 3, 8
+    margin_left, margin_top = 0 * mm, 4.5 * mm
+    pad_x, pad_y = 5 * mm, 3 * mm
+    font, bold = 'Helvetica', 'Helvetica-Bold'
+    size, leading = 10.5, 12.5
+    s_size, s_leading, s_gap = 7, 8.5, 2 * mm
+    max_text_w = label_w - 2 * pad_x
+    page_w, page_h = A4
+
+    def fit(text, fnt=font, sz=size):
+        """Text auf die Etikettenbreite kürzen (Ellipse), damit nichts über den Rand läuft."""
+        if stringWidth(text, fnt, sz) <= max_text_w:
+            return text
+        while text and stringWidth(text + '…', fnt, sz) > max_text_w:
+            text = text[:-1]
+        return text.rstrip() + '…'
+
+    def sender_segments(text):
+        """[(text, font)] für eine Absenderzeile: führendes @handle fett."""
+        if text.startswith('@') and ' ' in text:
+            handle, rest = text.split(' ', 1)
+            return [(handle, bold), (' ' + rest, font)]
+        return [(text, font)]
+
+    def seg_width(segs):
+        return sum(stringWidth(t, f, s_size) for t, f in segs)
+
+    # Absender: eine Zeile, wenn er passt; sonst an „ · " so in zwei Zeilen teilen,
+    # dass die längere Zeile möglichst kurz wird (ausgewogener Umbruch)
+    sender_lines = []
+    sender = (sender or '').strip()
+    if sender:
+        parts = sender.split(' · ')
+        if seg_width(sender_segments(sender)) <= max_text_w or len(parts) == 1:
+            sender_lines = [sender]
+        else:
+            best = None
+            for i in range(1, len(parts)):
+                a, b = ' · '.join(parts[:i]), ' · '.join(parts[i:])
+                widest = max(seg_width(sender_segments(a)), seg_width(sender_segments(b)))
+                if best is None or widest < best[0]:
+                    best = (widest, [a, b])
+            sender_lines = best[1]
+    sender_h = len(sender_lines) * s_leading + (s_gap if sender_lines else 0)
+
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    c.setTitle('Weihnachtskarten Adressetiketten')
+    per_page = cols * rows
+    slot = max(0, skip)
+    for entry in entries:
+        page_index, pos = divmod(slot, per_page)
+        if pos == 0 and slot > 0:
+            c.showPage()
+        col, row = pos % cols, pos // cols
+        x = margin_left + col * label_w + pad_x
+        y_top = page_h - margin_top - row * label_h - pad_y
+
+        # Absender oben, eine Linie unter dem ganzen Block (so breit wie die längste Zeile)
+        y = y_top - s_size
+        widest = 0
+        for sl in sender_lines:
+            segs = sender_segments(fit(sl, font, s_size))
+            cx = x
+            for t, f in segs:
+                c.setFont(f, s_size)
+                c.drawString(cx, y, t)
+                cx += stringWidth(t, f, s_size)
+            widest = max(widest, cx - x)
+            y -= s_leading
+        if sender_lines:
+            c.setLineWidth(0.4)
+            c.line(x, y + s_leading - 2, x + widest, y + s_leading - 2)
+
+        lines = [entry.name]
+        if entry.address_extra:
+            lines.append(entry.address_extra)
+        lines.append(entry.street)
+        lines.append(f'{entry.postal_code} {entry.city}')
+        if entry.country_line:
+            lines.append(entry.country_line.upper())
+        # Adressblock vertikal mittig im Rest unter dem Absender
+        area_top = y_top - sender_h
+        area_h = label_h - 2 * pad_y - sender_h
+        block_h = leading * len(lines)
+        y = area_top - max(0, (area_h - block_h) / 2) - size
+        c.setFont(font, size)
+        for line in lines:
+            c.drawString(x, y, fit(line))
+            y -= leading
+        slot += 1
+    c.showPage()
+    c.save()
+    return buf.getvalue()
+
+
+@admin_required
+def card_requests_labels_pdf():
+    """Etiketten-PDF (Avery 3475) aller aktiven Bestellungen.
+
+    ?skip=N lässt N Etiketten auf dem ersten Bogen frei, ?sender=… setzt die Absenderzeile (leer = keine).
+    """
+    from flask import Response
+    try:
+        skip = max(0, min(23, int(request.args.get('skip', 0))))
+    except ValueError:
+        skip = 0
+    sender = (request.args.get('sender') or '').strip()[:200]
+    entries = CardRequest.query.order_by(CardRequest.created_at.asc()).all()
+    pdf = build_label_pdf(entries, skip=skip, sender=sender)
+    return Response(pdf, mimetype='application/pdf', headers={
+        'Content-Disposition': f'attachment; filename="weihnachtskarten-etiketten-{datetime.now(BERLIN).strftime("%Y%m%d")}.pdf"',
+    })
+
+
+@admin_required
+def card_requests_export_newsletter():
+    """CSV nur mit den Newsletter-Einwilligungen (Name, E-Mail) für den Import in Brevo."""
+    rows = [['Name', 'E-Mail', 'Land', 'Einwilligung am']]
+    for r in CardRequest.query.filter_by(newsletter=True).order_by(CardRequest.created_at.asc()).all():
+        if r.email:
+            rows.append([r.name, r.email, r.country,
+                         r.created_at.replace(tzinfo=timezone.utc).astimezone(BERLIN).strftime('%d.%m.%Y %H:%M')])
+    return _csv_response(rows, f'weihnachtskarten-newsletter-{datetime.now(BERLIN).strftime("%Y%m%d")}.csv')
+
+
+@admin_required
+def card_requests_delete_all():
+    """Nach dem Versand alle Adressen löschen. Die Zahlen bleiben für die Auswertung in card_campaign."""
+    if request.form.get('confirm') != 'LOESCHEN':
+        flash('Zum Löschen aller Adressen bitte LOESCHEN in das Bestätigungsfeld schreiben.', 'error')
+        return redirect(url_for('admin.card_requests_list'))
+    campaign = CardCampaign.get(for_update=True)
+    count = CardRequest.query.count()
+    newsletter = CardRequest.query.filter_by(newsletter=True).count()
+    CardRequest.query.delete()
+    campaign.deleted_count += count
+    campaign.deleted_newsletter_count += newsletter
+    campaign.deleted_at = datetime.utcnow()
+    campaign.is_open = False
+    db.session.commit()
+    flash(f'{count} Adressen gelöscht ({newsletter} mit Newsletter-Einwilligung). Formular geschlossen.', 'success')
+    return redirect(url_for('admin.card_requests_list'))
 
 
 # ---------------------------------------------------------------------------

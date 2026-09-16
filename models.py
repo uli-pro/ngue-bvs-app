@@ -1609,3 +1609,163 @@ class SpeakerRequest(db.Model):
     def count_open(cls):
         """Anzahl der Anfragen, die noch Bearbeitung brauchen (neu oder in Kontakt)."""
         return cls.query.filter(cls.status.in_(['neu', 'kontakt'])).count()
+
+
+# =============================================================================
+# Weihnachtskarten-Aktion (Formular /weihnachtskarten)
+# -----------------------------------------------------------------------------
+# Beide Tabellen liegen in einer EIGENEN Datenbank (Bind 'karten', Umgebungs-
+# variable KARTEN_DATABASE_URI) mit eigenem DB-Benutzer, der auf die Spenden-
+# Datenbank keine Rechte hat. Der Formular-Code fasst Person/Donation nie an.
+# =============================================================================
+
+def normalize_dedupe_text(value):
+    """Adress-Text für die Dublettenprüfung vereinheitlichen.
+
+    Kleinschreibung, Umlaute aufgelöst, „straße"/„strasse"/„str." → „str",
+    alles außer Buchstaben und Ziffern entfernt. „Hauptstraße 5", „Hauptstr. 5"
+    und „HAUPT STRASSE 5" ergeben denselben Schlüssel.
+    """
+    s = (value or '').strip().lower()
+    for a, b in (('ä', 'ae'), ('ö', 'oe'), ('ü', 'ue'), ('ß', 'ss')):
+        s = s.replace(a, b)
+    s = s.replace('strasse', 'str').replace('str.', 'str')
+    return ''.join(ch for ch in s if ch.isalnum())
+
+
+class CardCampaign(db.Model):
+    """Einstellungen der Kartenaktion (eine Zeile, id=1) plus Zahlen für die Auswertung."""
+    __bind_key__ = 'karten'
+    __tablename__ = 'card_campaign'
+
+    id = db.Column(db.Integer, primary_key=True)
+    is_open = db.Column(db.Boolean, nullable=False, default=False)
+    max_households = db.Column(db.Integer, nullable=False, default=100)
+    closes_at = db.Column(db.DateTime)                  # UTC, naiv; None = kein automatisches Ende
+    # Auswertung nach dem Löschen der Adressen (bleibt ohne Personenbezug stehen)
+    deleted_count = db.Column(db.Integer, nullable=False, default=0)
+    deleted_newsletter_count = db.Column(db.Integer, nullable=False, default=0)
+    deleted_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @classmethod
+    def get(cls, for_update=False):
+        query = cls.query.filter_by(id=1)
+        if for_update:
+            query = query.with_for_update()
+        return query.first()
+
+    @property
+    def is_past_deadline(self):
+        return self.closes_at is not None and datetime.utcnow() >= self.closes_at
+
+    def remaining(self):
+        return max(0, self.max_households - CardRequest.query.count())
+
+    def is_accepting(self):
+        return self.is_open and not self.is_past_deadline and self.remaining() > 0
+
+
+class CardRequest(db.Model):
+    """Ein Haushalt, der ein Set Weihnachtskarten bestellt hat."""
+    __bind_key__ = 'karten'
+    __tablename__ = 'card_requests'
+
+    COUNTRIES = [
+        ('DE', 'Deutschland'),
+        ('AT', 'Österreich'),
+        ('CH', 'Schweiz'),
+    ]
+    # Erwartete PLZ-Form je Land (nur Ziffern)
+    POSTAL_CODE_LENGTH = {'DE': 5, 'AT': 4, 'CH': 4}
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    address_extra = db.Column(db.String(200))           # c/o, Wohnung, Firma ...
+    street = db.Column(db.String(200), nullable=False)  # Straße und Hausnummer
+    postal_code = db.Column(db.String(10), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(2), nullable=False, default='DE')
+    email = db.Column(db.String(255))
+    newsletter = db.Column(db.Boolean, nullable=False, default=False)
+    privacy_consent = db.Column(db.Boolean, nullable=False, default=False)
+    # Dubletten-Schlüssel (Land|PLZ|Straße|Nachname): Unique-Index in der DB, damit auch
+    # gleichzeitige Anfragen nicht doppelt landen. Tippfehler fängt zusätzlich find_similar().
+    dedupe_address = db.Column(db.String(300), nullable=False, unique=True)
+    dedupe_email = db.Column(db.String(255), unique=True)
+    # Ähnliche Adresse mit anderem Nachnamen: angenommen, aber im Admin markiert
+    possible_duplicate_of = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Ab dieser Ähnlichkeit (difflib-Ratio) gelten zwei Straßennamen als gleich
+    SIMILARITY_THRESHOLD = 0.8
+
+    @staticmethod
+    def surname_key(name):
+        """Letztes Wort des Namens, normalisiert: „Ulrich und Esther Probst" → „probst"."""
+        parts = (name or '').split()
+        return normalize_dedupe_text(parts[-1]) if parts else ''
+
+    @staticmethod
+    def split_street(street):
+        """„Sudetenlandstr. 18 a" → („sudetenlandstr", „18a"). Ohne Ziffer: Nummer leer."""
+        s = (street or '').strip()
+        for i, ch in enumerate(s):
+            if ch.isdigit():
+                return normalize_dedupe_text(s[:i]), normalize_dedupe_text(s[i:])
+        return normalize_dedupe_text(s), ''
+
+    @staticmethod
+    def city_key(city):
+        """Erstes Wort des Orts, normalisiert: „Pohlheim - Watzenborn-Steinberg" → „pohlheim"."""
+        c = (city or '').replace(',', ' ').replace('-', ' ').replace('/', ' ').split()
+        return normalize_dedupe_text(c[0]) if c else ''
+
+    @staticmethod
+    def address_key(country, postal_code, street, name=''):
+        plz = ''.join(ch for ch in (postal_code or '') if ch.isalnum())
+        return f"{country}|{plz}|{normalize_dedupe_text(street)}|{CardRequest.surname_key(name)}"
+
+    @classmethod
+    def find_similar(cls, country, postal_code, city, street):
+        """Bestehende Einträge, die trotz Tippfehlern dieselbe Adresse meinen.
+
+        Kriterien: gleiches Land, gleiche Hausnummer, Straßenname ähnlich (Ratio ≥ 0.8)
+        und PLZ gleich oder erstes Wort des Orts gleich. Fängt „Sudetenlanstr." und
+        eine vertippte PLZ mit Teilort-Angabe; „Bergstraße 3" und „Bergstraße 4" nicht.
+        """
+        from difflib import SequenceMatcher
+        street_name, number = cls.split_street(street)
+        if not street_name or not number:
+            return []
+        plz = ''.join(ch for ch in (postal_code or '') if ch.isalnum())
+        city_k = cls.city_key(city)
+        hits = []
+        for other in cls.query.filter_by(country=country).all():
+            o_name, o_number = cls.split_street(other.street)
+            if o_number != number:
+                continue
+            o_plz = ''.join(ch for ch in (other.postal_code or '') if ch.isalnum())
+            if o_plz != plz and cls.city_key(other.city) != city_k:
+                continue
+            if SequenceMatcher(None, street_name, o_name).ratio() >= cls.SIMILARITY_THRESHOLD:
+                hits.append(other)
+        return hits
+
+    @staticmethod
+    def email_key(email):
+        e = (email or '').strip().lower()
+        return e or None
+
+    @property
+    def surname(self):
+        return self.surname_key(self.name)
+
+    @property
+    def country_label(self):
+        return dict(self.COUNTRIES).get(self.country, self.country)
+
+    @property
+    def country_line(self):
+        """Landeszeile für das Adressetikett: bei Inlandspost leer."""
+        return '' if self.country == 'DE' else self.country_label

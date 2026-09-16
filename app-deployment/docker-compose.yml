@@ -62,6 +62,9 @@ services:
 
       # Database
       SQLALCHEMY_DATABASE_URI: postgresql://${POSTGRES_USER:-ngueapp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ngue_db}
+      # Getrennte Datenbank der Weihnachtskarten-Aktion (eigener DB-User ohne Rechte auf ngue_db).
+      # Anlegen: migrations/011_karten_datenbank_anlegen.sql. Fehlt KARTEN_DB_PASSWORD, ist /weihnachtskarten aus (503).
+      KARTEN_DATABASE_URI: ${KARTEN_DB_PASSWORD:+postgresql://karten:${KARTEN_DB_PASSWORD}@postgres:5432/ngue_karten}
 
       # Stripe Configuration
       STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY:?Stripe public key required}

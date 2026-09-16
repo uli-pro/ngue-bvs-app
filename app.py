@@ -33,6 +33,16 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Zweite, getrennte Datenbank für die Weihnachtskarten-Aktion (eigener DB-User ohne
+# Rechte auf der Spenden-DB). Fehlt die Variable, ist das Formular nicht verfügbar,
+# der Rest der App läuft normal.
+_karten_uri = os.environ.get("KARTEN_DATABASE_URI")
+if _karten_uri:
+    app.config["SQLALCHEMY_BINDS"] = {"karten": _karten_uri}
+app.config["KARTEN_DB_AVAILABLE"] = bool(_karten_uri)
+# Mindestzeit zwischen Laden und Absenden des Kartenformulars (Bot-Schutz)
+app.config["CARD_FORM_MIN_SECONDS"] = int(os.environ.get("CARD_FORM_MIN_SECONDS", "3"))
+
 # Admin notification configuration
 app.config["ADMIN_EMAIL"] = os.environ.get("ADMIN_EMAIL")
 app.config["ADMIN_EMAILS"] = os.environ.get("ADMIN_EMAILS", "")
@@ -47,7 +57,7 @@ app.config['PDF_TEMPLATE_PATH'] = 'templates/certificates'
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Initialize extensions
-from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority, CampaignUrl, SpeakerRequest
+from models import db, Person, Verse, Donation, VerseReservation, Certificate, MagicLinkToken, BookPriority, CampaignUrl, SpeakerRequest, CardCampaign, CardRequest
 from book_names import get_publication_notice
 from sqlalchemy import text, func
 from stripe_service import StripeService, StripeError
@@ -1256,6 +1266,164 @@ def vortrag():
 def vortrag_danke():
     """Bestätigungsseite nach der Anfrage (löst das Plausible-Ziel 'Vortragsanfrage' aus)."""
     return render_template("vortrag-danke.html")
+
+
+# =============================================================================
+# Weihnachtskarten-Aktion: /weihnachtskarten
+# Daten liegen in der getrennten Datenbank (Bind 'karten'), siehe models.py.
+# =============================================================================
+from itsdangerous import TimestampSigner, BadSignature, SignatureExpired
+from sqlalchemy.exc import IntegrityError
+
+
+def _card_form_signer():
+    return TimestampSigner(app.config["SECRET_KEY"], salt="weihnachtskarten-form")
+
+
+def _card_form_context(campaign, form_data=None, errors=None):
+    return {
+        'campaign': campaign,
+        'remaining': campaign.remaining() if campaign else 0,
+        'accepting': campaign.is_accepting() if campaign else False,
+        'countries': CardRequest.COUNTRIES,
+        'form_data': form_data or {},
+        'errors': errors or [],
+        'form_token': _card_form_signer().sign(b"ok").decode(),
+    }
+
+
+def _card_form_too_fast(token):
+    """True, wenn der Zeitstempel fehlt, ungültig ist oder das Formular zu schnell abgeschickt wurde."""
+    min_seconds = app.config.get("CARD_FORM_MIN_SECONDS", 3)
+    try:
+        _, ts = _card_form_signer().unsign(token or "", max_age=6 * 3600, return_timestamp=True)
+    except (BadSignature, SignatureExpired):
+        return True
+    age = (datetime.now(ts.tzinfo) - ts).total_seconds()
+    return age < min_seconds
+
+
+@app.route("/weihnachtskarten", methods=["GET", "POST"])
+@limiter.limit("3 per minute", methods=["POST"])
+def weihnachtskarten():
+    """Kostenlose Weihnachtskarten bestellen (Instagram-Aktion, ein Set pro Haushalt)."""
+    if not app.config.get("KARTEN_DB_AVAILABLE"):
+        abort(503)
+    campaign = CardCampaign.get()
+    if campaign is None:
+        app.logger.error("card_campaign row missing in karten database")
+        abort(503)
+
+    if request.method == "GET":
+        return render_template("weihnachtskarten.html", **_card_form_context(campaign))
+
+    if not campaign.is_accepting():
+        return render_template("weihnachtskarten.html", **_card_form_context(campaign)), 200
+
+    # Honeypot: Bots füllen das versteckte Feld aus. Erfolg vortäuschen, nichts speichern.
+    if request.form.get("website"):
+        app.logger.warning(f"Honeypot triggered on /weihnachtskarten from IP {request.remote_addr}")
+        return redirect(url_for("weihnachtskarten_danke"))
+
+    f = {k: (request.form.get(k) or "").strip() for k in [
+        "name", "address_extra", "street", "postal_code", "city", "country", "email",
+    ]}
+    f["newsletter"] = bool(request.form.get("newsletter"))
+    f["privacy"] = bool(request.form.get("privacy"))
+
+    errors = []
+    if _card_form_too_fast(request.form.get("form_token")):
+        errors.append("Das ging zu schnell. Bitte prüfen Sie Ihre Angaben und senden Sie das Formular noch einmal ab.")
+    if len(f["name"]) < 2:
+        errors.append("Bitte geben Sie Ihren Namen an.")
+    if len(f["street"]) < 3 or not any(ch.isdigit() for ch in f["street"]):
+        errors.append("Bitte geben Sie Straße und Hausnummer an.")
+    if f["country"] not in dict(CardRequest.COUNTRIES):
+        errors.append("Wir verschicken nur nach Deutschland, Österreich und in die Schweiz.")
+        f["country"] = "DE"
+    plz = f["postal_code"].replace(" ", "")
+    if not (plz.isdigit() and len(plz) == CardRequest.POSTAL_CODE_LENGTH[f["country"]]):
+        errors.append("Die Postleitzahl passt nicht zum gewählten Land.")
+    f["postal_code"] = plz
+    if len(f["city"]) < 2:
+        errors.append("Bitte geben Sie Ihren Ort an.")
+    if f["email"] and ("@" not in f["email"] or "." not in f["email"].split("@")[-1] or " " in f["email"]):
+        errors.append("Die E-Mail-Adresse sieht nicht gültig aus.")
+    if f["newsletter"] and not f["email"]:
+        errors.append("Für den Newsletter brauchen wir eine E-Mail-Adresse.")
+    if not f["privacy"]:
+        errors.append("Bitte akzeptieren Sie die Datenschutzerklärung.")
+
+    if errors:
+        return render_template("weihnachtskarten.html", **_card_form_context(campaign, f, errors)), 400
+
+    address_key = CardRequest.address_key(f["country"], f["postal_code"], f["street"], f["name"])
+    email_key = CardRequest.email_key(f["email"])
+    duplicate_message = "Für diese Adresse oder E-Mail-Adresse ist schon ein Kartenset eingetragen. Ein Set pro Haushalt, danke fürs Verständnis."
+
+    try:
+        # Zeile sperren, damit bei 99 Einträgen nicht zwei gleichzeitig durchrutschen
+        locked = CardCampaign.get(for_update=True)
+        if not locked.is_accepting():
+            db.session.rollback()
+            return render_template("weihnachtskarten.html", **_card_form_context(locked)), 200
+
+        # Ähnliche Adresse (Tippfehler, andere PLZ, Teilort): gleicher Nachname → ablehnen,
+        # anderer Nachname → annehmen und im Admin markieren (Mehrfamilienhaus möglich)
+        similar = CardRequest.find_similar(f["country"], f["postal_code"], f["city"], f["street"])
+        surname = CardRequest.surname_key(f["name"])
+        if any(o.surname == surname for o in similar):
+            db.session.rollback()
+            return render_template("weihnachtskarten.html", **_card_form_context(campaign, f, [duplicate_message])), 400
+        possible_duplicate_of = similar[0].id if similar else None
+
+        req = CardRequest(
+            name=f["name"][:200],
+            address_extra=f["address_extra"][:200] or None,
+            street=f["street"][:200],
+            postal_code=f["postal_code"][:10],
+            city=f["city"][:100],
+            country=f["country"],
+            email=(f["email"][:255].lower() or None),
+            newsletter=f["newsletter"] and bool(f["email"]),
+            privacy_consent=True,
+            dedupe_address=address_key,
+            dedupe_email=email_key,
+            possible_duplicate_of=possible_duplicate_of,
+        )
+        db.session.add(req)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return render_template("weihnachtskarten.html", **_card_form_context(campaign, f, [duplicate_message])), 400
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Card request could not be saved: {e}")
+        errors = ["Es gab ein Problem beim Speichern. Bitte versuchen Sie es später noch einmal oder schreiben Sie an info@vers-patenschaft.de."]
+        return render_template("weihnachtskarten.html", **_card_form_context(campaign, f, errors)), 500
+
+    app.logger.info(f"Card request #{req.id} saved ({req.postal_code} {req.city}, {req.country})"
+                    + (f", possible duplicate of #{req.possible_duplicate_of}" if req.possible_duplicate_of else ""))
+    return redirect(url_for("weihnachtskarten_danke"))
+
+
+# Tipp-Aliasse: wer den genauen Namen vergessen hat, landet trotzdem richtig.
+# Feste Routen gewinnen in Flask gegen die Kampagnen-Route /<slug>.
+CARD_PAGE_ALIASES = [
+    "karten", "karte", "kartenset", "kartenaktion", "weihnachtskarte",
+    "weihnachtskarten-aktion", "weihnachtskartenaktion", "weihnachten", "xmas", "advent",
+]
+
+
+@app.route("/<any(" + ",".join(f'"{a}"' for a in CARD_PAGE_ALIASES) + "):alias>")
+def weihnachtskarten_alias(alias):
+    return redirect(url_for("weihnachtskarten"), code=302)
+
+
+@app.route("/weihnachtskarten/danke")
+def weihnachtskarten_danke():
+    """Bestätigungsseite (löst das Plausible-Ziel 'Karten bestellt' aus)."""
+    return render_template("weihnachtskarten-danke.html")
 
 
 # ==========================================
