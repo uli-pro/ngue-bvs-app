@@ -8,6 +8,8 @@ requirements.txt
 CLAUDE.md
 .claude/
 projektwissen/
+# Videos der Vortragsseite (static/video) kommen per scp auf den Server, nicht per Git
+static/video/*.mp4
 # -----------------------------------------------------------------------------
 # Python & Flask Runtime
 # -----------------------------------------------------------------------------

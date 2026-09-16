@@ -99,6 +99,31 @@
     margin: 0 auto;
     box-shadow: var(--shadow-lg);
   }
+  .clip-player {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  .clip-player .btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+  }
+  .clip-select {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .clip-list .list-group-item {
+    cursor: pointer;
+  }
+  .clip-list .list-group-item.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  .clip-list .list-group-item .clip-ref {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
   .hero-split {
     text-align: left;
   }
@@ -110,74 +135,99 @@
       font-size: 2rem;
     }
   }
-  .conditions-list li {
-    margin-bottom: 0.75rem;
+  .info-card .card-body {
+    padding: 1.5rem;
   }
-  .conditions-list i {
-    width: 1.5rem;
+  @media (min-width: 768px) {
+    .info-card .card-body {
+      padding: 2rem;
+    }
+  }
+  .info-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .info-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+  .info-list li {
+    margin-bottom: 0.75rem;
+    padding-left: 1.9rem;
+    position: relative;
+  }
+  .info-list li:last-child {
+    margin-bottom: 0;
+  }
+  .info-list li > i {
+    position: absolute;
+    left: 0;
+    top: 0.25em;
+    width: 1.4rem;
+    text-align: center;
   }
 </style>
 
-<!-- Hero: Text links, Reel rechts -->
+<!-- Hero: Text links, Redeausschnitte rechts -->
 <section class="hero-section hero-split">
   <div class="container">
     <div class="row align-items-center g-5">
-      <div class="{% if reel_available %}col-lg-7 text-center text-lg-start{% else %}col-lg-8 mx-auto text-center{% endif %}">
+      <div class="{% if talk_clips %}col-lg-7 text-center text-lg-start{% else %}col-lg-8 mx-auto text-center{% endif %}">
         <h1 class="hero-title mb-4">Ulrich Probst in Ihre Gemeinde einladen<br><small class="text-primary">Vortrag, Predigt oder Gemeindeabend zur Bibelübersetzung</small></h1>
         <p class="hero-subtitle">
-          Seit 2016 übersetze ich das Alte Testament für die Neue Genfer Übersetzung. Ich komme gern zu Ihnen, um von dieser Arbeit zu erzählen oder zu predigen. Ein Honorar erwarte ich nicht, nur die Gelegenheit, für die NGÜ um Spenden zu bitten.
+          Seit 2016 übersetze ich das Alte Testament für die Neue Genfer Übersetzung. Gern komme ich zu Ihnen, um davon zu erzählen oder zu predigen. Ein Honorar erwarte ich nicht, nur die Gelegenheit, für die NGÜ um Spenden zu bitten.
         </p>
         <a href="#anfrage" class="btn btn-primary btn-lg">
           <i class="fas fa-envelope me-2"></i>Jetzt anfragen
         </a>
       </div>
-      {% if reel_available %}
+      {% if talk_clips %}
       <div class="col-lg-5">
-        <video class="reel-video" controls autoplay muted playsinline preload="auto" poster="/static/img/vortrag-reel-poster.jpg">
-          <source src="/static/video/vortrag-reel.mp4" type="video/mp4">
-          Ihr Browser kann dieses Video nicht abspielen.
-        </video>
-        <p class="yt-note mt-2 mb-0 text-center"><i class="fas fa-volume-mute me-1"></i>Startet ohne Ton, zum Anhören auf das Lautsprechersymbol tippen. Jeremia 1,11: Einblick eines Bibelübersetzers, eines der kurzen Videos von <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
+        <div class="clip-player" data-clips='{{ talk_clips|tojson }}' data-autoplay="1">
+          <video class="reel-video" controls autoplay muted playsinline preload="auto"{% if talk_clips[0].poster %} poster="/static/img/{{ talk_clips[0].poster }}"{% endif %}>
+            <source src="/static/video/{{ talk_clips[0].file }}" type="video/mp4">
+            Ihr Browser kann dieses Video nicht abspielen.
+          </video>
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary clip-prev" aria-label="Vorheriger Ausschnitt"><i class="fas fa-chevron-left"></i></button>
+            <select class="form-select form-select-sm clip-select flex-grow-1" aria-label="Ausschnitt auswählen">
+              {% for clip in talk_clips %}
+              <option value="{{ loop.index0 }}">{{ loop.index }}. {{ clip.title }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-secondary clip-next" aria-label="Nächster Ausschnitt"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+        <p class="yt-note mt-2 mb-0 text-center">{{ talk_clips|length }} Ausschnitte aus dem Vortrag „Kann man die Bibel überhaupt übersetzen?“, FeG Wetzlar. Ganzer Vortrag: <a href="#vortrag-video">vers-patenschaft.de/gotteswort</a>. <i class="fas fa-volume-mute ms-1 me-1"></i>Startet ohne Ton, zum Anhören auf das Lautsprechersymbol tippen.</p>
       </div>
       {% endif %}
     </div>
   </div>
 </section>
 
-<!-- Formate -->
+<!-- Zur Person und Angebot -->
 <section class="section-padding">
   <div class="container">
-    <div class="text-center mb-5">
-      <h2>Was ich anbiete</h2>
-    </div>
     <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card h-100 text-center">
-          <div class="card-body p-4">
-            <div class="mb-3"><i class="fas fa-church fa-3x text-primary"></i></div>
-            <h4>Gottesdienst und Predigt</h4>
-            <p class="mb-2">Predigt über einen Text aus dem Alten Testament, gern nach Ihrem Predigtplan, mit einem kurzen Einblick in die Übersetzungsarbeit.</p>
-            <p class="text-secondary mb-0"><small>25 bis 30 Minuten</small></p>
+      <div class="col-lg-6">
+        <div class="card info-card h-100">
+          <div class="card-body">
+            <h2>Zur Person</h2>
+            <p>Ulrich Probst hat Theologie an der Freien Theologischen Hochschule Gießen studiert und Linguistik an der Sommerakademie der Wycliff-Bibelübersetzer. Mit Wycliff war er als Soziolinguist und Verwaltungsleiter in der Zentralafrikanischen Republik tätig. Nach fünfzehn Jahren als Pastor arbeitet er seit 2016 an der Neuen Genfer Übersetzung, seit einigen Jahren an den Büchern des Alten Testaments.</p>
+            <p class="mb-0">Er ist verheiratet, Vater von drei erwachsenen Söhnen und lebt in Pohlheim bei Gießen.</p>
           </div>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card h-100 text-center">
-          <div class="card-body p-4">
-            <div class="mb-3"><i class="fas fa-chalkboard-teacher fa-3x text-primary"></i></div>
-            <h4>Vortrag und Gemeindeabend</h4>
-            <p class="mb-2">Ein Abend über die Bibel und ihre Übersetzungen: Wie aus hebräischen Sätzen verständliches Deutsch wird, und was dabei auf dem Spiel steht.</p>
-            <p class="text-secondary mb-0"><small>60 bis 90 Minuten mit Fragerunde</small></p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 text-center">
-          <div class="card-body p-4">
-            <div class="mb-3"><i class="fas fa-book-open fa-3x text-primary"></i></div>
-            <h4>Seminar und Bibeltag</h4>
-            <p class="mb-2">Vertiefte Arbeit an einem biblischen Buch oder an Übersetzungsfragen, mit Gruppenarbeit und Gespräch.</p>
-            <p class="text-secondary mb-0"><small>Halber oder ganzer Tag</small></p>
+      <div class="col-lg-6">
+        <div class="card info-card h-100">
+          <div class="card-body">
+            <h2>Was ich anbiete</h2>
+            <ul class="info-list">
+              <li><i class="fas fa-church text-primary"></i><strong>Gottesdienst und Predigt</strong> <span class="text-secondary">(25 bis 30 Minuten)</span><br>Predigt über einen Text aus dem Alten Testament, gern nach Ihrem Predigtplan, mit einem kurzen Einblick in die Übersetzungsarbeit.</li>
+              <li><i class="fas fa-chalkboard-teacher text-primary"></i><strong>Vortrag und Gemeindeabend</strong> <span class="text-secondary">(60 bis 90 Minuten mit Fragerunde)</span><br>Wie aus hebräischen Sätzen verständliches Deutsch wird, und was dabei auf dem Spiel steht.</li>
+              <li><i class="fas fa-book-open text-primary"></i><strong>Seminar und Bibeltag</strong> <span class="text-secondary">(halber oder ganzer Tag)</span><br>Vertiefte Arbeit an einem biblischen Buch oder an Übersetzungsfragen, mit Gruppenarbeit und Gespräch.</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -185,40 +235,83 @@
   </div>
 </section>
 
-<!-- Themen -->
+<!-- Themen und Rahmenbedingungen -->
 <section class="bg-light-custom section-padding">
   <div class="container">
-    <div class="row">
-      <div class="col-lg-8 mx-auto">
-        <h2 class="text-center mb-4">Themen</h2>
-        <ul class="list-unstyled conditions-list mb-4">
-          <li><i class="fas fa-check text-success me-2"></i><strong>Gottes Wort in unsere Sprache: die Bibel und ihre Übersetzungen.</strong> Warum es so viele Übersetzungen gibt, worin sie sich unterscheiden und wie man eine gute erkennt.</li>
-          <li><i class="fas fa-check text-success me-2"></i><strong>Wie entsteht eine Bibelübersetzung? Ein Blick in die Werkstatt der NGÜ.</strong> Vom hebräischen Text bis zum gedruckten Buch, mit Beispielen aus der laufenden Arbeit.</li>
-          <li><i class="fas fa-check text-success me-2"></i><strong>Warum das Alte Testament für Christen unverzichtbar ist.</strong> Was verloren geht, wenn wir nur das Neue Testament lesen.</li>
-          <li><i class="fas fa-check text-success me-2"></i><strong>Ein Wunschthema nach Absprache.</strong> Sie haben eine Bibelstelle, ein Buch oder eine Frage im Blick? Schreiben Sie es ins Formular.</li>
-        </ul>
-        <p class="text-center text-secondary mb-0">Auf Instagram zeige ich in kurzen Videos, worum es bei einzelnen Übersetzungsentscheidungen geht: <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a></p>
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card info-card h-100">
+          <div class="card-body">
+            <h2>Themen</h2>
+            <ul class="info-list">
+              <li><i class="fas fa-check text-success"></i><strong>Gottes Wort in unsere Sprache: die Bibel und ihre Übersetzungen.</strong> Warum es so viele gibt, worin sie sich unterscheiden und wie man eine gute erkennt.</li>
+              <li><i class="fas fa-check text-success"></i><strong>Wie entsteht eine Bibelübersetzung? Ein Blick in die Werkstatt der NGÜ.</strong> Vom hebräischen Text bis zum gedruckten Buch, mit Beispielen aus der laufenden Arbeit.</li>
+              <li><i class="fas fa-check text-success"></i><strong>Warum das Alte Testament für Christen unverzichtbar ist.</strong> Was verloren geht, wenn wir nur das Neue Testament lesen.</li>
+              <li><i class="fas fa-check text-success"></i><strong>Ein Wunschthema nach Absprache.</strong> Eine Bibelstelle, ein Buch, eine Frage? Schreiben Sie es ins Formular.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card info-card h-100">
+          <div class="card-body">
+            <h2>Was Sie wissen sollten</h2>
+            <ul class="info-list">
+              <li><i class="fas fa-hand-holding-heart text-primary"></i><strong>Kein Honorar.</strong> Stattdessen eine Kollekte für die NGÜ oder die Möglichkeit, bei der Veranstaltung um Spenden zu bitten.</li>
+              <li><i class="fas fa-train text-primary"></i><strong>Fahrtkosten</strong> trägt die Gemeinde: Bahn 2. Klasse oder 0,30 € pro Kilometer ab Pohlheim. Bei weiter Anreise eine Übernachtung, gern privat.</li>
+              <li><i class="fas fa-map-marked-alt text-primary"></i><strong>Einsatzgebiet:</strong> Deutschland, auf Anfrage Schweiz und Österreich.</li>
+              <li><i class="fas fa-calendar-alt text-primary"></i><strong>Vorlauf:</strong> möglichst vier Wochen. Termine nach Verfügbarkeit, in der Reihenfolge des Eingangs.</li>
+              <li><i class="fas fa-video text-primary"></i><strong>Technik:</strong> Beamer und Ton vor Ort, Laptop und Präsentation bringe ich mit.</li>
+              <li><i class="fas fa-book text-primary"></i><strong>Büchertisch</strong> mit NGÜ-Ausgaben und Informationen zur Vers-Patenschaft, wenn Sie möchten.</li>
+              <li><i class="fas fa-camera text-primary"></i><strong>Fotos und kurze Videos</strong> für Instagram nur mit Ihrem Einverständnis. Sie entscheiden das im Formular.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Videos -->
+<!-- Hören und sehen -->
 <section class="section-padding">
   <div class="container">
     <div class="text-center mb-5">
       <h2>Hören und sehen</h2>
-      <p class="lead text-secondary">Ein Vortrag in voller Länge und ein Fernsehbeitrag über meine Arbeit</p>
+      <p class="lead text-secondary mb-0">Kurze Reels aus der Werkstatt, ein Fernsehbeitrag und ein Vortrag in voller Länge</p>
     </div>
-    <div class="row g-4 justify-content-center">
-      <div class="col-lg-6">
-        <div class="yt-embed" data-yt-id="8N5WuDm6PKM">
-          <img src="/static/img/yt-vortrag-gottes-wort.jpg" alt="Vorschaubild des Vortrags „Gottes Wort in unsere Sprache“" loading="lazy">
-          <button type="button" class="yt-play" aria-label="Video „Gottes Wort in unsere Sprache“ von YouTube laden und abspielen"><i class="fas fa-play"></i></button>
+
+    {% if workshop_reels %}
+    <div class="row g-4 align-items-start mb-5">
+      <div class="col-md-5 col-lg-4">
+        <div class="clip-player" data-clips='{{ workshop_reels|tojson }}'>
+          <video class="reel-video" controls playsinline preload="metadata"{% if workshop_reels[0].poster %} poster="/static/img/{{ workshop_reels[0].poster }}"{% endif %}>
+            <source src="/static/video/{{ workshop_reels[0].file }}" type="video/mp4">
+            Ihr Browser kann dieses Video nicht abspielen.
+          </video>
+          {% if workshop_reels|length > 1 %}
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary clip-prev" aria-label="Vorheriges Reel"><i class="fas fa-chevron-left"></i></button>
+            <span class="clip-title small fw-semibold text-center flex-grow-1 d-flex align-items-center justify-content-center">{{ workshop_reels[0].reference }}</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary clip-next" aria-label="Nächstes Reel"><i class="fas fa-chevron-right"></i></button>
+          </div>
+          {% endif %}
         </div>
-        <h5 class="mt-3 mb-1">Gottes Wort in unsere Sprache: die Bibel und ihre Übersetzungen</h5>
-        <p class="yt-note mb-0">Vortrag von Ulrich Probst. Beim Klick wird das Video von YouTube geladen; dabei werden Daten an Google übertragen. <a href="/datenschutz#youtube">Mehr erfahren</a></p>
       </div>
+      <div class="col-md-7 col-lg-8">
+        <h5 class="mb-1">Aus der Werkstatt eines Bibelübersetzers</h5>
+        <p class="yt-note mb-3">Auf Instagram zeige ich in kurzen Videos, worum es bei einzelnen Übersetzungsentscheidungen geht. Eine Auswahl, zum Abspielen auf einen Titel tippen. Alle Reels: <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a></p>
+        <div class="list-group clip-list">
+          {% for reel in workshop_reels %}
+          <button type="button" class="list-group-item list-group-item-action{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
+            <span class="clip-ref">{{ reel.reference }}</span>{{ reel.title }}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4 justify-content-center">
       <div class="col-lg-6">
         <div class="yt-embed" data-yt-id="ut7253tIvV8">
           <img src="/static/img/yt-fenster-zum-sonntag.jpg" alt="Vorschaubild des Beitrags „Fasziniert von Sprache und der Bibel“" loading="lazy">
@@ -227,42 +320,13 @@
         <h5 class="mt-3 mb-1">Fasziniert von Sprache und der Bibel</h5>
         <p class="yt-note mb-0">Beitrag des Schweizer Magazins „Fenster zum Sonntag“ aus der Sendung „Bibel mal anders“, 9 Minuten. Beim Klick wird das Video von YouTube geladen; dabei werden Daten an Google übertragen. <a href="/datenschutz#youtube">Mehr erfahren</a></p>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- Über Ulrich Probst -->
-<section class="bg-light-custom section-padding">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-8 mx-auto">
-        <div class="card">
-          <div class="card-body p-4 p-md-5">
-            <h2 class="mb-4">Zur Person</h2>
-            <p>Ulrich Probst hat Theologie an der Freien Theologischen Hochschule Gießen studiert und eine Ausbildung in Linguistik an der Sommerakademie der Wycliff-Bibelübersetzer absolviert. Mit Wycliff war er als Soziolinguist und Verwaltungsleiter in der Zentralafrikanischen Republik tätig. Nach fünfzehn Jahren als Pastor arbeitet er seit 2016 an der Neuen Genfer Übersetzung, seit einigen Jahren an den Büchern des Alten Testaments.</p>
-            <p class="mb-0">Er ist verheiratet, Vater von drei erwachsenen Söhnen und lebt in Pohlheim bei Gießen.</p>
-          </div>
+      <div class="col-lg-6" id="vortrag-video">
+        <div class="yt-embed" data-yt-id="8N5WuDm6PKM">
+          <img src="/static/img/yt-vortrag-gottes-wort.jpg" alt="Vorschaubild des Vortrags „Gottes Wort in unsere Sprache“" loading="lazy">
+          <button type="button" class="yt-play" aria-label="Video „Gottes Wort in unsere Sprache“ von YouTube laden und abspielen"><i class="fas fa-play"></i></button>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Rahmenbedingungen -->
-<section class="section-padding">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-8 mx-auto">
-        <h2 class="text-center mb-4">Was Sie wissen sollten</h2>
-        <ul class="list-unstyled conditions-list">
-          <li><i class="fas fa-hand-holding-heart text-primary me-2"></i><strong>Kein Honorar.</strong> Ich bitte stattdessen um eine Kollekte für die Neue Genfer Übersetzung oder um die Möglichkeit, während der Veranstaltung für die NGÜ um Spenden zu bitten.</li>
-          <li><i class="fas fa-train text-primary me-2"></i><strong>Fahrtkosten</strong> übernimmt die Gemeinde: Bahn 2. Klasse oder 0,30 € pro Kilometer ab Pohlheim bei Gießen. Bei weiter Anreise ist eine Übernachtung nötig, gern privat in der Gemeinde.</li>
-          <li><i class="fas fa-map-marked-alt text-primary me-2"></i><strong>Einsatzgebiet:</strong> Deutschland, auf Anfrage auch Schweiz und Österreich.</li>
-          <li><i class="fas fa-calendar-alt text-primary me-2"></i><strong>Vorlauf:</strong> möglichst vier Wochen, kürzer nach Absprache. Termine nach Verfügbarkeit, Anfragen werden in der Reihenfolge des Eingangs bearbeitet.</li>
-          <li><i class="fas fa-video text-primary me-2"></i><strong>Technik:</strong> Beamer und Ton vor Ort, Laptop und Präsentation bringe ich mit.</li>
-          <li><i class="fas fa-book text-primary me-2"></i><strong>Büchertisch</strong> mit NGÜ-Ausgaben und Informationen zur Vers-Patenschaft, wenn Sie das möchten.</li>
-          <li><i class="fas fa-camera text-primary me-2"></i><strong>Fotos und kurze Videoausschnitte</strong> für unseren Instagram-Kanal mache ich nur, wenn Sie einverstanden sind. Sie entscheiden das im Formular.</li>
-        </ul>
+        <h5 class="mt-3 mb-1">Gottes Wort in unsere Sprache: die Bibel und ihre Übersetzungen</h5>
+        <p class="yt-note mb-0">Der ganze Vortrag, aus dem die Ausschnitte oben stammen. Beim Klick wird das Video von YouTube geladen; dabei werden Daten an Google übertragen. <a href="/datenschutz#youtube">Mehr erfahren</a></p>
       </div>
     </div>
   </div>
@@ -441,6 +505,65 @@
       box.innerHTML = '';
       box.appendChild(iframe);
     });
+  });
+
+  // Clip-Player (9:16): spielt eine Liste lokaler Videos der Reihe nach ab.
+  // Steuerung über Pfeile, Auswahlfeld und (optional) eine Titelliste in derselben Section.
+  document.querySelectorAll('.clip-player').forEach(function (player) {
+    var clips = JSON.parse(player.getAttribute('data-clips') || '[]');
+    if (clips.length === 0) return;
+    var video = player.querySelector('video');
+    var source = video.querySelector('source');
+    var title = player.querySelector('.clip-title');
+    var select = player.querySelector('.clip-select');
+    var section = player.closest('section');
+    var list = section ? section.querySelector('.clip-list') : null;
+    var current = 0;
+
+    function show(index, play, byUser) {
+      current = (index + clips.length) % clips.length;
+      var clip = clips[current];
+      video.pause();
+      if (clip.poster) {
+        video.setAttribute('poster', '/static/img/' + clip.poster);
+      } else {
+        video.removeAttribute('poster');
+      }
+      source.setAttribute('src', '/static/video/' + clip.file);
+      video.load();
+      if (title) title.textContent = clip.reference || clip.title;
+      if (select) select.value = String(current);
+      if (list) {
+        list.querySelectorAll('.list-group-item').forEach(function (item, i) {
+          item.classList.toggle('active', i === current);
+        });
+      }
+      if (play) {
+        if (byUser) video.muted = false;   // ausdrückliche Auswahl: mit Ton
+        var p = video.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+    }
+
+    player.querySelectorAll('.clip-prev').forEach(function (b) {
+      b.addEventListener('click', function () { show(current - 1, true, true); });
+    });
+    player.querySelectorAll('.clip-next').forEach(function (b) {
+      b.addEventListener('click', function () { show(current + 1, true, true); });
+    });
+    if (select) {
+      select.addEventListener('change', function () { show(parseInt(select.value, 10), true, true); });
+    }
+    if (list) {
+      list.querySelectorAll('.list-group-item').forEach(function (item) {
+        item.addEventListener('click', function () {
+          show(parseInt(item.getAttribute('data-index'), 10), true, true);
+          if (window.innerWidth < 768) video.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
+    }
+    // Nach dem Ende automatisch weiter, Tonzustand bleibt wie er ist
+    video.addEventListener('ended', function () { show(current + 1, true, false); });
   });
 
   // Bootstrap-Validierung
