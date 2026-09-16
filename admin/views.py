@@ -216,7 +216,14 @@ def donation_detail(donation_id):
     # Get Stripe account ID for correct dashboard links
     stripe_account_id = os.getenv('STRIPE_ACCOUNT_ID', 'acct_1QzchbLmJHIgYDey')
 
+    bulk_mail = None
+    if donation.is_bulk_sponsoring:
+        import bulk_sponsoring_service as _bulk
+        subject, text = _bulk.mailvorschlag(donation)
+        bulk_mail = {'subject': subject, 'text': text, 'cc': _bulk_cc_default()}
+
     return render_template('admin/donation_detail.html',
+                           bulk_mail=bulk_mail,
                          donation=donation,
                          certificate=certificate,
                          tax_receipt=tax_receipt,
@@ -351,7 +358,7 @@ def regenerate_tax_receipt(donation_id):
     # Generate new tax receipt using the existing PDF service
     pdf_service = PDFGeneratorService()
     try:
-        tax_receipt = pdf_service.generate_tax_receipt_atomic(donation.id)
+        tax_receipt = pdf_service.generate_tax_receipt_atomic(donation.id, force=True)
         if tax_receipt:
             flash('Spendenbescheinigung wurde neu generiert.', 'success')
         else:
@@ -1151,3 +1158,264 @@ def speaker_request_delete(request_id):
     db.session.commit()
     flash(f'Anfrage „{label}" gelöscht.', 'success')
     return redirect(url_for('admin.speaker_requests_list'))
+
+
+# ---------------------------------------------------------------------------
+# Bulk-Sponsoring: Kapitel-/Buch-Patenschaften zum Sonderpreis
+# ---------------------------------------------------------------------------
+# Fachlogik in bulk_sponsoring_service.py (gemeinsam mit dem CLI bulk_sponsoring.py).
+# Ablauf: Formular -> Vorschau (nichts geschrieben) -> "Eintragen" mit Einmal-Token
+# -> Spende + PDFs -> Detailseite mit Sende-Knopf für die persönliche Mail.
+
+import secrets
+from decimal import Decimal
+from flask import current_app
+import bulk_sponsoring_service as bulk
+
+BULK_FORM_FIELDS = (
+    'email', 'salutation', 'first_name', 'last_name', 'street', 'house_number',
+    'postal_code', 'city', 'country', 'newsletter_consent', 'versangaben_text',
+    'gesamtbetrag', 'zuwendungsdatum', 'ausstellungsdatum', 'zahlungsweg', 'notiz',
+)
+
+
+# Standard-CC für die persönliche Mail: Daniel Weninger (Stiftung) und das
+# Postfach info@vers-patenschaft.de. Über BULK_MAIL_CC in der .env änderbar,
+# im Formular vor dem Senden editierbar.
+BULK_MAIL_CC_DEFAULT = 'daniel.weninger@schoeffer.org, info@vers-patenschaft.de'
+
+
+def _bulk_cc_liste(text):
+    return [a.strip().lower() for a in (text or '').replace(';', ',').split(',') if a.strip()]
+
+
+def _bulk_cc_default():
+    return os.getenv('BULK_MAIL_CC', BULK_MAIL_CC_DEFAULT)
+
+
+def _bulk_form_data():
+    """Rohwerte aus dem Formular, wie eingegeben (für das Wieder-Befüllen)."""
+    fd = {f: request.form.get(f, '').strip() for f in BULK_FORM_FIELDS}
+    fd['newsletter_consent'] = request.form.get('newsletter_consent') == 'on'
+    return fd
+
+
+def _bulk_validate(fd):
+    """Formularwerte -> (daten-dict für den Service, angaben-Liste, Fehlerliste)."""
+    errors = []
+    daten = {
+        'email': fd['email'].lower(),
+        'salutation': fd['salutation'] or None,
+        'first_name': fd['first_name'],
+        'last_name': fd['last_name'],
+        'street': fd['street'],
+        'house_number': fd['house_number'],
+        'postal_code': fd['postal_code'],
+        'city': fd['city'],
+        'country': (fd['country'] or 'DE').upper(),
+        'newsletter_consent': bool(fd['newsletter_consent']),
+        'zahlungsweg': fd['zahlungsweg'] or 'Überweisung',
+        'notiz': fd['notiz'] or None,
+    }
+    import re as _re
+    if not _re.fullmatch(r"[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}", daten['email']):
+        errors.append('Bitte eine gültige E-Mail-Adresse angeben.')
+    if daten['salutation'] and daten['salutation'] not in bulk.ANREDEN:
+        errors.append('Ungültige Anrede.')
+    for feld, name in (('first_name', 'Vorname'), ('last_name', 'Nachname'), ('street', 'Straße'),
+                       ('house_number', 'Hausnummer'), ('postal_code', 'PLZ'), ('city', 'Ort')):
+        if not daten[feld]:
+            errors.append(f'{name} ist ein Pflichtfeld.')
+    if not _re.fullmatch(r"\d{4,5}", daten['postal_code'] or ''):
+        errors.append('PLZ muss aus 4 oder 5 Ziffern bestehen.')
+    if daten['country'] not in bulk.LAENDER:
+        errors.append('Land muss DE, CH oder AT sein.')
+
+    angaben = []
+    try:
+        angaben = bulk.parse_versangaben_text(fd['versangaben_text'])
+    except bulk.BulkSponsoringFehler as e:
+        errors.append(str(e))
+    for feld, name in (('gesamtbetrag', bulk.parse_betrag), ('zuwendungsdatum', bulk.parse_datum),
+                       ('ausstellungsdatum', bulk.parse_datum)):
+        try:
+            daten[feld] = name(fd[feld]) if fd[feld] else None
+        except bulk.BulkSponsoringFehler as e:
+            errors.append(str(e))
+            daten[feld] = None
+    if daten.get('gesamtbetrag') is None and not any('Betrag' in e for e in errors):
+        errors.append('Gesamtbetrag ist ein Pflichtfeld.')
+    if daten.get('zuwendungsdatum') is None and not any('Datum' in e for e in errors):
+        errors.append('Tag der Zuwendung ist ein Pflichtfeld.')
+    if daten.get('ausstellungsdatum') is None:
+        daten['ausstellungsdatum'] = daten.get('zuwendungsdatum')
+    return daten, angaben, errors
+
+
+def _bulk_render(fd, preview=None, errors=()):
+    for e in errors:
+        flash(e, 'error')
+    return render_template(
+        'admin/bulk_sponsoring_form.html',
+        form_data=fd,
+        preview=preview,
+        anreden=bulk.ANREDEN,
+        laender=bulk.LAENDER,
+    )
+
+
+@admin_required
+def bulk_sponsoring_new():
+    """Formular, Vorschau und Eintragen für ein Bulk-Sponsoring."""
+    if request.method == 'GET':
+        fd = {f: '' for f in BULK_FORM_FIELDS}
+        fd.update(country='DE', zahlungsweg='Überweisung', newsletter_consent=False,
+                  zuwendungsdatum=datetime.now().strftime('%Y-%m-%d'))
+        return _bulk_render(fd)
+
+    fd = _bulk_form_data()
+    action = request.form.get('action', 'vorschau')
+    daten, angaben, errors = _bulk_validate(fd)
+    if errors:
+        return _bulk_render(fd, errors=errors)
+
+    try:
+        aufloesung = bulk.loese_verse_auf(angaben)
+    except bulk.BulkSponsoringFehler as e:
+        return _bulk_render(fd, errors=[str(e)])
+
+    if action != 'eintragen':
+        # --- Vorschau: nichts wird geschrieben ---
+        bestand, aenderungen = bulk.person_vorschau(daten)
+        etiketten = bulk.etiketten_fuer_verse(aufloesung.verse)
+        betraege = bulk.verteile_betrag(daten['gesamtbetrag'], len(aufloesung.verse))
+        token = secrets.token_hex(16)
+        session['bulk_token'] = token
+        aktive_reservierungen = bulk.aktive_reservierungen(aufloesung.verse)
+        preview = {
+            'token': token,
+            'person_bestand': bestand,
+            'person_aenderungen': aenderungen,
+            'aufloesung': aufloesung,
+            'etiketten': etiketten,
+            'etiketten_zertifikat': [e.text.upper() for e in etiketten[:bulk.MAX_ETIKETTEN_ZERTIFIKAT]],
+            'zu_viele_etiketten': len(etiketten) > bulk.MAX_ETIKETTEN_ZERTIFIKAT,
+            'vortext': bulk.vortext(etiketten),
+            'beschreibung': bulk.beschreibung_fliesstext(etiketten, len(aufloesung.verse)),
+            'betraege': betraege,
+            'regulaer': bulk.REGULAERER_VERSPREIS * len(aufloesung.verse),
+            'aktive_reservierungen': aktive_reservierungen,
+            'daten': daten,
+        }
+        return _bulk_render(fd, preview=preview)
+
+    # --- Eintragen ---
+    token = request.form.get('token', '')
+    if not token or token != session.get('bulk_token'):
+        return _bulk_render(fd, errors=['Die Vorschau ist abgelaufen oder wurde schon eingetragen. Bitte erneut prüfen.'])
+    session.pop('bulk_token', None)
+
+    try:
+        donation, receipt_number, etiketten = bulk.erstelle_bulk_sponsoring(
+            daten, aufloesung, admin_email=session.get('admin_email')
+        )
+        db.session.commit()
+    except Exception as e:  # noqa: BLE001 — Meldung wird dem Admin gezeigt
+        db.session.rollback()
+        current_app.logger.exception('Bulk-Sponsoring konnte nicht eingetragen werden')
+        return _bulk_render(fd, errors=[f'Eintragen fehlgeschlagen, nichts geschrieben: {e}'])
+
+    donation_id = donation.id
+    flash(f'Bulk-Sponsoring eingetragen: Spende #{donation_id}, Bescheinigung {receipt_number}, '
+          f'{len(aufloesung.verse)} Verse.', 'success')
+
+    dokumente = bulk.erzeuge_dokumente(current_app._get_current_object(), donation_id)
+    for fehler in dokumente['fehler']:
+        flash(f'PDF-Erzeugung fehlgeschlagen ({fehler}). Bitte auf der Detailseite neu generieren.', 'warning')
+    if not dokumente['fehler']:
+        flash('Zertifikat und Spendenbescheinigung wurden erzeugt. Bitte beide prüfen, dann die Mail senden.', 'info')
+
+    return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+
+@admin_required
+def person_by_email():
+    """Bestehende Person zur E-Mail nachschlagen (für das Vorbefüllen im Formular)."""
+    email = request.args.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'found': False})
+    person = Person.query.filter_by(email=email).first()
+    if not person:
+        return jsonify({'found': False})
+    return jsonify({
+        'found': True,
+        'id': person.id,
+        'salutation': person.salutation or '',
+        'first_name': person.first_name or '',
+        'last_name': person.last_name or '',
+        'street': person.street or '',
+        'house_number': person.house_number or '',
+        'postal_code': person.postal_code or '',
+        'city': person.city or '',
+        'country': person.country or 'DE',
+        'newsletter_consent': bool(person.newsletter_consent),
+        'donations': Donation.query.filter_by(person_id=person.id, payment_status='completed').count(),
+    })
+
+
+@admin_required
+def send_bulk_email(donation_id):
+    """Persönliche Mail mit Zertifikat und Spendenbescheinigung an den Bulk-Spender."""
+    donation = Donation.query.get_or_404(donation_id)
+    if not donation.is_bulk_sponsoring:
+        flash('Diese Spende ist kein Bulk-Sponsoring.', 'warning')
+        return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+    subject = request.form.get('subject', '').strip()
+    text = request.form.get('text', '').strip()
+    cc = _bulk_cc_liste(request.form.get('cc', ''))
+    if not subject or not text:
+        flash('Betreff und Text dürfen nicht leer sein.', 'error')
+        return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+    import re as _re
+    for adresse in cc:
+        if not _re.fullmatch(r"[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}", adresse):
+            flash(f'Ungültige CC-Adresse: {adresse}', 'error')
+            return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+    certificate = Certificate.query.filter_by(
+        donation_id=donation_id, certificate_type='personal_certificate'
+    ).order_by(Certificate.generated_at.desc()).first()
+    tax_receipt = Certificate.query.filter_by(
+        donation_id=donation_id, certificate_type='tax_receipt'
+    ).order_by(Certificate.generated_at.desc()).first()
+    if not (certificate and certificate.exists_on_disk and tax_receipt and tax_receipt.exists_on_disk):
+        flash('Zertifikat und Spendenbescheinigung müssen vorhanden sein, bevor die Mail gesendet wird.', 'warning')
+        return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+    attachments = [
+        {'path': certificate.file_path,
+         'filename': f'NGUE_Zertifikat_{donation.id}.pdf', 'mimetype': 'application/pdf'},
+        {'path': tax_receipt.file_path,
+         'filename': f'NGUE_Spendenbescheinigung_{donation.id}.pdf', 'mimetype': 'application/pdf'},
+    ]
+
+    try:
+        email_service.send_bulk_documents_email(donation.person.email, subject, text, attachments, cc=cc)
+    except Exception as e:  # noqa: BLE001
+        current_app.logger.exception('Bulk-Mail konnte nicht gesendet werden')
+        flash(f'Fehler beim Versenden: {e}', 'danger')
+        return redirect(url_for('admin.donation_detail', donation_id=donation_id))
+
+    now = datetime.utcnow()
+    donation.email_sent = True
+    donation.email_sent_at = now
+    donation.certificate_sent_at = now
+    donation.admin_comment = (donation.admin_comment or '') + (
+        f"\nMail mit Zertifikat und Bescheinigung gesendet am {now.strftime('%d.%m.%Y %H:%M')} UTC "
+        f"an {donation.person.email}" + (f", CC: {', '.join(cc)}" if cc else "") + f" (Betreff: {subject})"
+    )
+    db.session.commit()
+
+    flash(f'Mail an {donation.person.email} gesendet' + (f' (CC: {", ".join(cc)})' if cc else '') + '.', 'success')
+    return redirect(url_for('admin.donation_detail', donation_id=donation_id))

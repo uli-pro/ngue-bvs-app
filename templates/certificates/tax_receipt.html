@@ -67,8 +67,14 @@
             color: #000;
             text-align: center;
             line-height: 1.1;
-            overflow-wrap: anywhere;
+            /* Kein Umbruch mitten im Wort. Lange Zahlwörter tragen weiche
+               Trennstellen (&shy;) nach "tausend"/"hundert", die Striche
+               hängen per &nbsp; am Wort. Ab 27 Zeichen kleinere Schrift,
+               damit zwei Zeilen reichen. */
+            hyphens: manual;
         }
+        .amount-words.long { font-size: 9pt; }
+        .amount-words.very-long { font-size: 8pt; }
 
         /* Donation date
            Spalte im Hintergrund-PNG: 133,9mm bis 194,7mm.
@@ -124,8 +130,8 @@
         </div>
         
         <!-- Amount in words -->
-        <div class="amount-words">
-            --- {{ amount_in_words }} ---
+        <div class="amount-words{% if amount_in_words|length > 32 %} very-long{% elif amount_in_words|length > 26 %} long{% endif %}">
+            ---&nbsp;{{ amount_in_words|replace('tausend', 'tausend\u00ad')|replace('hundert', 'hundert\u00ad')|trim('\u00ad') }}&nbsp;---
         </div>
         
         <!-- Donation date -->

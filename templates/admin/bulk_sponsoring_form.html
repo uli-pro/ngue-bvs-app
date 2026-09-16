@@ -1,0 +1,263 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Bulk-Sponsoring eintragen - Admin{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Bulk-Sponsoring eintragen</h2>
+<p class="text-muted mb-4">
+    Extern akquirierte Kapitel- oder Buch-Patenschaft zum Sonderpreis (kein Stripe-Vorgang).
+    Erst <strong>Vorschau prüfen</strong>, dann <strong>Eintragen</strong>. Bereits gesponserte Verse werden übersprungen.
+</p>
+
+{% set fd = form_data or {} %}
+
+<form method="POST" id="bulk-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="row">
+    <!-- Linke Spalte: Eingaben -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0">Spender</h5></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label" for="email">E-Mail</label>
+                    <input type="email" class="form-control" name="email" id="email" required
+                           value="{{ fd.get('email', '') }}" autocomplete="off">
+                    <div class="form-text" id="email-status">Bestehende Personen werden nach Eingabe der E-Mail automatisch vorbefüllt.</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label" for="salutation">Anrede</label>
+                        <select class="form-select" name="salutation" id="salutation">
+                            <option value="" {% if not fd.get('salutation') %}selected{% endif %}>Ohne</option>
+                            {% for a in anreden %}
+                            <option value="{{ a }}" {% if fd.get('salutation') == a %}selected{% endif %}>{{ a }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="first_name">Vorname</label>
+                        <input type="text" class="form-control" name="first_name" id="first_name" required value="{{ fd.get('first_name', '') }}">
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label class="form-label" for="last_name">Nachname</label>
+                        <input type="text" class="form-control" name="last_name" id="last_name" required value="{{ fd.get('last_name', '') }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label" for="street">Straße</label>
+                        <input type="text" class="form-control" name="street" id="street" required value="{{ fd.get('street', '') }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="house_number">Hausnummer</label>
+                        <input type="text" class="form-control" name="house_number" id="house_number" required value="{{ fd.get('house_number', '') }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label" for="country">Land</label>
+                        <select class="form-select" name="country" id="country">
+                            {% for l in laender %}
+                            <option value="{{ l }}" {% if (fd.get('country') or 'DE') == l %}selected{% endif %}>{{ l }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label" for="postal_code">PLZ</label>
+                        <input type="text" class="form-control" name="postal_code" id="postal_code" required pattern="\d{4,5}" value="{{ fd.get('postal_code', '') }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="city">Ort</label>
+                        <input type="text" class="form-control" name="city" id="city" required value="{{ fd.get('city', '') }}">
+                    </div>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="newsletter_consent" id="newsletter_consent" {% if fd.get('newsletter_consent') %}checked{% endif %}>
+                    <label class="form-check-label" for="newsletter_consent">Newsletter-Einwilligung</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0">Spende</h5></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label" for="versangaben_text">Bücher, Kapitel oder Versbereiche</label>
+                    <textarea class="form-control font-monospace" name="versangaben_text" id="versangaben_text" rows="4" required
+                              placeholder="Obadja&#10;Hiob 2&#10;Maleachi 4,1-3">{{ fd.get('versangaben_text', '') }}</textarea>
+                    <div class="form-text">Eine Angabe pro Zeile. <code>Obadja</code> = ganzes Buch, <code>Hiob 2</code> = ganzes Kapitel, <code>Maleachi 4,1-3</code> = Versbereich. Deutsche Namen oder Buchcodes (JOB, MAL).</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="gesamtbetrag">Gesamtbetrag (€)</label>
+                        <input type="text" class="form-control" name="gesamtbetrag" id="gesamtbetrag" required inputmode="decimal"
+                               placeholder="1.750,00" value="{{ fd.get('gesamtbetrag', '') }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="zuwendungsdatum">Tag der Zuwendung</label>
+                        <input type="date" class="form-control" name="zuwendungsdatum" id="zuwendungsdatum" required value="{{ fd.get('zuwendungsdatum', '') }}">
+                        <div class="form-text">Geldeingang laut Stiftung. Steht auf der Bescheinigung.</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="ausstellungsdatum">Ausstellungsdatum</label>
+                        <input type="date" class="form-control" name="ausstellungsdatum" id="ausstellungsdatum" value="{{ fd.get('ausstellungsdatum', '') }}">
+                        <div class="form-text">Leer = Tag der Zuwendung.</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="zahlungsweg">Zahlungsweg</label>
+                        <input type="text" class="form-control" name="zahlungsweg" id="zahlungsweg" value="{{ fd.get('zahlungsweg', 'Überweisung') }}">
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label" for="notiz">Notiz (optional, landet im Admin-Kommentar)</label>
+                        <input type="text" class="form-control" name="notiz" id="notiz" value="{{ fd.get('notiz', '') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" name="action" value="vorschau" class="btn btn-primary">Vorschau prüfen</button>
+            <a href="{{ url_for('admin.donations_list') }}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </div>
+
+    <!-- Rechte Spalte: Vorschau -->
+    <div class="col-lg-6">
+        {% if preview %}
+        {% set p = preview %}
+        {% set a = p.aufloesung %}
+        <div class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white"><h5 class="mb-0">Vorschau — noch nichts geschrieben</h5></div>
+            <div class="card-body">
+
+                <h6>Person</h6>
+                {% if p.person_bestand %}
+                    <p class="mb-1">Bestehende Person <a href="{{ url_for('admin.person_edit', person_id=p.person_bestand.id) }}" target="_blank">#{{ p.person_bestand.id }}</a>, die Spende wird ihr zugeordnet.</p>
+                    {% if p.person_aenderungen %}
+                    <p class="mb-1 text-warning">Folgende Felder werden aktualisiert:</p>
+                    <ul class="small">
+                        {% for feld, alt, neu in p.person_aenderungen %}
+                        <li><code>{{ feld }}</code>: „{{ alt if alt is not none else '' }}" → „{{ neu }}"</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="small text-muted mb-2">Stammdaten unverändert.</p>
+                    {% endif %}
+                {% else %}
+                    <p class="mb-2">Neue Person wird angelegt: {{ p.daten.first_name }} {{ p.daten.last_name }} &lt;{{ p.daten.email }}&gt;</p>
+                {% endif %}
+
+                <h6 class="mt-3">Verse</h6>
+                <table class="table table-sm mb-2">
+                    <thead><tr><th>Angabe</th><th class="text-end">Verse</th><th class="text-end">werden eingetragen</th></tr></thead>
+                    <tbody>
+                    {% for name, gesamt, eingetragen in a.bereiche %}
+                    <tr><td>{{ name }}</td><td class="text-end">{{ gesamt }}</td><td class="text-end {% if eingetragen < gesamt %}text-warning{% endif %}">{{ eingetragen }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot><tr><th>Summe</th><th class="text-end">{{ a.angefragt }}</th><th class="text-end">{{ a.verse|length }}</th></tr></tfoot>
+                </table>
+                {% if a.uebersprungen %}
+                <div class="alert alert-warning py-2 small">
+                    <strong>{{ a.uebersprungen|length }} Verse übersprungen</strong> (bereits gesponsert):
+                    {{ a.uebersprungen|map(attribute='german_reference')|join(', ') }}
+                </div>
+                {% endif %}
+                {% if a.erschienen %}
+                <div class="alert alert-danger py-2 small">
+                    <strong>{{ a.erschienen|length }} Verse gehören zu einem bereits erschienenen Band</strong> und werden im Shop nicht mehr angeboten. Sie werden trotzdem eingetragen — nur fortfahren, wenn das so gewollt ist:
+                    {{ a.erschienen|map(attribute='german_reference')|join(', ') }}
+                </div>
+                {% endif %}
+                {% if p.aktive_reservierungen %}
+                <div class="alert alert-warning py-2 small">
+                    <strong>{{ p.aktive_reservierungen }} Verse sind gerade im Warenkorb eines Besuchers reserviert.</strong> Die Reservierungen werden beim Eintragen gelöscht. Im Zweifel ein paar Minuten warten.
+                </div>
+                {% endif %}
+
+                <h6 class="mt-3">Betrag</h6>
+                <dl class="row small mb-2">
+                    <dt class="col-sm-5">Gesamtbetrag</dt><dd class="col-sm-7">{{ p.daten.gesamtbetrag|currency }}</dd>
+                    <dt class="col-sm-5">Regulär wären</dt><dd class="col-sm-7">{{ p.regulaer|currency }} ({{ a.verse|length }} × 100 €)</dd>
+                    <dt class="col-sm-5">Rechnerisch je Vers</dt><dd class="col-sm-7">{{ p.betraege[0]|currency }}{% if p.betraege|length > 1 and p.betraege[-1] != p.betraege[0] %} bzw. {{ p.betraege[-1]|currency }}{% endif %}</dd>
+                    <dt class="col-sm-5">Tag der Zuwendung</dt><dd class="col-sm-7">{{ p.daten.zuwendungsdatum.strftime('%d.%m.%Y') }}</dd>
+                    <dt class="col-sm-5">Ausstellungsdatum</dt><dd class="col-sm-7">{{ p.daten.ausstellungsdatum.strftime('%d.%m.%Y') }}</dd>
+                    <dt class="col-sm-5">Zahlungsweg</dt><dd class="col-sm-7">{{ p.daten.zahlungsweg }}</dd>
+                    <dt class="col-sm-5">Bescheinigungsnummer</dt><dd class="col-sm-7">wird beim Eintragen vergeben</dd>
+                </dl>
+
+                <h6 class="mt-3">So steht es auf dem Zertifikat</h6>
+                <div class="border rounded p-3 text-center mb-2" style="background:#fafafa;">
+                    <div class="text-muted small">hat durch eine Spende von {{ p.daten.gesamtbetrag|currency }} die Übersetzung<br>{{ p.vortext }} ermöglicht:</div>
+                    <div class="mt-2 fst-italic" style="color:#333f84; font-size:1.3rem; line-height:1.5;">
+                        {% for e in p.etiketten_zertifikat %}{{ e }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+                    </div>
+                </div>
+                {% if p.zu_viele_etiketten %}
+                <div class="alert alert-danger py-2 small">Mehr als {{ p.etiketten_zertifikat|length }} Einträge — das Zertifikat zeigt nur die ersten. Angaben zusammenfassen (z.B. ganzes Buch statt einzelner Kapitel).</div>
+                {% endif %}
+                <p class="small text-muted mb-3">In der Mail: „Ihre Patenschaft umfasst <em>{{ p.beschreibung }}</em>."</p>
+
+                <input type="hidden" name="token" value="{{ p.token }}">
+                <button type="submit" name="action" value="eintragen" class="btn btn-success w-100"
+                        onclick="return confirm('Spende jetzt eintragen? Bescheinigungsnummer wird vergeben, {{ a.verse|length }} Verse werden als gesponsert markiert.');">
+                    Eintragen: {{ a.verse|length }} Verse, {{ p.daten.gesamtbetrag|currency }}
+                </button>
+                <p class="small text-muted mt-2 mb-0">Danach werden Zertifikat und Spendenbescheinigung erzeugt. Die Mail an den Spender wird erst auf der Detailseite gesendet, nach Sichtprüfung der PDFs.</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="card mb-4">
+            <div class="card-body text-muted">
+                <p class="mb-2"><strong>Ablauf</strong></p>
+                <ol class="mb-0 small">
+                    <li>Spender und Spende eintragen, <em>Vorschau prüfen</em>.</li>
+                    <li>Vorschau lesen: Person, übersprungene Verse, Zertifikat-Text.</li>
+                    <li><em>Eintragen</em>. Zertifikat und Bescheinigung werden erzeugt.</li>
+                    <li>Auf der Detailseite beide PDFs ansehen, Mailtext anpassen, senden.</li>
+                </ol>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const email = document.getElementById('email');
+    const status = document.getElementById('email-status');
+    const felder = ['salutation', 'first_name', 'last_name', 'street', 'house_number', 'postal_code', 'city', 'country'];
+    let zuletzt = email.value.trim().toLowerCase();
+
+    async function nachschlagen() {
+        const wert = email.value.trim().toLowerCase();
+        if (!wert || wert === zuletzt || !wert.includes('@')) return;
+        zuletzt = wert;
+        try {
+            const r = await fetch('{{ url_for("admin.person_by_email") }}?email=' + encodeURIComponent(wert));
+            const p = await r.json();
+            if (!p.found) {
+                status.textContent = 'Keine Person mit dieser E-Mail — wird neu angelegt.';
+                status.className = 'form-text';
+                return;
+            }
+            felder.forEach(f => { const el = document.getElementById(f); if (el) el.value = p[f] || ''; });
+            document.getElementById('newsletter_consent').checked = !!p.newsletter_consent;
+            status.textContent = 'Bestehende Person #' + p.id + ' (' + p.donations + ' abgeschlossene Spenden) — Felder vorbefüllt, die Spende wird ihr zugeordnet.';
+            status.className = 'form-text text-success';
+        } catch (e) {
+            status.textContent = 'Nachschlagen fehlgeschlagen: ' + e;
+            status.className = 'form-text text-danger';
+        }
+    }
+    email.addEventListener('blur', nachschlagen);
+    email.addEventListener('change', nachschlagen);
+})();
+</script>
+{% endblock %}

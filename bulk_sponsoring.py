@@ -39,9 +39,13 @@ Die Spendenbescheinigung wird über die normale Pipeline erzeugt — eine einzig
 über den vollen Betrag, mit der Nummer aus der Datenbank. So bleibt die
 Nummernfolge lückenlos und PDF und Datenbank können nicht auseinanderlaufen.
 
-Das Zertifikat erzeugt das Skript NICHT: dessen Text weicht bei
-Kapitel-Patenschaften ab ("Kapitel" statt "Bibelverse"). E-Mails verschickt
-es ebenfalls nicht.
+Zertifikat und Spendenbescheinigung werden über die normale Pipeline erzeugt
+(Bulk-Layout: "OBADJA" / "HIOB 2" statt Einzelverse). E-Mails verschickt das
+Skript nicht — dafür gibt es den Sende-Knopf im Admin auf der Spendendetailseite.
+
+Seit 09/2026 gibt es dieselbe Funktion im Admin-Panel (/admin/bulk-sponsoring/neu).
+Die Fachlogik liegt in bulk_sponsoring_service.py und wird von beiden genutzt;
+dieses Skript ist nur noch die Kommandozeilen-Oberfläche dazu.
 """
 
 import json
@@ -49,26 +53,23 @@ import os
 import re
 import sys
 from datetime import datetime
-from decimal import Decimal, InvalidOperation, ROUND_DOWN
+from decimal import Decimal
 
 SKRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SKRIPT_DIR)
 
 from app import app
 from book_names import BOOK_NAMES
-from models import db, Person, Verse, Donation, DonationVerse, ReceiptCounter, VerseReservation
-from pdf_service import PDFGeneratorService
+from models import db
+import bulk_sponsoring_service as bulk
+from bulk_sponsoring_service import (  # noqa: F401 — Namen bleiben für Aufrufer erhalten
+    BulkSponsoringFehler, buchcode, parse_versangabe, bezeichnung, verteile_betrag, euro,
+)
 
 # Protokoll der Eingaben — enthält personenbezogene Daten, siehe .gitignore
 EINGABEN_DIR = os.path.join(SKRIPT_DIR, "bulk-eingaben")
 
 BESTAETIGUNGSWORT = "EINTRAGEN"
-
-# Deutscher Buchname (kleingeschrieben, ohne Leerzeichen) -> Buchcode
-DEUTSCH_ZU_CODE = {
-    name.lower().replace(" ", "").replace(".", ""): code
-    for code, name in BOOK_NAMES.items()
-}
 
 
 class Abbruch(Exception):
@@ -131,22 +132,10 @@ def frage_datum(text):
 
 def frage_betrag(text):
     while True:
-        wert = frage(text).replace("€", "").replace(" ", "")
-        # Deutsche Schreibweise 1.500,00 -> 1500.00
-        if "," in wert:
-            wert = wert.replace(".", "").replace(",", ".")
         try:
-            betrag = Decimal(wert).quantize(Decimal("0.01"))
-        except InvalidOperation:
-            print("  -> Kein gültiger Betrag. Beispiel: 1500 oder 1.500,00")
-            continue
-        if betrag <= 0:
-            print("  -> Der Betrag muss größer als 0 sein.")
-            continue
-        if betrag > Decimal("999999.99"):
-            print("  -> Betrag zu groß (Feld erlaubt max. 999.999,99).")
-            continue
-        return betrag
+            return bulk.parse_betrag(frage(text))
+        except BulkSponsoringFehler as fehler:
+            print(f"  -> {fehler}")
 
 
 def frage_plz(text):
@@ -172,57 +161,15 @@ def frage_anrede():
 # Vers-Eingabe
 # ---------------------------------------------------------------------------
 
-def buchcode(eingabe):
-    """Wandelt 'JOB', 'Hiob', '1. Mose' usw. in den Buchcode um. None wenn unbekannt."""
-    roh = eingabe.strip()
-    if roh.upper() in BOOK_NAMES:
-        return roh.upper()
-    return DEUTSCH_ZU_CODE.get(roh.lower().replace(" ", "").replace(".", ""))
-
-
-def parse_versangabe(zeile):
-    """Zerlegt eine Zeile in (buchcode, kapitel, von, bis).
-
-    von/bis sind None, wenn das ganze Kapitel gemeint ist.
-
-    Erlaubt:  JOB 2        Hiob 2        (ganzes Kapitel)
-              JOB 2,1-13   Hiob 2,1-13   (Versbereich)
-              JOB 2,5      Hiob 2,5      (einzelner Vers)
-    """
-    muster = re.fullmatch(
-        r"(?P<buch>[^\d,]+(?:\d\.?\s*\w+)?)\s+(?P<kap>\d+)"
-        r"(?:\s*,\s*(?P<von>\d+)(?:\s*-\s*(?P<bis>\d+))?)?",
-        zeile.strip(),
-    )
-    if not muster:
-        # Bücher wie "1. Mose" / "1SA" beginnen mit einer Ziffer
-        muster = re.fullmatch(
-            r"(?P<buch>\d\.?\s*\S+|\dCH|\dKI|\dSA)\s+(?P<kap>\d+)"
-            r"(?:\s*,\s*(?P<von>\d+)(?:\s*-\s*(?P<bis>\d+))?)?",
-            zeile.strip(),
-        )
-    if not muster:
-        raise ValueError("Format nicht erkannt. Beispiele: 'Hiob 2', 'JOB 2,1-13', 'MAL 4,3'")
-
-    code = buchcode(muster.group("buch"))
-    if not code:
-        raise ValueError(f"Unbekanntes Buch: {muster.group('buch').strip()!r}")
-
-    kapitel = int(muster.group("kap"))
-    von = int(muster.group("von")) if muster.group("von") else None
-    bis = int(muster.group("bis")) if muster.group("bis") else von
-
-    if von is not None and bis < von:
-        raise ValueError(f"Versbereich verkehrt herum: {von}-{bis}")
-
-    return code, kapitel, von, bis
+# buchcode() und parse_versangabe() kommen aus bulk_sponsoring_service.
 
 
 def frage_verse():
     """Fragt Vers-/Kapitelangaben ab, bis eine Leerzeile kommt."""
     print()
-    print("  Verse oder ganze Kapitel eingeben, eine Angabe pro Zeile.")
-    print("  Beispiele:  Hiob 2        (ganzes Kapitel)")
+    print("  Bücher, Kapitel oder Verse eingeben, eine Angabe pro Zeile.")
+    print("  Beispiele:  Obadja        (ganzes Buch)")
+    print("              Hiob 2        (ganzes Kapitel)")
     print("              JOB 2,1-13    (Versbereich)")
     print("              Maleachi 4,3  (einzelner Vers)")
     print("  Leere Zeile beendet die Eingabe, '?' zeigt alle Buchcodes.")
@@ -247,15 +194,15 @@ def frage_verse():
 
         try:
             angaben.append(parse_versangabe(zeile))
-        except ValueError as fehler:
+        except BulkSponsoringFehler as fehler:
             print(f"  -> {fehler}")
             continue
 
         code, kap, von, bis = angaben[-1]
-        bereich = "ganzes Kapitel" if von is None else (
-            f"Vers {von}" if von == bis else f"Verse {von}-{bis}"
+        art = "ganzes Buch" if kap is None else (
+            "ganzes Kapitel" if von is None else (f"Vers {von}" if von == bis else f"Verse {von}-{bis}")
         )
-        print(f"     ✓ {BOOK_NAMES[code]} {kap} ({bereich})")
+        print(f"     ✓ {bezeichnung(angaben[-1])} ({art})")
 
 
 def zeige_buchcodes():
@@ -270,124 +217,7 @@ def zeige_buchcodes():
 # Fachlogik
 # ---------------------------------------------------------------------------
 
-def lade_verse(angaben):
-    """Löst die Versangaben gegen die Datenbank auf. Wirft bei Problemen."""
-    verse = []
-    gesehen = set()
-
-    for code, kapitel, von, bis in angaben:
-        abfrage = Verse.query.filter_by(book=code, chapter=kapitel)
-        if von is not None:
-            abfrage = abfrage.filter(Verse.verse >= von, Verse.verse <= bis)
-        treffer = abfrage.order_by(Verse.verse).all()
-
-        bezeichnung = f"{BOOK_NAMES[code]} {kapitel}" + (
-            "" if von is None else (f",{von}" if von == bis else f",{von}-{bis}")
-        )
-
-        if not treffer:
-            raise ValueError(f"Keine Verse gefunden für {bezeichnung}.")
-
-        if von is not None:
-            erwartet = bis - von + 1
-            if len(treffer) != erwartet:
-                gefunden = ", ".join(str(v.verse) for v in treffer)
-                raise ValueError(
-                    f"{bezeichnung}: {erwartet} Verse erwartet, {len(treffer)} gefunden "
-                    f"(vorhanden: {gefunden}). Kapitel hat vermutlich weniger Verse."
-                )
-
-        for vers in treffer:
-            if vers.id in gesehen:
-                raise ValueError(f"{vers.german_reference} ist doppelt angegeben.")
-            gesehen.add(vers.id)
-            verse.append(vers)
-
-    return verse
-
-
-def verteile_betrag(gesamt, anzahl):
-    """Verteilt den Gesamtbetrag centgenau auf n Verse.
-
-    Basisbetrag abgerundet, Restcents auf die ersten Verse verteilt.
-    Beispiel 1500,00 € / 19 Verse -> 14x 78,95 € + 5x 78,94 € = 1500,00 €
-    """
-    cent = Decimal("0.01")
-    basis = (gesamt / anzahl).quantize(cent, rounding=ROUND_DOWN)
-    rest_cents = int(((gesamt - basis * anzahl) / cent).to_integral_value())
-
-    betraege = [basis + cent if i < rest_cents else basis for i in range(anzahl)]
-    assert sum(betraege) == gesamt, f"Verteilung ergibt {sum(betraege)}, erwartet {gesamt}"
-    return betraege
-
-
-def baue_kommentar(daten, verse, receipt_number, gesamt):
-    """Interner Kommentar an der Spende (donations.admin_comment)."""
-    regulaer = Decimal(100) * len(verse)
-    referenzen = ", ".join(v.german_reference for v in verse)
-    zeilen = [
-        "BULK-SPONSORING — extern akquirierte Kapitel-/Buch-Patenschaft.",
-        f"Gesamtbetrag: {euro(gesamt)} für {len(verse)} Verse "
-        f"(regulär wären {euro(regulaer)}). Deshalb is_bulk_sponsoring=True "
-        "und aus den Tagesreport-Summen herausgerechnet.",
-        f"Verse: {referenzen}",
-        f"Spendenbescheinigung: EINE über den vollen Betrag von {euro(gesamt)}, "
-        f"Nr. {receipt_number}. Keine Einzelbescheinigungen je Vers — die Beträge "
-        "auf den donation_verses sind nur die rechnerische Aufteilung innerhalb "
-        "dieser einen Spende.",
-        f"Zahlungsweg: {daten['zahlungsweg']} (kein Stripe-Vorgang, "
-        "daher keine PaymentTransaction).",
-        f"Tag der Zuwendung: {daten['zuwendungsdatum'].strftime('%d.%m.%Y')}, "
-        f"Bescheinigung ausgestellt am {daten['ausstellungsdatum'].strftime('%d.%m.%Y')}.",
-        "Spendenbescheinigung über die normale Pipeline erzeugt (Certificate-Record "
-        "vorhanden). Zertifikat wird manuell erstellt, da der Text bei "
-        "Kapitel-Patenschaften abweicht.",
-        "Kein automatischer E-Mail-Versand.",
-    ]
-    if daten.get("notiz"):
-        zeilen.append(f"Notiz: {daten['notiz']}")
-    return "\n".join(zeilen)
-
-
-def euro(betrag):
-    """1500.00 -> '1.500,00 €'"""
-    return f"{betrag:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + " €"
-
-
-# ---------------------------------------------------------------------------
-# Ein-/Ausgabe der Eingabedaten
-# ---------------------------------------------------------------------------
-
-FELDER_UEBERSICHT = """
-================================================================================
-BULK-SPONSORING EINTRAGEN
-================================================================================
-
-Diese Angaben werden benötigt — bitte vorher bereitlegen:
-
-  SPENDER
-    - E-Mail-Adresse            (Pflicht, dient als eindeutiger Schlüssel)
-    - Anrede                    (Herr / Frau / Eheleute / Familie / Ohne)
-    - Vorname, Nachname
-    - Straße, Hausnummer
-    - PLZ, Ort, Land            (Land als 2 Buchstaben, z.B. DE)
-    - Newsletter-Einwilligung   (j/n)
-
-  SPENDE
-    - Gesponserte Verse         (ganze Kapitel oder Versbereiche,
-                                 z.B. "Hiob 2" oder "JOB 2,1-13")
-    - Gesamtbetrag in Euro      (der tatsächlich gezahlte Sonderpreis)
-    - Tag der Zuwendung         (Geldeingang — steht auf der Bescheinigung)
-    - Ausstellungsdatum         (Datum auf der Bescheinigung, meist heute)
-    - Zahlungsweg               (z.B. Überweisung)
-    - Notiz                     (optional, kommt in den Admin-Kommentar)
-
-Die Spendenbescheinigungsnummer wird automatisch gezogen — nicht selbst wählen.
-
-WICHTIG: Vor einem Produktionslauf einen Datenbank-Dump ziehen.
-
-================================================================================
-"""
+# lade_verse(), verteile_betrag(), baue_kommentar(), euro() liegen im Service.
 
 
 def erfasse_daten():
@@ -454,40 +284,60 @@ def lade_eingaben(pfad):
 # Vorschau und Ausführung
 # ---------------------------------------------------------------------------
 
-def zeige_vorschau(daten, person, ist_neu, verse, betraege, receipt_number, kommentar):
+def zeige_vorschau(daten, person_bestand, aenderungen, aufloesung, etiketten, betraege):
+    verse = aufloesung.verse
     gesamt = daten["gesamtbetrag"]
     print()
     print("=" * 80)
     print("VORSCHAU — es wurde noch nichts geschrieben")
     print("=" * 80)
     print()
-    print(f"  Person ({'NEU angelegt' if ist_neu else f'BESTEHEND, ID {person.id} — Daten werden aktualisiert'}):")
-    anrede = f"{person.salutation} " if person.salutation else ""
-    print(f"    {anrede}{person.first_name} {person.last_name} <{person.email}>")
-    print(f"    {person.street} {person.house_number}, {person.postal_code} {person.city} ({person.country})")
-    print(f"    Newsletter: {'ja' if person.newsletter_consent else 'nein'}")
+    if person_bestand:
+        print(f"  Person: BESTEHEND, ID {person_bestand.id} — die Spende wird ihr zugeordnet.")
+        if aenderungen:
+            print("    Folgende Felder werden aktualisiert:")
+            for feld, alt, neu in aenderungen:
+                print(f"      {feld}: {alt!r} -> {neu!r}")
+    else:
+        print("  Person: NEU angelegt")
+    anrede = f"{daten['salutation']} " if daten.get("salutation") else ""
+    print(f"    {anrede}{daten['first_name']} {daten['last_name']} <{daten['email']}>")
+    print(f"    {daten['street']} {daten['house_number']}, {daten['postal_code']} {daten['city']} ({daten['country']})")
+    print(f"    Newsletter: {'ja' if daten['newsletter_consent'] else 'nein'}")
+    print()
+    print("  Angaben:")
+    for name, anzahl, eingetragen in aufloesung.bereiche:
+        hinweis = "" if eingetragen == anzahl else f"   ({anzahl - eingetragen} übersprungen, bereits gesponsert)"
+        print(f"    {name:<24} {eingetragen:>4} Verse{hinweis}")
+    if aufloesung.erschienen:
+        print()
+        print(f"  WARNUNG: {len(aufloesung.erschienen)} Verse gehören zu einem bereits erschienenen Band")
+        print("  und werden im Shop nicht mehr angeboten. Nur fortfahren, wenn das so gewollt ist:")
+        print("    " + ", ".join(v.german_reference for v in aufloesung.erschienen))
     print()
     print("  Spende:")
     print(f"    Gesamtbetrag       {euro(gesamt)}")
-    print(f"    Verse              {len(verse)} (regulär wären {euro(Decimal(100) * len(verse))})")
+    print(f"    Verse              {len(verse)} (regulär wären {euro(bulk.REGULAERER_VERSPREIS * len(verse))})")
     print(f"    Tag der Zuwendung  {daten['zuwendungsdatum'].strftime('%d.%m.%Y')}")
     print(f"    Ausstellungsdatum  {daten['ausstellungsdatum'].strftime('%d.%m.%Y')}")
     print(f"    Zahlungsweg        {daten['zahlungsweg']}")
     print(f"    Status             completed, is_bulk_sponsoring=True")
-    print(f"    Bescheinigung      {receipt_number}   <-- wird verbraucht")
+    print(f"    Bescheinigung      wird beim Eintragen vergeben")
+    print()
+    print("  Zertifikat:")
+    print(f"    ... die Übersetzung {bulk.vortext(etiketten)} ermöglicht:")
+    for e in etiketten[:bulk.MAX_ETIKETTEN_ZERTIFIKAT]:
+        print(f"      {e.text.upper()}")
+    if len(etiketten) > bulk.MAX_ETIKETTEN_ZERTIFIKAT:
+        print(f"    WARNUNG: {len(etiketten)} Einträge, das Zertifikat zeigt nur {bulk.MAX_ETIKETTEN_ZERTIFIKAT}.")
     print()
     print("  Verse (werden auf 'gesponsert' gesetzt):")
     for vers, betrag in zip(verse, betraege):
         print(f"    {vers.german_reference:<20} {euro(betrag):>12}")
     print(f"    {'SUMME':<20} {euro(sum(betraege)):>12}")
     print()
-    print("  Admin-Kommentar:")
-    for zeile in kommentar.splitlines():
-        print(f"    {zeile}")
-    print()
-    print("  Danach wird die Spendenbescheinigung als PDF erzeugt (eine, über den")
-    print("  vollen Betrag) und ein Certificate-Record dafür angelegt.")
-    print("  Nicht angelegt: Zertifikat-PDF, PaymentTransaction, E-Mails.")
+    print("  Danach werden Spendenbescheinigung und Zertifikat als PDF erzeugt.")
+    print("  Nicht angelegt: PaymentTransaction, E-Mails (Versand über den Admin).")
     print("=" * 80)
 
 
@@ -507,100 +357,24 @@ def main(dry_run, ladepfad):
         if ladepfad:
             print(f"Eingaben geladen aus: {ladepfad}")
 
-        # --- Verse auflösen und prüfen -----------------------------------
-        verse = lade_verse(daten["versangaben"])
+        # --- Verse auflösen (bereits gesponserte werden übersprungen) --------
+        try:
+            aufloesung = bulk.loese_verse_auf(daten["versangaben"])
+        except BulkSponsoringFehler as fehler:
+            raise SystemExit(f"\nABBRUCH: {fehler}")
 
-        gesponsert = [v for v in verse if v.is_sponsored]
-        if gesponsert:
-            referenzen = ", ".join(v.german_reference for v in gesponsert[:8])
-            weitere = " ..." if len(gesponsert) > 8 else ""
-            raise SystemExit(
-                f"\nABBRUCH: {len(gesponsert)} der {len(verse)} Verse sind bereits "
-                f"gesponsert:\n  {referenzen}{weitere}\n"
-                "Bitte klären, bevor die Spende eingetragen wird."
-            )
-
-        # Verse aus erschienenen Bänden werden im Shop nicht mehr angeboten.
-        # Eine Patenschaft darauf ist nicht grundsätzlich falsch — sie kann
-        # vor dem Erscheinen zugesagt worden sein —, muss aber eine bewusste
-        # Entscheidung bleiben, deshalb hier nur eine Warnung.
-        erschienen = [v for v in verse if v.is_translated]
-        if erschienen:
-            referenzen = ", ".join(v.german_reference for v in erschienen[:8])
-            weitere = " ..." if len(erschienen) > 8 else ""
-            print(
-                f"\nWARNUNG: {len(erschienen)} der {len(verse)} Verse gehören zu einem "
-                f"bereits erschienenen Band und werden nicht mehr angeboten:\n"
-                f"  {referenzen}{weitere}\n"
-                "Nur fortfahren, wenn die Patenschaft trotzdem so gewollt ist."
-            )
-
-        betraege = verteile_betrag(daten["gesamtbetrag"], len(verse))
-
-        # --- Person -------------------------------------------------------
-        bestand = Person.query.filter_by(email=daten["email"]).first()
-        ist_neu = bestand is None
-
-        person = Person.find_or_create(daten["email"], **{
-            schluessel: daten[schluessel] for schluessel in (
-                "first_name", "last_name", "salutation", "street", "house_number",
-                "postal_code", "city", "country", "newsletter_consent",
-            )
-        })
-        db.session.flush()
-
-        receipt_number = ReceiptCounter.get_next_receipt_number(auto_commit=False)
-        kommentar = baue_kommentar(daten, verse, receipt_number, daten["gesamtbetrag"])
-
-        # --- Spende -------------------------------------------------------
-        donation = Donation(
-            person_id=person.id,
-            person_snapshot=person.to_snapshot(),
-            amount=betraege[0],          # Legacy-Feld, wird nirgends ausgewertet
-            verse_count=len(verse),
-            total_amount=daten["gesamtbetrag"],
-            currency="EUR",
-            wants_receipt=True,
-            privacy_consent=True,
-            payment_status="completed",
-            certificate_generated=False,  # PDFs werden manuell erzeugt
-            receipt_generated=False,
-            receipt_number=receipt_number,
-            receipt_issued_at=daten["ausstellungsdatum"],
-            email_sent=False,             # kein automatischer Versand
-            is_bulk_sponsoring=True,
-            admin_comment=kommentar,
-            created_at=daten["zuwendungsdatum"],
-            completed_at=daten["zuwendungsdatum"],
-        )
-        db.session.add(donation)
-        db.session.flush()
-
-        for vers, betrag in zip(verse, betraege):
-            db.session.add(DonationVerse(
-                donation_id=donation.id,
-                verse_id=vers.id,
-                amount=betrag,
-                created_at=daten["zuwendungsdatum"],
-            ))
-            vers.is_sponsored = True
-            vers.sponsored_at = daten["zuwendungsdatum"]
-
-        VerseReservation.query.filter(
-            VerseReservation.verse_id.in_([v.id for v in verse])
-        ).delete(synchronize_session=False)
-
-        person.last_donation_at = daten["zuwendungsdatum"]
+        betraege = verteile_betrag(daten["gesamtbetrag"], len(aufloesung.verse))
+        person_bestand, aenderungen = bulk.person_vorschau(daten)
+        etiketten = bulk.etiketten_fuer_verse(aufloesung.verse)
 
         # --- Vorschau und Bestätigung -------------------------------------
-        zeige_vorschau(daten, person, ist_neu, verse, betraege, receipt_number, kommentar)
+        zeige_vorschau(daten, person_bestand, aenderungen, aufloesung, etiketten, betraege)
 
         if not ladepfad:
             pfad = speichere_eingaben(daten)
             print(f"\nEingaben protokolliert: {pfad}")
 
         if dry_run:
-            db.session.rollback()
             print("\nDRY-RUN beendet — nichts geschrieben.")
             return
 
@@ -613,39 +387,40 @@ def main(dry_run, ladepfad):
             antwort = ""
 
         if antwort != BESTAETIGUNGSWORT:
-            db.session.rollback()
-            print("\nAbgebrochen — nichts geschrieben. Die Bescheinigungsnummer bleibt frei.")
+            print("\nAbgebrochen — nichts geschrieben.")
             return
 
-        db.session.commit()
+        # --- Schreiben: eine Transaktion, Bescheinigungsnummer inklusive ------
+        try:
+            donation, receipt_number, _ = bulk.erstelle_bulk_sponsoring(
+                daten, aufloesung, admin_email="bulk_sponsoring.py (CLI)"
+            )
+            db.session.commit()
+        except Exception as fehler:  # noqa: BLE001
+            db.session.rollback()
+            raise SystemExit(f"\nFEHLER beim Eintragen, nichts geschrieben: {type(fehler).__name__}: {fehler}")
+
         donation_id = donation.id
         print()
         print("=" * 80)
         print(f"EINGETRAGEN. Donation-ID {donation_id}, Bescheinigung {receipt_number}")
         print("=" * 80)
 
-        # --- Spendenbescheinigung erzeugen --------------------------------
-        # Über die normale Pipeline, damit die Nummer aus der Datenbank auf dem
-        # PDF landet und ein Certificate-Record entsteht. Läuft NACH dem Commit:
-        # scheitert die PDF-Erzeugung, bleibt die Spende korrekt eingetragen und
-        # das PDF kann nachgezogen werden.
-        print("\nErzeuge Spendenbescheinigung ...")
-        try:
-            dienst = PDFGeneratorService(app)
-            beleg = dienst.generate_tax_receipt_atomic(donation_id)
-            donation = db.session.get(Donation, donation_id)
-            donation.receipt_generated = True
-            db.session.commit()
-            print(f"  {beleg.file_path}")
-        except Exception as fehler:
-            print(f"  FEHLGESCHLAGEN: {type(fehler).__name__}: {fehler}")
-            print(f"  Die Spende ist eingetragen (ID {donation_id}, {receipt_number}).")
-            print("  Die Bescheinigung muss nachträglich erzeugt werden.")
+        # --- PDFs über die normale Pipeline (nach dem Commit) -----------------
+        print("\nErzeuge Spendenbescheinigung und Zertifikat ...")
+        dokumente = bulk.erzeuge_dokumente(app, donation_id)
+        if dokumente["bescheinigung"]:
+            print(f"  Bescheinigung: {dokumente['bescheinigung'].file_path}")
+        if dokumente["zertifikat"]:
+            print(f"  Zertifikat:    {dokumente['zertifikat'].file_path}")
+        for fehler in dokumente["fehler"]:
+            print(f"  FEHLGESCHLAGEN: {fehler}")
+            print("  -> im Admin auf der Spendendetailseite neu generieren.")
 
         print()
         print("Nächste Schritte (nicht automatisch erledigt):")
-        print("  - Zertifikat-PDF erzeugen (Text weicht bei Kapitel-Patenschaften ab)")
-        print("  - Zertifikat und Bescheinigung an den Spender senden")
+        print(f"  - Im Admin Spende #{donation_id} öffnen, beide PDFs prüfen")
+        print("  - Dort die persönliche Mail mit beiden Anhängen senden")
 
 
 if __name__ == "__main__":
@@ -654,19 +429,13 @@ if __name__ == "__main__":
     if "--load" in argumente:
         stelle = argumente.index("--load")
         if stelle + 1 >= len(argumente):
-            raise SystemExit("FEHLER: --load benötigt einen Dateipfad.")
+            raise SystemExit("--load braucht einen Dateipfad.")
         pfad = argumente[stelle + 1]
-        if not os.path.exists(pfad):
-            raise SystemExit(f"FEHLER: Datei nicht gefunden: {pfad}")
-
     try:
         main(dry_run="--dry-run" in argumente, ladepfad=pfad)
     except Abbruch as fehler:
         print(f"\n{fehler}")
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\n\nAbgebrochen — nichts geschrieben.")
-        sys.exit(1)
-    except ValueError as fehler:
-        print(f"\nFEHLER: {fehler}")
+        print("\nAbgebrochen.")
         sys.exit(1)

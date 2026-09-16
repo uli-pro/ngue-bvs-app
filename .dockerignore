@@ -141,6 +141,7 @@ bulk-eingaben/
 !setup_db.py
 !send_daily_report.py
 !bulk_sponsoring.py
+!bulk_sponsoring_service.py
 !backfill_payment_methods.py
 !requirements.txt
 

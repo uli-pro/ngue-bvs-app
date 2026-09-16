@@ -1,0 +1,52 @@
+{% extends "certificates/base_certificate.html" %}
+
+{#
+  Zertifikat für Bulk-Sponsoring (Kapitel-/Buch-Patenschaften zum Sonderpreis).
+  Statt aller Einzelverse stehen die verdichteten Einträge aus
+  bulk_sponsoring_service.beschrifte(): "OBADJA", "HIOB 2", "MALEACHI 4,1-3".
+  Layout und Positionen sind identisch mit personal_certificate.html.
+#}
+
+{% block certificate_content %}
+    <div class="date-text">
+        Ausgestellt am: {{ formatted_date }}
+    </div>
+
+    <div class="confirmation-text">
+        HIERMIT BESTÄTIGEN WIR:
+    </div>
+
+    <div class="donor-name">
+        {{ person_snapshot.first_name }} {{ person_snapshot.last_name }}
+    </div>
+
+    <div class="donation-text">
+        hat durch eine Spende von {{ formatted_amount }} € die Übersetzung
+    </div>
+
+    <div class="translation-text">
+        {{ bulk_vortext }} ermöglicht:
+    </div>
+
+    {% set half = (bulk_etiketten|length + 1) // 2 %}
+    {% if bulk_etiketten|length <= 5 %}
+        <div class="verse-reference">
+            {% for eintrag in bulk_etiketten %}
+                {{ eintrag }}{% if not loop.last %}<br>{% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="verse-reference two-column">
+            <div class="verse-col">
+                {% for eintrag in bulk_etiketten[:half] %}
+                    {{ eintrag }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
+            <div class="verse-col">
+                {% for eintrag in bulk_etiketten[half:] %}
+                    {{ eintrag }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

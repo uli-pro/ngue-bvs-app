@@ -3,7 +3,7 @@
 {% block title %}Spende #{{ donation.id }} - Admin{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Spenden-Details #{{ donation.id }}</h2>
+<h2 class="mb-4">Spenden-Details #{{ donation.id }}{% if donation.is_bulk_sponsoring %} <span class="badge bg-info align-middle" style="font-size:0.5em;">Bulk-Sponsoring</span>{% endif %}</h2>
 
 <!-- Donation Data Row -->
 <div class="row mb-4">
@@ -236,6 +236,56 @@
         </div>
     </div>
 </div>
+
+{% if bulk_mail %}
+<!-- Bulk-Sponsoring: persönliche Mail mit beiden PDFs -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Mail an den Spender (Zertifikat + Spendenbescheinigung)</h5>
+            </div>
+            <div class="card-body">
+                {% set pdfs_da = certificate and certificate.exists_on_disk and tax_receipt and tax_receipt.exists_on_disk %}
+                {% if donation.email_sent_at %}
+                <div class="alert alert-success py-2">Bereits gesendet am {{ donation.email_sent_at.strftime('%d.%m.%Y %H:%M') }} UTC. Erneutes Senden ist möglich.</div>
+                {% endif %}
+                {% if not pdfs_da %}
+                <div class="alert alert-warning py-2">Zertifikat und Spendenbescheinigung müssen vorhanden sein, bevor gesendet werden kann. Oben generieren.</div>
+                {% else %}
+                <p class="small text-muted">Vor dem Senden beide PDFs oben über „anzeigen" prüfen. Der Text ist ein Vorschlag und kann frei geändert werden.</p>
+                {% endif %}
+                <form method="POST" action="{{ url_for('admin.send_bulk_email', donation_id=donation.id) }}"
+                      onsubmit="return confirm('Mail jetzt an {{ donation.person.email }} senden?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">An</label>
+                            <input type="text" class="form-control" value="{{ donation.person.email }}" disabled>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label" for="bulk-cc">CC (kommagetrennt)</label>
+                            <input type="text" class="form-control" name="cc" id="bulk-cc" value="{{ bulk_mail.cc }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="bulk-subject">Betreff</label>
+                        <input type="text" class="form-control" name="subject" id="bulk-subject" required value="{{ bulk_mail.subject }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="bulk-text">Text</label>
+                        <textarea class="form-control" name="text" id="bulk-text" rows="18" required>{{ bulk_mail.text }}</textarea>
+                    </div>
+                    <p class="small text-muted">Anhänge: NGUE_Zertifikat_{{ donation.id }}.pdf, NGUE_Spendenbescheinigung_{{ donation.id }}.pdf. Absender ist das Stiftungs-Postfach.</p>
+                    <button type="submit" class="btn btn-success" {% if not pdfs_da %}disabled{% endif %}>
+                        Mail mit beiden PDFs senden
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% if donation.payment_status in ['failed', 'disputed', 'refunded'] %}
 <div class="row mt-3">
