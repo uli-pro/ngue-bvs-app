@@ -1,0 +1,12 @@
+{% extends "email/base.html" %}
+
+{% block title %}Ihre Patenschaft für die Neue Genfer Übersetzung{% endblock %}
+{% block header %}Ihre NGÜ-Patenschaft{% endblock %}
+
+{% block content %}
+{% for absatz in absaetze %}
+<p>{{ absatz }}</p>
+{% endfor %}
+{% endblock %}
+
+{% block footer_text %}Diese E-Mail wurde persönlich verfasst. Sie können einfach darauf antworten.{% endblock %}

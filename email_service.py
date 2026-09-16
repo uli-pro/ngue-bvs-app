@@ -87,7 +87,8 @@ class SMTPProvider:
         self.logger.info(f"Active email provider: {self.active_config['name']}")
 
     def _send_with_config(self, config: Dict, to_email: str, subject: str,
-                         html_body: str, text_body: str, attachments: List[Dict] = None) -> Tuple[bool, Optional[str]]:
+                         html_body: str, text_body: str, attachments: List[Dict] = None,
+                         cc: List[str] = None) -> Tuple[bool, Optional[str]]:
         """Try to send email with specific configuration"""
         try:
             # FIX (2025-01-17): MIME structure for emails with attachments
@@ -108,6 +109,9 @@ class SMTPProvider:
             # Required headers
             msg['From'] = f"{config['from_name']} <{config['from_email']}>"
             msg['To'] = to_email
+            if cc:
+                # send_message() liest die Empfänger aus To/Cc, ein Cc-Header genügt
+                msg['Cc'] = ', '.join(cc)
             msg['Subject'] = subject
             msg['Date'] = formatdate(localtime=True)
 
@@ -176,7 +180,8 @@ class SMTPProvider:
             return False, error_msg
 
     def send_email(self, to_email: str, subject: str, html_body: str,
-                   text_body: str, attachments: List[Dict] = None) -> bool:
+                   text_body: str, attachments: List[Dict] = None,
+                   cc: List[str] = None) -> bool:
         """Send email with automatic fallback"""
         errors = []
 
@@ -184,7 +189,7 @@ class SMTPProvider:
         for config in self.configs:
             self.logger.info(f"Attempting to send via {config['name']}...")
             success, error = self._send_with_config(config, to_email, subject,
-                                                   html_body, text_body, attachments)
+                                                   html_body, text_body, attachments, cc)
             if success:
                 # Update active config for future sends
                 self.active_config = config
@@ -466,6 +471,34 @@ class EmailService:
         except Exception as e:
             self.logger.error(f"Certificate email with attachments failed: {e}")
             raise EmailServiceError(f"Failed to send certificate email with attachments: {e}")
+
+    def send_bulk_documents_email(self, to_email: str, subject: str, text_body: str,
+                                  pdf_attachments: List[Dict[str, str]],
+                                  cc: List[str] = None) -> bool:
+        """Persönlich formulierte Mail für Bulk-Sponsoring (Kapitel-/Buch-Patenschaft).
+
+        Der Text kommt fertig aus dem Admin (editierbarer Vorschlag aus
+        bulk_sponsoring_service.mailvorschlag) und wird für die HTML-Version
+        nur in Absätze gesetzt. Anhänge: Zertifikat und Spendenbescheinigung.
+        """
+        from bulk_sponsoring_service import text_zu_absaetzen
+        try:
+            html_body, text_version = self._render_template(
+                'bulk_documents',
+                absaetze=text_zu_absaetzen(text_body),
+                text=text_body,
+            )
+            return self.provider.send_email(
+                to_email=to_email,
+                subject=subject,
+                html_body=html_body,
+                text_body=text_version,
+                attachments=pdf_attachments,
+                cc=cc
+            )
+        except Exception as e:
+            self.logger.error(f"Bulk documents email failed: {e}")
+            raise EmailServiceError(f"Failed to send bulk documents email: {e}")
 
     def send_donation_confirmation(self, donation_data: Dict[str, Any]) -> bool:
         """Send donation confirmation email"""

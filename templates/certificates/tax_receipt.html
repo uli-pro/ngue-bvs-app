@@ -69,6 +69,10 @@
             line-height: 1.1;
             overflow-wrap: anywhere;
         }
+        /* Lange Zahlwörter (ab ca. 1.700 €, z.B. "Eintausendsiebenhundertfünfzig")
+           würden mitten im Wort umbrechen — stattdessen kleinere Schrift. */
+        .amount-words.long { font-size: 9pt; }
+        .amount-words.very-long { font-size: 8pt; }
 
         /* Donation date
            Spalte im Hintergrund-PNG: 133,9mm bis 194,7mm.
@@ -124,7 +128,7 @@
         </div>
         
         <!-- Amount in words -->
-        <div class="amount-words">
+        <div class="amount-words{% if amount_in_words|length > 32 %} very-long{% elif amount_in_words|length > 26 %} long{% endif %}">
             --- {{ amount_in_words }} ---
         </div>
         

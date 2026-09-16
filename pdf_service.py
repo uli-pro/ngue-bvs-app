@@ -213,7 +213,7 @@ class PDFGeneratorService:
             context = self._prepare_certificate_context(donation, certificate_type)
 
             # 5. HTML rendern
-            template_name = f"certificates/{certificate_type}.html"
+            template_name = self._certificate_template(donation, certificate_type)
             html_content = render_template(template_name, **context)
 
             # 6. PDF generieren
@@ -261,7 +261,7 @@ class PDFGeneratorService:
             
             # 4. PDF generieren
             context = self._prepare_certificate_context(donation, certificate_type)
-            template_name = f"certificates/{certificate_type}.html"
+            template_name = self._certificate_template(donation, certificate_type)
             html_content = render_template(template_name, **context)
             self._generate_pdf_from_html(html_content, file_path)
             
@@ -743,8 +743,25 @@ class PDFGeneratorService:
             'formatted_date': format_date_german(cert_date),
             'certificate_title': f"Patenschafts-Zertifikat für {len(verses)} {'Vers' if len(verses) == 1 else 'Verse'}"
         }
-        
+
+        if getattr(donation, 'is_bulk_sponsoring', False):
+            from bulk_sponsoring_service import (
+                etiketten_fuer_verse, vortext, MAX_ETIKETTEN_ZERTIFIKAT,
+            )
+            etiketten = etiketten_fuer_verse(verses)
+            context['bulk_vortext'] = vortext(etiketten)
+            context['bulk_etiketten'] = [e.text.upper() for e in etiketten[:MAX_ETIKETTEN_ZERTIFIKAT]]
+
         return context
+
+    def _certificate_template(self, donation: Donation, certificate_type: str) -> str:
+        """Bulk-Sponsoring (Kapitel-/Buch-Patenschaften) bekommt ein eigenes Layout:
+        statt aller Einzelverse steht "OBADJA" oder "HIOB 2" auf dem Zertifikat.
+        Der Certificate-Record bleibt vom Typ personal_certificate, damit die
+        Admin-Funktionen (anzeigen, neu generieren, senden) unverändert greifen."""
+        if certificate_type == 'personal_certificate' and getattr(donation, 'is_bulk_sponsoring', False):
+            return 'certificates/bulk_certificate.html'
+        return f"certificates/{certificate_type}.html"
 
     def _prepare_tax_receipt_context(self, donation: Donation) -> Dict[str, Any]:
         """Bereitet Context für Spendenbescheinigung vor"""
@@ -773,7 +790,9 @@ class PDFGeneratorService:
             'formatted_amount': f"{donation.total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             'amount_in_words': self._amount_to_words(donation.total_amount),
             'formatted_date': format_date_german(donation.completed_at or donation.created_at),
-            'issue_date': format_date_german(datetime.now()),
+            # Ausstellungsdatum: das gespeicherte Datum, damit ein spaeteres Neu-Generieren
+            # (und das Bulk-Sponsoring mit rueckdatiertem Ausstellungsdatum) dasselbe PDF ergibt
+            'issue_date': format_date_german(donation.receipt_issued_at or datetime.now()),
             'background_image_path': f'file://{background_image_path}',
 
             # Receipt numbering (legally required per §50 Abs. 1 EStDV)

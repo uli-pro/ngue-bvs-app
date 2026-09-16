@@ -53,6 +53,11 @@ def init_admin(app):
     admin_bp.add_url_rule('/donations/<int:donation_id>/resend-storno', 'resend_storno', views.resend_storno, methods=['POST'])
 
     # Database cleanup management
+    # Bulk-Sponsoring (Kapitel-/Buch-Patenschaften zum Sonderpreis)
+    admin_bp.add_url_rule('/bulk-sponsoring/neu', 'bulk_sponsoring_new', views.bulk_sponsoring_new, methods=['GET', 'POST'])
+    admin_bp.add_url_rule('/api/person-by-email', 'person_by_email', views.person_by_email, methods=['GET'])
+    admin_bp.add_url_rule('/donations/<int:donation_id>/send-bulk-email', 'send_bulk_email', views.send_bulk_email, methods=['POST'])
+
     admin_bp.add_url_rule('/cleanup', 'cleanup_orphaned', views.cleanup_orphaned, methods=['POST'])
     admin_bp.add_url_rule('/api/cleanup-stats', 'get_cleanup_stats', views.get_cleanup_stats, methods=['GET'])
 
