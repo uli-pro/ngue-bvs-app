@@ -1091,18 +1091,18 @@ def kontakt():
 # ==========================================
 
 # Redeausschnitte aus dem Vortrag "Kann man die Bibel überhaupt übersetzen?" (FeG Wetzlar),
-# Reihenfolge wie im Veröffentlichungsplan der Shorts. Dateien liegen unter static/video/,
+# Reihenfolge von Uli festgelegt (16.09.2026), weicht vom Veröffentlichungsplan ab. Dateien liegen unter static/video/,
 # Poster unter static/img/ (gleicher Name, .jpg). Nur vorhandene Dateien werden ausgespielt.
 SPEAKER_TALK_CLIPS = [
     ('short-01-ehepaar', 'Eine E-Mail an die falsche Adresse …'),
-    ('short-05-stille-post', 'Ist die Bibel stille Post über 2000 Jahre?'),
     ('short-07-chef', 'Warum wörtliches Übersetzen so einleuchtend scheint'),
     ('short-08-kommunikation', 'Wie Kommunikation wirklich funktioniert'),
-    ('short-10-unverstanden', 'Was tun mit Bibelstellen, die man nicht versteht?'),
     ('short-02-hebraeer', 'Jeder Übersetzer hat mal einen schlechten Tag'),
+    ('short-03-paulus', 'Paulus in Stückchen: Warum viele ihn falsch verstehen'),
+    ('short-10-unverstanden', 'Was tun mit Bibelstellen, die man nicht versteht?'),
+    ('short-05-stille-post', 'Ist die Bibel stille Post über 2000 Jahre?'),
     ('short-06-jesaja', '1100 Jahre später: 99 Prozent identisch'),
     ('short-09-hirte', 'Der Herr ist mein Hirte: Was Israel dabei hörte'),
-    ('short-03-paulus', 'Paulus in Stückchen: Warum viele ihn falsch verstehen'),
     ('short-11-interpretation', 'Ist Übersetzung immer Interpretation?'),
     ('short-04-klagelieder', 'Nach drei Kapiteln Klage kommt dieser Satz'),
     ('short-12-sorgfalt', 'Wie sorgfältig arbeiten Bibelübersetzer?'),
