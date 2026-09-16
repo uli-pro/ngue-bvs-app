@@ -542,7 +542,11 @@ def erstelle_bulk_sponsoring(daten, aufloesung, admin_email=None):
     person = Person.find_or_create(daten["email"].lower(), **personenfelder(daten))
     db.session.flush()
 
-    receipt_number = ReceiptCounter.get_next_receipt_number(auto_commit=False)
+    # Nummer aus dem Jahr des Ausstellungsdatums, damit eine im Januar nachgetragene
+    # Dezember-Spende eine Nummer des Vorjahres bekommt
+    receipt_number = ReceiptCounter.get_next_receipt_number(
+        auto_commit=False, year=daten["ausstellungsdatum"].year
+    )
     etiketten = etiketten_fuer_verse(verse)
     kommentar = baue_kommentar(
         daten, verse, receipt_number, etiketten, aufloesung.uebersprungen, admin_email
@@ -565,7 +569,10 @@ def erstelle_bulk_sponsoring(daten, aufloesung, admin_email=None):
         email_sent=False,
         is_bulk_sponsoring=True,
         admin_comment=kommentar,
-        created_at=zuwendung,
+        # created_at = Zeitpunkt des Eintrags: so erscheint die Spende im Tagesreport
+        # des Folgetags (der filtert nach created_at). completed_at = Tag der Zuwendung,
+        # daraus speisen sich Zertifikat und Bescheinigung.
+        created_at=datetime.utcnow(),
         completed_at=zuwendung,
     )
     db.session.add(donation)

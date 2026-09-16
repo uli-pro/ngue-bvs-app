@@ -938,7 +938,7 @@ class ReceiptCounter(db.Model):
         return f'<ReceiptCounter year={self.year} last_number={self.last_number}>'
 
     @staticmethod
-    def get_next_receipt_number(auto_commit=True):
+    def get_next_receipt_number(auto_commit=True, year=None):
         """
         Generates the next receipt number in format: ngue-bvs-YYYY-NNNN
 
@@ -957,7 +957,8 @@ class ReceiptCounter(db.Model):
         import logging
         logger = logging.getLogger(__name__)
 
-        current_year = datetime.utcnow().year
+        # year: Jahr des Ausstellungsdatums (Bulk-Sponsoring, rückdatiert); sonst heute
+        current_year = year or datetime.utcnow().year
 
         try:
             # Use SELECT FOR UPDATE to prevent race conditions
