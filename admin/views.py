@@ -1184,11 +1184,11 @@ def _csv_cell(value):
 
 
 def _csv_response(rows, filename):
-    """Semikolon-getrennt mit UTF-8-BOM, damit LibreOffice Umlaute und Spalten sofort erkennt."""
+    """Komma-getrennt (RFC 4180), alle Felder in Anführungszeichen, UTF-8-BOM für LibreOffice/Excel."""
     import csv
     import io
     buf = io.StringIO()
-    writer = csv.writer(buf, delimiter=';', quoting=csv.QUOTE_ALL, lineterminator='\r\n')
+    writer = csv.writer(buf, delimiter=',', quoting=csv.QUOTE_ALL, lineterminator='\r\n')
     for row in rows:
         writer.writerow([_csv_cell(v) for v in row])
     data = '\ufeff' + buf.getvalue()
