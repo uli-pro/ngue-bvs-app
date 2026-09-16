@@ -39,6 +39,28 @@ DEUTSCH_ZU_CODE = {
     name.lower().replace(" ", "").replace(".", ""): code
     for code, name in BOOK_NAMES.items()
 }
+# Gängige Schreibvarianten, die nicht in BOOK_NAMES stehen (Eingabe wird
+# kleingeschrieben und ohne Leerzeichen/Punkte verglichen)
+BUCH_ALIASSE = {
+    "genesis": "GEN", "exodus": "EXO", "levitikus": "LEV", "leviticus": "LEV",
+    "numeri": "NUM", "deuteronomium": "DEU",
+    "ruth": "RUT", "esther": "EST", "psalmen": "PSA", "psalms": "PSA",
+    "sprichwörter": "PRO", "sprichwoerter": "PRO", "sprueche": "PRO",
+    "kohelet": "ECC", "hoheslied": "SNG", "hohelied": "SNG", "hoheslied salomos": "SNG",
+    "ezechiel": "EZK", "ezechiël": "EZK", "hesekiel": "EZK",
+    "zephanja": "ZEP", "zefanja": "ZEP", "zephania": "ZEP",
+    "sacharja": "ZEC", "zacharias": "ZEC", "sacharia": "ZEC",
+    "koenige": "1KI",  # bewusst nicht: braucht die Zahl; s.u.
+    "1koenige": "1KI", "2koenige": "2KI", "1könige": "1KI", "2könige": "2KI",
+    "1kön": "1KI", "2kön": "2KI", "1sam": "1SA", "2sam": "2SA", "1chr": "1CH", "2chr": "2CH",
+    "1mo": "GEN", "2mo": "EXO", "3mo": "LEV", "4mo": "NUM", "5mo": "DEU",
+    "hi": "JOB", "ps": "PSA", "spr": "PRO", "pred": "ECC", "hld": "SNG", "jes": "ISA",
+    "jer": "JER", "klgl": "LAM", "hes": "EZK", "hos": "HOS", "am": "AMO", "ob": "OBA",
+    "mi": "MIC", "nah": "NAM", "hab": "HAB", "zef": "ZEP", "hag": "HAG", "sach": "ZEC",
+}
+del BUCH_ALIASSE["koenige"]
+DEUTSCH_ZU_CODE.update({k.replace(" ", "").replace(".", ""): v for k, v in BUCH_ALIASSE.items()})
+
 # Kanonische Reihenfolge der Bücher für die Sortierung der Beschriftung
 BUCH_REIHENFOLGE = {code: i for i, code in enumerate(BOOK_NAMES)}
 
