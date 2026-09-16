@@ -91,22 +91,50 @@
   }
   .reel-video {
     width: 100%;
-    max-width: 320px;
     aspect-ratio: 9 / 16;
     border-radius: 12px;
     background: #000;
     display: block;
-    margin: 0 auto;
     box-shadow: var(--shadow-lg);
   }
   .clip-player {
-    max-width: 320px;
+    max-width: 300px;
     margin: 0 auto;
+  }
+  .clip-stage {
+    position: relative;
+  }
+  .clip-unmute {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .clip-unmute:hover,
+  .clip-unmute:focus {
+    background: var(--color-primary);
+  }
+  .clip-caption {
+    font-size: 0.8rem;
+    color: var(--color-neutral);
+    line-height: 1.4;
+  }
+  .clip-caption a {
+    font-weight: 600;
   }
   .clip-player .btn {
     flex: 0 0 auto;
     width: auto;
     min-width: 0;
+    padding: 0.3rem 0.7rem;
+    border-width: 1px;
   }
   .clip-select {
     flex: 1 1 0;
@@ -147,6 +175,25 @@
     font-size: 1.5rem;
     margin-bottom: 1rem;
   }
+  .person-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .person-body {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  @media (max-width: 575.98px) {
+    .person-body {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
   .info-list {
     list-style: none;
     padding-left: 0;
@@ -185,10 +232,13 @@
       {% if talk_clips %}
       <div class="col-lg-5">
         <div class="clip-player" data-clips='{{ talk_clips|tojson }}' data-autoplay="1">
-          <video class="reel-video" controls autoplay muted playsinline preload="auto"{% if talk_clips[0].poster %} poster="/static/img/{{ talk_clips[0].poster }}"{% endif %}>
-            <source src="/static/video/{{ talk_clips[0].file }}" type="video/mp4">
-            Ihr Browser kann dieses Video nicht abspielen.
-          </video>
+          <div class="clip-stage">
+            <video class="reel-video" controls autoplay muted playsinline preload="auto"{% if talk_clips[0].poster %} poster="/static/img/{{ talk_clips[0].poster }}"{% endif %}>
+              <source src="/static/video/{{ talk_clips[0].file }}" type="video/mp4">
+              Ihr Browser kann dieses Video nicht abspielen.
+            </video>
+            <button type="button" class="clip-unmute" aria-label="Ton einschalten" title="Ton einschalten"><i class="fas fa-volume-mute"></i></button>
+          </div>
           <div class="d-flex align-items-center gap-2 mt-2">
             <button type="button" class="btn btn-sm btn-outline-secondary clip-prev" aria-label="Vorheriger Ausschnitt"><i class="fas fa-chevron-left"></i></button>
             <select class="form-select form-select-sm clip-select flex-grow-1" aria-label="Ausschnitt auswählen">
@@ -199,7 +249,7 @@
             <button type="button" class="btn btn-sm btn-outline-secondary clip-next" aria-label="Nächster Ausschnitt"><i class="fas fa-chevron-right"></i></button>
           </div>
         </div>
-        <p class="yt-note mt-2 mb-0 text-center">{{ talk_clips|length }} Ausschnitte aus dem Vortrag „Kann man die Bibel überhaupt übersetzen?“, FeG Wetzlar. Ganzer Vortrag: <a href="#vortrag-video">vers-patenschaft.de/gotteswort</a>. <i class="fas fa-volume-mute ms-1 me-1"></i>Startet ohne Ton, zum Anhören auf das Lautsprechersymbol tippen.</p>
+        <p class="clip-caption mt-2 mb-0 text-center">{{ talk_clips|length }} Ausschnitte aus dem Vortrag „Kann man die Bibel überhaupt übersetzen?“<br>Ganzer Vortrag: <a href="#vortrag-video">vers-patenschaft.de/gotteswort</a></p>
       </div>
       {% endif %}
     </div>
@@ -214,8 +264,13 @@
         <div class="card info-card h-100">
           <div class="card-body">
             <h2>Zur Person</h2>
+            <div class="person-body">
+              <img src="/static/img/ulrich-probst.jpg" alt="Ulrich Probst" class="person-photo" width="150" height="150" loading="lazy">
+              <div>
             <p>Ulrich Probst hat Theologie an der Freien Theologischen Hochschule Gießen studiert und Linguistik an der Sommerakademie der Wycliff-Bibelübersetzer. Mit Wycliff war er als Soziolinguist und Verwaltungsleiter in der Zentralafrikanischen Republik tätig. Nach fünfzehn Jahren als Pastor arbeitet er seit 2016 an der Neuen Genfer Übersetzung, seit einigen Jahren an den Büchern des Alten Testaments.</p>
             <p class="mb-0">Er ist verheiratet, Vater von drei erwachsenen Söhnen und lebt in Pohlheim bei Gießen.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -269,6 +324,10 @@
         </div>
       </div>
     </div>
+    <div class="text-center mt-5">
+      <p class="lead mb-3">Passt das zu Ihrer Gemeinde?</p>
+      <a href="#anfrage" class="btn btn-primary btn-lg"><i class="fas fa-envelope me-2"></i>Jetzt anfragen</a>
+    </div>
   </div>
 </section>
 
@@ -284,10 +343,12 @@
     <div class="row g-4 align-items-start mb-5">
       <div class="col-md-5 col-lg-4">
         <div class="clip-player" data-clips='{{ workshop_reels|tojson }}'>
-          <video class="reel-video" controls playsinline preload="metadata"{% if workshop_reels[0].poster %} poster="/static/img/{{ workshop_reels[0].poster }}"{% endif %}>
-            <source src="/static/video/{{ workshop_reels[0].file }}" type="video/mp4">
-            Ihr Browser kann dieses Video nicht abspielen.
-          </video>
+          <div class="clip-stage">
+            <video class="reel-video" controls playsinline preload="metadata"{% if workshop_reels[0].poster %} poster="/static/img/{{ workshop_reels[0].poster }}"{% endif %}>
+              <source src="/static/video/{{ workshop_reels[0].file }}" type="video/mp4">
+              Ihr Browser kann dieses Video nicht abspielen.
+            </video>
+          </div>
           {% if workshop_reels|length > 1 %}
           <div class="d-flex align-items-center gap-2 mt-2">
             <button type="button" class="btn btn-sm btn-outline-secondary clip-prev" aria-label="Vorheriges Reel"><i class="fas fa-chevron-left"></i></button>
@@ -498,12 +559,33 @@
     button.addEventListener('click', function () {
       var id = box.getAttribute('data-yt-id');
       var iframe = document.createElement('iframe');
-      iframe.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0';
+      iframe.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0&enablejsapi=1';
+      pauseAllVideos(null);
       iframe.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
       iframe.setAttribute('allowfullscreen', '');
       iframe.setAttribute('title', 'YouTube-Video');
       box.innerHTML = '';
       box.appendChild(iframe);
+    });
+  });
+
+  // Nur ein Player mit Ton: alle anderen Videos (und geladene YouTube-Player) anhalten
+  function pauseAllVideos(except) {
+    document.querySelectorAll('video').forEach(function (v) {
+      if (v !== except && !v.paused) v.pause();
+    });
+    document.querySelectorAll('.yt-embed iframe').forEach(function (f) {
+      try {
+        f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      } catch (e) {}
+    });
+  }
+  document.querySelectorAll('video').forEach(function (v) {
+    v.addEventListener('play', function () {
+      if (!v.muted) pauseAllVideos(v);
+    });
+    v.addEventListener('volumechange', function () {
+      if (!v.muted && !v.paused) pauseAllVideos(v);
     });
   });
 
@@ -518,7 +600,19 @@
     var select = player.querySelector('.clip-select');
     var section = player.closest('section');
     var list = section ? section.querySelector('.clip-list') : null;
+    var unmute = player.querySelector('.clip-unmute');
     var current = 0;
+
+    // Ton-Symbol über dem Video: sichtbar, solange das Video stumm ist
+    if (unmute) {
+      unmute.addEventListener('click', function () {
+        video.muted = false;
+        if (video.paused) video.play();
+      });
+      video.addEventListener('volumechange', function () {
+        unmute.style.display = video.muted ? '' : 'none';
+      });
+    }
 
     function show(index, play, byUser) {
       current = (index + clips.length) % clips.length;
