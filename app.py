@@ -1090,18 +1090,71 @@ def kontakt():
 # REFERENTEN-ANFRAGE (Vortrag / Predigt buchen)
 # ==========================================
 
-SPEAKER_REEL_PATH = os.path.join('video', 'vortrag-reel.mp4')
+# Redeausschnitte aus dem Vortrag "Kann man die Bibel überhaupt übersetzen?" (FeG Wetzlar),
+# Reihenfolge von Uli festgelegt (16.09.2026), weicht vom Veröffentlichungsplan ab. Dateien liegen unter static/video/,
+# Poster unter static/img/ (gleicher Name, .jpg). Nur vorhandene Dateien werden ausgespielt.
+SPEAKER_TALK_CLIPS = [
+    ('short-01-ehepaar', 'Eine E-Mail an die falsche Adresse …'),
+    ('short-07-chef', 'Warum wörtliches Übersetzen so einleuchtend scheint'),
+    ('short-08-kommunikation', 'Wie Kommunikation wirklich funktioniert'),
+    ('short-02-hebraeer', 'Jeder Übersetzer hat mal einen schlechten Tag'),
+    ('short-03-paulus', 'Paulus in Stückchen: Warum viele ihn falsch verstehen'),
+    ('short-10-unverstanden', 'Was tun mit Bibelstellen, die man nicht versteht?'),
+    ('short-05-stille-post', 'Ist die Bibel stille Post über 2000 Jahre?'),
+    ('short-06-jesaja', '1100 Jahre später: 99 Prozent identisch'),
+    ('short-09-hirte', 'Der Herr ist mein Hirte: Was Israel dabei hörte'),
+    ('short-11-interpretation', 'Ist Übersetzung immer Interpretation?'),
+    ('short-04-klagelieder', 'Nach drei Kapiteln Klage kommt dieser Satz'),
+    ('short-12-sorgfalt', 'Wie sorgfältig arbeiten Bibelübersetzer?'),
+    ('short-13-vertrauen', 'Welcher Bibelübersetzung kann man vertrauen?'),
+]
+
+# Werkstatt-Reels von @ngue2029: (Dateiname ohne .mp4, Bibelstelle, Aufhänger).
+# Dateien unter static/video/, Poster unter static/img/ (gleicher Name, .jpg).
+SPEAKER_WORKSHOP_REELS = [
+    ('jer-1-11', 'Jeremia 1,11', 'Mandelzweig oder Wacholder? Wie ein hebräisches Wortspiel ins Deutsche kommt'),
+    ('hiob-33-23-24', 'Hiob 33,23-24', 'Einer von tausend: Ein Fürsprecher am Rand des Grabes'),
+    ('hiob-29-18', 'Hiob 29,18', 'Ein Phönix in der Bibel?'),
+    ('hes-1-10', 'Hesekiel 1,10', 'Warum ist Markus ein Löwe? Die Spur führt zu Hesekiels vier Wesen'),
+    ('jer-49-22', 'Jeremia 49,22', 'Ein Adler breitet die Schwingen aus. Tröstlich? Nein, der Moment des Zugriffs'),
+    ('hiob-37-20', 'Hiob 37,20', 'Verschlungen, mitgeteilt oder verwirrt? Ein Wort, drei Bedeutungen'),
+    ('klgl-3-37', 'Klagelieder 3,37', 'Wer hat das Sagen? Gott allein, oder lässt er Menschen handeln?'),
+    ('ester-2-19', 'Ester 2,19', 'Ein zweites Mal junge Frauen? Ein rätselhaftes Wort bleibt stehen'),
+]
+
+
+def _static_file_exists(*parts):
+    """Liegt die Datei unter static/? (eigene Funktion, damit Tests sie gezielt patchen können)"""
+    return os.path.isfile(os.path.join(app.static_folder, *parts))
+
+
+def _available_clips(entries):
+    """Nur die Clips zurückgeben, deren Videodatei unter static/video liegt."""
+    result = []
+    for entry in entries:
+        name = entry[0]
+        if _static_file_exists('video', name + '.mp4'):
+            poster = name + '.jpg'
+            if not _static_file_exists('img', poster):
+                poster = None
+            result.append({
+                'file': name + '.mp4',
+                'poster': poster,
+                'reference': entry[1] if len(entry) == 3 else None,
+                'title': entry[-1],
+            })
+    return result
 
 
 def _speaker_form_context(form_data=None):
     """Gemeinsamer Template-Kontext für die Vortragsseite."""
-    reel_path = os.path.join(app.static_folder, SPEAKER_REEL_PATH)
     return {
         'event_types': SpeakerRequest.EVENT_TYPES,
         'countries': SpeakerRequest.COUNTRIES,
         'photo_choices': SpeakerRequest.PHOTO_CONSENT_CHOICES,
         'form_data': form_data or {},
-        'reel_available': os.path.isfile(reel_path),
+        'talk_clips': _available_clips(SPEAKER_TALK_CLIPS),
+        'workshop_reels': _available_clips(SPEAKER_WORKSHOP_REELS),
         'today': datetime.now().strftime('%Y-%m-%d'),
     }
 
