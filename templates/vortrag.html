@@ -190,19 +190,36 @@
     height: 150px;
     border-radius: 50%;
     object-fit: cover;
-    flex: 0 0 auto;
+    float: left;
+    margin: 0.25rem 1.5rem 0.5rem 0;
     box-shadow: var(--shadow-lg);
   }
-  .person-body {
-    display: flex;
-    gap: 1.5rem;
-    align-items: flex-start;
+  .person-body::after {
+    content: "";
+    display: block;
+    clear: both;
   }
   @media (max-width: 575.98px) {
-    .person-body {
-      flex-direction: column;
-      align-items: center;
+    .person-photo {
+      width: 110px;
+      height: 110px;
+      margin-right: 1rem;
     }
+  }
+  .offer-list li {
+    margin-bottom: 1.5rem;
+  }
+  .offer-list li:last-child {
+    margin-bottom: 0;
+  }
+  .offer-list .offer-duration {
+    display: block;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-neutral);
+    margin-top: 0.1rem;
+    margin-bottom: 0.25rem;
   }
   .info-list {
     list-style: none;
@@ -276,11 +293,9 @@
             <h2>Zur Person</h2>
             <div class="person-body">
               <img src="/static/img/ulrich-probst.jpg" alt="Ulrich Probst" class="person-photo" width="150" height="150" loading="lazy">
-              <div>
             <p>Ulrich Probst hat Theologie an der Freien Theologischen Hochschule Gießen studiert und Linguistik an der Sommerakademie der Wycliff-Bibelübersetzer. Mit Wycliff war er als Soziolinguist und Verwaltungsleiter in der Zentralafrikanischen Republik tätig.</p>
             <p>Nach fünfzehn Jahren als Pastor arbeitet er seit 2016 an der Neuen Genfer Übersetzung, seit einigen Jahren an den Büchern des Alten Testaments.</p>
             <p class="mb-0">Er ist verheiratet, Vater von drei erwachsenen Söhnen und lebt in Pohlheim bei Gießen.</p>
-              </div>
             </div>
           </div>
         </div>
@@ -289,10 +304,10 @@
         <div class="card info-card h-100">
           <div class="card-body">
             <h2>Was ich anbiete</h2>
-            <ul class="info-list">
-              <li><i class="fas fa-church text-primary"></i><strong>Gottesdienst und Predigt</strong> <span class="text-secondary">(25 bis 30 Minuten)</span><br>Predigt über einen Text aus dem Alten Testament, gern nach Ihrem Predigtplan, mit einem kurzen Einblick in die Übersetzungsarbeit.</li>
-              <li><i class="fas fa-chalkboard-teacher text-primary"></i><strong>Vortrag und Gemeindeabend</strong> <span class="text-secondary">(60 bis 90 Minuten mit Fragerunde)</span><br>Wie aus hebräischen Sätzen verständliches Deutsch wird, und was dabei auf dem Spiel steht.</li>
-              <li><i class="fas fa-book-open text-primary"></i><strong>Seminar und Bibeltag</strong> <span class="text-secondary">(halber oder ganzer Tag)</span><br>Vertiefte Arbeit an einem biblischen Buch oder an Übersetzungsfragen, mit Gruppenarbeit und Gespräch.</li>
+            <ul class="info-list offer-list">
+              <li><i class="fas fa-church text-primary"></i><strong>Gottesdienst und Predigt</strong><span class="offer-duration">25 bis 30 Minuten</span>Predigt über einen Text aus dem Alten Testament, gern nach Ihrem Predigtplan, mit einem kurzen Einblick in die Übersetzungsarbeit.</li>
+              <li><i class="fas fa-chalkboard-teacher text-primary"></i><strong>Vortrag und Gemeindeabend</strong><span class="offer-duration">60 bis 90 Minuten mit Fragerunde</span>Wie aus hebräischen Sätzen verständliches Deutsch wird, und was dabei auf dem Spiel steht.</li>
+              <li><i class="fas fa-book-open text-primary"></i><strong>Seminar und Bibeltag</strong><span class="offer-duration">Halber oder ganzer Tag</span>Vertiefte Arbeit an einem biblischen Buch oder an Übersetzungsfragen, mit Gruppenarbeit und Gespräch.</li>
             </ul>
           </div>
         </div>
@@ -345,13 +360,13 @@
 <!-- Hören und sehen -->
 <section class="section-padding">
   <div class="container">
-    <div class="text-center mb-5">
-      <h2>Hören und sehen</h2>
-      <p class="lead text-secondary mb-0">Kurze Reels aus der Werkstatt, ein Fernsehbeitrag und ein Vortrag in voller Länge</p>
+    <div class="mb-4">
+      <h2 class="mb-1">Hören und sehen</h2>
+      <p class="text-secondary mb-0">Kurze Reels aus der Werkstatt, ein Fernsehbeitrag und ein Vortrag in voller Länge</p>
     </div>
 
     {% if workshop_reels %}
-    <div class="row g-4 align-items-center mb-5">
+    <div class="row g-4 align-items-start mb-5">
       <div class="col-md-4 col-lg-3">
         <div class="clip-player clip-player-sm" data-clips='{{ workshop_reels|tojson }}'>
           <div class="clip-stage">
