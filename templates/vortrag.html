@@ -142,16 +142,24 @@
     flex: 1 1 0;
     min-width: 0;
   }
+  .clip-player.clip-player-sm {
+    max-width: 240px;
+  }
   .clip-list .list-group-item {
     cursor: pointer;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.9rem;
+    line-height: 1.35;
   }
   .clip-list .list-group-item.active {
     background: var(--color-primary);
     border-color: var(--color-primary);
   }
   .clip-list .list-group-item .clip-ref {
-    display: block;
+    display: inline-block;
+    min-width: 6.5rem;
     font-size: 0.8rem;
+    font-weight: 600;
     opacity: 0.8;
   }
   .hero-split {
@@ -343,9 +351,9 @@
     </div>
 
     {% if workshop_reels %}
-    <div class="row g-4 align-items-start mb-5">
-      <div class="col-md-5 col-lg-4">
-        <div class="clip-player" data-clips='{{ workshop_reels|tojson }}'>
+    <div class="row g-4 align-items-center mb-5">
+      <div class="col-md-4 col-lg-3">
+        <div class="clip-player clip-player-sm" data-clips='{{ workshop_reels|tojson }}'>
           <div class="clip-stage">
             <video class="reel-video" controls playsinline preload="metadata"{% if workshop_reels[0].poster %} poster="/static/img/{{ workshop_reels[0].poster }}"{% endif %}>
               <source src="/static/video/{{ workshop_reels[0].file }}" type="video/mp4">
@@ -361,7 +369,7 @@
           {% endif %}
         </div>
       </div>
-      <div class="col-md-7 col-lg-8">
+      <div class="col-md-8 col-lg-9">
         <h5 class="mb-1">Aus der Werkstatt eines Bibelübersetzers</h5>
         <p class="yt-note mb-3">Auf Instagram zeige ich in kurzen Videos, worum es bei einzelnen Übersetzungsentscheidungen geht. Eine Auswahl, zum Abspielen auf einen Titel tippen. Alle Reels: <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a></p>
         <div class="list-group clip-list">
