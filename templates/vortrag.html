@@ -145,19 +145,32 @@
   .clip-player.clip-player-sm {
     max-width: 240px;
   }
+  .clip-list {
+    flex: 1 1 auto;
+  }
   .clip-list .list-group-item {
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
     padding: 0.5rem 0.9rem;
     font-size: 0.9rem;
     line-height: 1.35;
+  }
+  .insta-link {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .insta-link i {
+    font-size: 1.15em;
+    vertical-align: -0.1em;
   }
   .clip-list .list-group-item.active {
     background: var(--color-primary);
     border-color: var(--color-primary);
   }
   .clip-list .list-group-item .clip-ref {
-    display: inline-block;
-    min-width: 6.5rem;
+    flex: 0 0 8.5rem;
     font-size: 0.8rem;
     font-weight: 600;
     opacity: 0.8;
@@ -186,8 +199,8 @@
     margin-bottom: 1rem;
   }
   .person-photo {
-    width: 150px;
-    height: 150px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     object-fit: cover;
     float: left;
@@ -233,6 +246,9 @@
   }
   .info-list li:last-child {
     margin-bottom: 0;
+  }
+  .topic-list li {
+    margin-bottom: 1.1rem;
   }
   .info-list li > i {
     position: absolute;
@@ -292,8 +308,8 @@
           <div class="card-body">
             <h2>Zur Person</h2>
             <div class="person-body">
-              <img src="/static/img/ulrich-probst.jpg" alt="Ulrich Probst" class="person-photo" width="150" height="150" loading="lazy">
-            <p>Ulrich Probst hat Theologie an der Freien Theologischen Hochschule Gießen studiert und Linguistik an der Sommerakademie der Wycliff-Bibelübersetzer. Mit Wycliff war er als Soziolinguist und Verwaltungsleiter in der Zentralafrikanischen Republik tätig.</p>
+              <img src="/static/img/ulrich-probst.jpg" alt="Ulrich Probst" class="person-photo" width="200" height="200" loading="lazy">
+            <p>Ulrich Probst hat Theologie an der Freien Theologischen Hochschule Gießen studiert und Linguistik bei den Wycliff-Bibelübersetzern. In der Zentralafrikanischen Republik war er für Wycliff als Soziolinguist und Verwaltungsleiter tätig.</p>
             <p>Nach fünfzehn Jahren als Pastor arbeitet er seit 2016 an der Neuen Genfer Übersetzung, seit einigen Jahren an den Büchern des Alten Testaments.</p>
             <p class="mb-0">Er ist verheiratet, Vater von drei erwachsenen Söhnen und lebt in Pohlheim bei Gießen.</p>
             </div>
@@ -324,10 +340,11 @@
         <div class="card info-card h-100">
           <div class="card-body">
             <h2>Themen</h2>
-            <ul class="info-list">
+            <ul class="info-list topic-list">
               <li><i class="fas fa-check text-success"></i><strong>Gottes Wort in unsere Sprache: die Bibel und ihre Übersetzungen.</strong> Warum es so viele gibt, worin sie sich unterscheiden und wie man eine gute erkennt.</li>
               <li><i class="fas fa-check text-success"></i><strong>Wie entsteht eine Bibelübersetzung? Ein Blick in die Werkstatt der NGÜ.</strong> Vom hebräischen Text bis zum gedruckten Buch, mit Beispielen aus der laufenden Arbeit.</li>
               <li><i class="fas fa-check text-success"></i><strong>Warum das Alte Testament für Christen unverzichtbar ist.</strong> Was verloren geht, wenn wir nur das Neue Testament lesen.</li>
+              <li><i class="fas fa-check text-success"></i><strong>Hiob: Wenn Gott schweigt.</strong> Ein Buch für Menschen, die leiden, und was seine Sprache über Klage und Vertrauen verrät.</li>
               <li><i class="fas fa-check text-success"></i><strong>Ein Wunschthema nach Absprache.</strong> Eine Bibelstelle, ein Buch, eine Frage? Schreiben Sie es ins Formular.</li>
             </ul>
           </div>
@@ -366,7 +383,7 @@
     </div>
 
     {% if workshop_reels %}
-    <div class="row g-4 align-items-start mb-5">
+    <div class="row g-4 mb-5">
       <div class="col-md-4 col-lg-3">
         <div class="clip-player clip-player-sm" data-clips='{{ workshop_reels|tojson }}'>
           <div class="clip-stage">
@@ -384,9 +401,9 @@
           {% endif %}
         </div>
       </div>
-      <div class="col-md-8 col-lg-9">
+      <div class="col-md-8 col-lg-9 d-flex flex-column">
         <h5 class="mb-1">Aus der Werkstatt eines Bibelübersetzers</h5>
-        <p class="yt-note mb-3">Auf Instagram zeige ich in kurzen Videos, worum es bei einzelnen Übersetzungsentscheidungen geht. Eine Auswahl, zum Abspielen auf einen Titel tippen. Alle Reels: <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a></p>
+        <p class="mb-3">Auf Instagram zeige ich in kurzen Videos, worum es bei einzelnen Übersetzungsentscheidungen geht. Hier eine Auswahl, zum Abspielen auf einen Titel tippen. Alle Reels: <a class="insta-link" href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram me-1"></i>@ngue2029</a></p>
         <div class="list-group clip-list">
           {% for reel in workshop_reels %}
           <button type="button" class="list-group-item list-group-item-action{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">

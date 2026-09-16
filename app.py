@@ -1118,6 +1118,8 @@ SPEAKER_WORKSHOP_REELS = [
     ('hes-1-10', 'Hesekiel 1,10', 'Warum ist Markus ein Löwe? Die Spur führt zu Hesekiels vier Wesen'),
     ('jer-49-22', 'Jeremia 49,22', 'Ein Adler breitet die Schwingen aus. Tröstlich? Nein, der Moment des Zugriffs'),
     ('hiob-37-20', 'Hiob 37,20', 'Verschlungen, mitgeteilt oder verwirrt? Ein Wort, drei Bedeutungen'),
+    ('klgl-3-37', 'Klagelieder 3,37', 'Wer hat das Sagen? Gott allein, oder lässt er Menschen handeln?'),
+    ('ester-2-19', 'Ester 2,19', 'Ein zweites Mal junge Frauen? Ein rätselhaftes Wort bleibt stehen'),
 ]
 
 
