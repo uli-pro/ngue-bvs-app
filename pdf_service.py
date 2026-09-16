@@ -499,8 +499,15 @@ class PDFGeneratorService:
             raise PDFGenerationError(f"Storno PDF generation failed: {str(e)}")
 
     def generate_tax_receipt_atomic(self, donation_id: int,
-                                   session_id: Optional[str] = None) -> Certificate:
-        """Atomische Spendenbescheinigung-Generierung"""
+                                   session_id: Optional[str] = None,
+                                   force: bool = False) -> Certificate:
+        """Atomische Spendenbescheinigung-Generierung.
+
+        force=True erzeugt eine neue PDF, auch wenn schon eine existiert
+        (Admin "neu generieren", z.B. nach Layout-Änderungen am Template).
+        Die Bescheinigungsnummer bleibt dieselbe, der alte Certificate-Record
+        und seine Datei bleiben erhalten; der neue Record ist der jüngste.
+        """
 
         with self._atomic_operation() as created_files:
             # Parameter validieren
@@ -508,7 +515,7 @@ class PDFGeneratorService:
 
             # Prüfen ob Receipt bereits existiert
             existing = Certificate.find_by_donation_and_type(donation_id, 'tax_receipt')
-            if existing and existing.exists_on_disk:
+            if existing and existing.exists_on_disk and not force:
                 return existing
 
             # Generate receipt number if not already assigned
