@@ -1,0 +1,176 @@
+<!-- This template was developed with assistance from Claude Code (Anthropic) -->
+<!-- Core design and user experience decisions are original work -->
+
+{% extends "layout.html" %}
+
+{% block title %}Weihnachtskarten mit einem Bibelvers aus der NGÜ{% endblock %}
+{% block meta_description %}Fünf Weihnachtskarten mit einem weihnachtlichen Bibelvers aus der Neuen Genfer Übersetzung, kostenlos für 100 Haushalte. Einfach Adresse eintragen, die Karten kommen mit der Post.{% endblock %}
+{% block og_title %}Fünf Weihnachtskarten, kostenlos{% endblock %}
+{% block og_description %}Ein weihnachtlicher Bibelvers aus der Neuen Genfer Übersetzung, gedruckt auf fünf Karten. Kostenlos für 100 Haushalte.{% endblock %}
+{% block twitter_title %}Fünf Weihnachtskarten, kostenlos{% endblock %}
+{% block twitter_description %}Ein weihnachtlicher Bibelvers aus der Neuen Genfer Übersetzung, gedruckt auf fünf Karten.{% endblock %}
+
+{% block main %}
+<section class="hero-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto text-center">
+        <p class="mb-3">
+          <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer" class="badge rounded-pill bg-white text-dark border fs-6 fw-normal px-3 py-2 text-decoration-none text-wrap" style="line-height: 1.4; max-width: 100%;">
+            <i class="fab fa-instagram text-primary me-1"></i>Eine Aktion von <strong>@ngue2029</strong> auf Instagram
+          </a>
+        </p>
+        <h1 class="hero-title mb-4">Fünf Weihnachtskarten für Sie<br><small class="text-primary">mit einem weihnachtlichen Bibelvers aus der Neuen Genfer Übersetzung</small></h1>
+        <p class="hero-subtitle">
+          Auf unserem Instagram-Kanal <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a> zeigen wir, wie die Neue Genfer Übersetzung entsteht. Zum Advent schicken wir unseren Followern und allen, die es werden möchten, ein Set mit fünf Karten nach Hause: kostenlos, ohne Verpflichtung, zum Verschenken, Verschicken oder Selberbehalten. Ein Set pro Haushalt, solange der Vorrat reicht.
+        </p>
+        {% if accepting %}
+        <p class="mb-4">
+          <span class="badge bg-primary fs-6 px-3 py-2">Noch {{ remaining }} von {{ campaign.max_households }} Sets frei</span>
+        </p>
+        <a href="#bestellen" class="btn btn-primary btn-lg"><i class="fas fa-envelope-open-text me-2"></i>Karten bestellen</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="bestellen" class="bg-light-custom section-padding">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-7 mx-auto">
+
+        {% if not accepting %}
+        <div class="card">
+          <div class="card-body p-4 text-center">
+            <i class="fas fa-gift fa-3x text-primary mb-3"></i>
+            {% if campaign.is_open and remaining == 0 %}
+            <h2 class="h4">Alle Sets sind vergeben</h2>
+            <p class="text-secondary mb-0">Innerhalb kurzer Zeit wurden alle {{ campaign.max_households }} Kartensets bestellt. Vielen Dank für das große Interesse! Ob es eine zweite Runde gibt, erfahren Sie auf Instagram bei <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
+            {% else %}
+            <h2 class="h4">Die Kartenaktion ist zurzeit nicht geöffnet</h2>
+            <p class="text-secondary mb-0">Wann es losgeht, erfahren Sie auf Instagram bei <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% else %}
+        <h2 class="text-center mb-2">Wohin dürfen wir die Karten schicken?</h2>
+        <p class="text-center text-secondary mb-4">Die Karten gehen Ende November mit der Post raus. Felder mit * sind Pflichtfelder.</p>
+
+        {% if errors %}
+        <div class="alert alert-danger" role="alert">
+          <ul class="mb-0">
+            {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <div class="card">
+          <div class="card-body p-4">
+            <form method="POST" action="/weihnachtskarten#bestellen" class="needs-validation" novalidate>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="form_token" value="{{ form_token }}">
+
+              <!-- Honeypot: für Menschen unsichtbar, Bots füllen es aus -->
+              <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                <label for="website">Website (do not fill)</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <div class="mb-3">
+                <label for="name" class="form-label">Vor- und Nachname *</label>
+                <input type="text" class="form-control" id="name" name="name" maxlength="200" required autocomplete="name" value="{{ form_data.name or '' }}">
+                <div class="invalid-feedback">Bitte geben Sie Ihren Namen an.</div>
+              </div>
+              <div class="mb-3">
+                <label for="address_extra" class="form-label">Adresszusatz</label>
+                <input type="text" class="form-control" id="address_extra" name="address_extra" maxlength="200" placeholder="z. B. c/o, Firma, Gemeinde, Wohnung" autocomplete="address-line2" value="{{ form_data.address_extra or '' }}">
+              </div>
+              <div class="mb-3">
+                <label for="street" class="form-label">Straße und Hausnummer *</label>
+                <input type="text" class="form-control" id="street" name="street" maxlength="200" required autocomplete="address-line1" value="{{ form_data.street or '' }}">
+                <div class="invalid-feedback">Bitte geben Sie Straße und Hausnummer an.</div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-4 col-md-3">
+                  <label for="postal_code" class="form-label">PLZ *</label>
+                  <input type="text" class="form-control" id="postal_code" name="postal_code" maxlength="10" inputmode="numeric" required autocomplete="postal-code" value="{{ form_data.postal_code or '' }}">
+                  <div class="invalid-feedback">PLZ fehlt.</div>
+                </div>
+                <div class="col-8 col-md-9">
+                  <label for="city" class="form-label">Ort *</label>
+                  <input type="text" class="form-control" id="city" name="city" maxlength="100" required autocomplete="address-level2" value="{{ form_data.city or '' }}">
+                  <div class="invalid-feedback">Bitte geben Sie Ihren Ort an.</div>
+                </div>
+              </div>
+              <div class="mb-4">
+                <label for="country" class="form-label">Land *</label>
+                <select class="form-select" id="country" name="country" autocomplete="country">
+                  {% for value, label in countries %}
+                  <option value="{{ value }}" {% if (form_data.country or 'DE') == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">Wir verschicken nach Deutschland, Österreich und in die Schweiz.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="email" class="form-label">E-Mail</label>
+                <input type="email" class="form-control" id="email" name="email" maxlength="255" autocomplete="email" value="{{ form_data.email or '' }}">
+                <div class="form-text">Freiwillig. Nur nötig, wenn Sie den Newsletter möchten oder wir Rückfragen zur Adresse haben.</div>
+              </div>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter" value="1" {% if form_data.newsletter %}checked{% endif %}>
+                  <label class="form-check-label" for="newsletter">
+                    Ich möchte den Newsletter der NGÜ mit Neuigkeiten aus der Übersetzungsarbeit erhalten (jederzeit abbestellbar).
+                  </label>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="privacy" name="privacy" value="1" required {% if form_data.privacy %}checked{% endif %}>
+                  <label class="form-check-label" for="privacy">
+                    Ich habe die <a href="/datenschutz#weihnachtskarten" target="_blank">Datenschutzerklärung</a> gelesen. Meine Adresse wird nur für den Versand der Karten gespeichert und danach gelöscht. *
+                  </label>
+                  <div class="invalid-feedback">Bitte akzeptieren Sie die Datenschutzerklärung.</div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="fas fa-paper-plane me-2"></i>Kartenset bestellen
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="card mt-4">
+          <div class="card-body p-3 d-flex align-items-center gap-3">
+            <i class="fab fa-instagram fa-2x text-primary"></i>
+            <div>
+              <strong>Wer steckt dahinter?</strong> Der Instagram-Kanal <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a> begleitet die Übersetzung des Alten Testaments für die Neue Genfer Übersetzung, getragen von der Peter-Schöffer-Stiftung. Wenn Ihnen die Karten gefallen: Folgen Sie uns, teilen Sie ein Foto Ihrer Karte und markieren Sie @ngue2029.
+            </div>
+          </div>
+        </div>
+        <p class="text-center text-secondary mt-3 mb-0"><small>Fragen? <a href="/kontakt">Zum Kontaktformular</a></small></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Bootstrap-Validierung: Pflichtfelder im Browser prüfen, Server prüft trotzdem
+  document.querySelectorAll('.needs-validation').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    });
+  });
+</script>
+{% endblock %}

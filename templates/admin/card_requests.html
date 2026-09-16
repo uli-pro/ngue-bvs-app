@@ -1,0 +1,158 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Weihnachtskarten - Admin - NGÜ Bibelvers-Patenschaft{% endblock %}
+
+{% block content %}
+<h2 class="mb-2">Weihnachtskarten-Aktion</h2>
+<p class="text-muted">
+    Bestellungen über das Formular <a href="/weihnachtskarten" target="_blank">/weihnachtskarten</a>.
+    Die Daten liegen in einer eigenen Datenbank, getrennt von den Spenderdaten.
+</p>
+
+{% if campaign %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><strong>Einstellungen</strong></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.card_campaign_settings') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_open" name="is_open" value="1" {% if campaign.is_open %}checked{% endif %}>
+                        <label class="form-check-label" for="is_open"><strong>Formular geöffnet</strong></label>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-5">
+                            <label for="max_households" class="form-label">Obergrenze Haushalte</label>
+                            <input type="number" class="form-control" id="max_households" name="max_households" min="1" max="10000" value="{{ campaign.max_households }}">
+                        </div>
+                        <div class="col-sm-7">
+                            <label for="closes_at" class="form-label">Automatisches Ende (Berlin)</label>
+                            <input type="datetime-local" class="form-control" id="closes_at" name="closes_at" value="{{ closes_at_input }}">
+                            <div class="form-text">Leer lassen = kein automatisches Ende.</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </form>
+                <hr>
+                <p class="mb-1">Status jetzt:
+                    {% if campaign.is_accepting() %}
+                    <span class="badge bg-success">nimmt Bestellungen an</span>
+                    {% elif not campaign.is_open %}
+                    <span class="badge bg-secondary">geschlossen (Schalter)</span>
+                    {% elif campaign.is_past_deadline %}
+                    <span class="badge bg-secondary">geschlossen (Enddatum erreicht)</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">voll (Obergrenze erreicht)</span>
+                    {% endif %}
+                </p>
+                <p class="mb-0 text-muted"><small>Für eine zweite Runde: Obergrenze erhöhen, Enddatum setzen, Schalter an.</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><strong>Stand</strong></div>
+            <div class="card-body">
+                <table class="table table-sm mb-3">
+                    <tr><td>Bestellungen (aktiv)</td><td class="text-end"><strong>{{ stats.count }}</strong> von {{ campaign.max_households }}</td></tr>
+                    <tr><td>Noch frei</td><td class="text-end">{{ campaign.remaining() }}</td></tr>
+                    <tr><td>Mit E-Mail</td><td class="text-end">{{ stats.with_email }}</td></tr>
+                    <tr><td>Newsletter-Häkchen</td><td class="text-end">{{ stats.newsletter }}</td></tr>
+                    <tr><td>Ähnliche Adressen (anderer Nachname, werden trotzdem verschickt)</td><td class="text-end">{% if stats.possible_duplicates %}<span class="badge bg-warning text-dark">{{ stats.possible_duplicates }}</span>{% else %}0{% endif %}</td></tr>
+                    <tr><td>Deutschland / Österreich / Schweiz</td><td class="text-end">{{ stats.by_country.DE }} / {{ stats.by_country.AT }} / {{ stats.by_country.CH }}</td></tr>
+                    {% if campaign.deleted_at %}
+                    <tr class="table-light"><td>Bereits gelöschte Adressen (frühere Runden)</td><td class="text-end">{{ campaign.deleted_count }}, davon {{ campaign.deleted_newsletter_count }} Newsletter</td></tr>
+                    {% endif %}
+                </table>
+                <form method="GET" action="{{ url_for('admin.card_requests_labels_pdf') }}" class="mb-2">
+                    <div class="mb-2">
+                        <label for="sender" class="form-label mb-0 small text-muted">Absenderzeile (klein, unterstrichen; „@handle“ am Anfang wird fett; leer = ohne Absender)</label>
+                        <input type="text" class="form-control form-control-sm" id="sender" name="sender" maxlength="200" value="{{ default_sender }}">
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-file-pdf me-1"></i>Etiketten als PDF (Avery 3475, 70 × 36 mm)</button>
+                        <label for="skip" class="form-label mb-0 small text-muted">Auf dem ersten Bogen freilassen:</label>
+                        <input type="number" class="form-control form-control-sm" style="width: 5rem" id="skip" name="skip" min="0" max="23" value="0">
+                    </div>
+                </form>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('admin.card_requests_export') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-csv me-1"></i>Adressen als CSV</a>
+                    <a href="{{ url_for('admin.card_requests_export_newsletter') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-csv me-1"></i>Newsletter-Einwilligungen als CSV</a>
+                </div>
+                <p class="mt-2 mb-0 text-muted"><small>PDF ohne Skalierung drucken („tatsächliche Größe“). CSV: Semikolon-getrennt, UTF-8, für LibreOffice-Serienbrief; Spalte „Landzeile“ ist bei Deutschland leer.</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Bestellungen ({{ stats.count }})</strong>
+    </div>
+    {% if requests %}
+    <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+            <thead>
+                <tr>
+                    <th>Eingang</th>
+                    <th>Name <small class="text-muted fw-normal">(#Nr)</small></th>
+                    <th>Adresse</th>
+                    <th>Land</th>
+                    <th>E-Mail</th>
+                    <th>NL</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in requests %}
+                <tr{% if r.possible_duplicate_of %} class="table-warning"{% endif %}>
+                    <td><small>{{ r.created_at.strftime('%d.%m. %H:%M') }}</small></td>
+                    <td><small class="text-muted">#{{ r.id }}</small> {{ r.name }}{% if r.possible_duplicate_of %}<br><span class="badge bg-warning text-dark" title="Ähnliche Adresse wie Eintrag #{{ r.possible_duplicate_of }}, anderer Nachname. Wird verschickt wie zugesagt; nur bei auffälliger Häufung Kontakt aufnehmen.">Mögliche Dublette von #{{ r.possible_duplicate_of }}</span>{% endif %}</td>
+                    <td>
+                        {% if r.address_extra %}<small class="text-muted">{{ r.address_extra }}</small><br>{% endif %}
+                        {{ r.street }}, {{ r.postal_code }} {{ r.city }}
+                    </td>
+                    <td>{{ r.country }}</td>
+                    <td><small>{{ r.email or '–' }}</small></td>
+                    <td>{% if r.newsletter %}<span class="badge bg-success">ja</span>{% endif %}</td>
+                    <td class="text-end">
+                        <form method="POST" action="{{ url_for('admin.card_request_delete', request_id=r.id) }}" class="d-inline"
+                              onsubmit="return confirm('Eintrag von {{ r.name|e }} löschen? Der Platz wird wieder frei.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Löschen</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body"><span class="text-muted">Noch keine Bestellungen.</span></div>
+    {% endif %}
+</div>
+
+{% if requests %}
+<div class="card border-danger">
+    <div class="card-header text-danger"><strong>Nach dem Versand: alle Adressen löschen</strong></div>
+    <div class="card-body">
+        <p class="mb-2"><small class="text-muted">Erst beide CSV-Dateien herunterladen und die Newsletter-Adressen in Brevo eintragen. Das Löschen entfernt alle {{ stats.count }} Einträge endgültig; die Zahlen für die Auswertung bleiben erhalten. Das Formular wird dabei geschlossen.</small></p>
+        <form method="POST" action="{{ url_for('admin.card_requests_delete_all') }}" class="row g-2 align-items-center"
+              onsubmit="return confirm('Wirklich alle {{ stats.count }} Adressen endgültig löschen?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-auto">
+                <input type="text" class="form-control form-control-sm" name="confirm" placeholder="LOESCHEN eintippen" autocomplete="off">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-danger btn-sm">Alle Adressen löschen</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="alert alert-warning">Die Karten-Datenbank ist nicht angebunden (KARTEN_DATABASE_URI fehlt oder die Einstellungszeile fehlt).</div>
+{% endif %}
+{% endblock %}

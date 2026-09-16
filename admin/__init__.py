@@ -79,6 +79,15 @@ def init_admin(app):
     admin_bp.add_url_rule('/vortragsanfragen/<int:request_id>', 'speaker_request_detail', views.speaker_request_detail, methods=['GET', 'POST'])
     admin_bp.add_url_rule('/vortragsanfragen/<int:request_id>/delete', 'speaker_request_delete', views.speaker_request_delete, methods=['POST'])
 
+    # Weihnachtskarten-Aktion (Formular /weihnachtskarten, eigene Datenbank)
+    admin_bp.add_url_rule('/weihnachtskarten', 'card_requests_list', views.card_requests_list)
+    admin_bp.add_url_rule('/weihnachtskarten/einstellungen', 'card_campaign_settings', views.card_campaign_settings, methods=['POST'])
+    admin_bp.add_url_rule('/weihnachtskarten/<int:request_id>/delete', 'card_request_delete', views.card_request_delete, methods=['POST'])
+    admin_bp.add_url_rule('/weihnachtskarten/adressen.csv', 'card_requests_export', views.card_requests_export)
+    admin_bp.add_url_rule('/weihnachtskarten/etiketten.pdf', 'card_requests_labels_pdf', views.card_requests_labels_pdf)
+    admin_bp.add_url_rule('/weihnachtskarten/newsletter.csv', 'card_requests_export_newsletter', views.card_requests_export_newsletter)
+    admin_bp.add_url_rule('/weihnachtskarten/alle-loeschen', 'card_requests_delete_all', views.card_requests_delete_all, methods=['POST'])
+
     # Apply rate limiting - skip for now as it requires route-specific setup
 
     return admin_bp
