@@ -2,6 +2,8 @@
 Flask==3.0.0
 Flask-Session==0.5.0
 Flask-SQLAlchemy==3.1.1
+# SQLAlchemy 2.1 nimmt für postgresql:// psycopg (v3) statt psycopg2 -> App startet nicht
+SQLAlchemy==2.0.54
 Flask-Migrate==4.0.5
 Flask-WTF==1.2.1
 WTForms==3.1.1
