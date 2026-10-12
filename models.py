@@ -1439,12 +1439,24 @@ class CampaignUrl(db.Model):
         return None
 
     @property
-    def plausible_url(self):
-        """Deeplink to Plausible Analytics with matching filters."""
-        from urllib.parse import urlparse, quote
+    def has_external_target(self):
+        """True if the link leads away from vers-patenschaft.de (e.g. a Kurzlink to YouTube)."""
+        from urllib.parse import urlparse
         url = self.target_url if '://' in (self.target_url or '') else f'https://{self.target_url}'
-        domain = urlparse(url).netloc
-        base = f'https://analytics.vers-patenschaft.de/{domain}'
+        domain = urlparse(url).netloc.lower()
+        return domain not in ('vers-patenschaft.de', 'www.vers-patenschaft.de')
+
+    @property
+    def plausible_url(self):
+        """Deeplink to Plausible Analytics with matching filters.
+
+        None for external targets: visitors never load a page of vers-patenschaft.de,
+        so Plausible has no data for them (only click_count counts those clicks).
+        """
+        from urllib.parse import quote
+        if self.has_external_target:
+            return None
+        base = 'https://analytics.vers-patenschaft.de/vers-patenschaft.de'
         params = []
         if self.utm_source:
             params.append(f'f=is,utm_source,{quote(self.utm_source)}')
