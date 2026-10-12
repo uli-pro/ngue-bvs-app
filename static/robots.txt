@@ -8,6 +8,7 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /stripe/
 Disallow: /download/
+Disallow: /spendenkorb
 Disallow: /vers-auswaehlen/keyword
 Disallow: /vers-auswaehlen/referenz
 Disallow: /vortrag/danke
