@@ -62,6 +62,7 @@
                     <th>Kanal</th>
                     <th>Typ</th>
                     <th style="min-width: 280px;">URL</th>
+                    <th title="Aufrufe des Kurzlinks seit dem Anlegen (inkl. Bots). Direktlinks zählt nur Plausible.">Klicks</th>
                     <th>Erstellt</th>
                     <th>Aktionen</th>
                 </tr>
@@ -101,11 +102,20 @@
                         </div>
                     </td>
                     <td>
+                        {% if c.url_type == 'offline' %}
+                        <strong>{{ c.click_count }}</strong>
+                        {% else %}
+                        <small class="text-muted">Plausible</small>
+                        {% endif %}
+                    </td>
+                    <td>
                         <small>{{ c.created_at.strftime('%d.%m.%Y') }}</small>
                     </td>
                     <td>
+                        {% if c.plausible_url %}
                         <a href="{{ c.plausible_url }}" target="_blank" class="btn btn-sm btn-outline-secondary me-1"
                            title="In Plausible öffnen">Statistik</a>
+                        {% endif %}
                         <a href="{{ url_for('admin.campaign_url_edit', campaign_id=c.id) }}"
                            class="btn btn-sm btn-outline-primary me-1">Bearbeiten</a>
                         {% if c.url_type == 'offline' and c.slug %}
