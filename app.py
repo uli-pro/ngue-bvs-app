@@ -1173,7 +1173,7 @@ def _speaker_form_context(form_data=None):
 @limiter.limit("3 per minute", methods=["POST"])
 def vortrag():
     """Landingpage und Anfrageformular: Ulrich Probst als Referent oder Prediger einladen."""
-    if request.method == "GET":
+    if request.method != "POST":
         return render_template("vortrag.html", **_speaker_form_context())
 
     # Honeypot: Bots füllen das versteckte Feld aus. Erfolg vortäuschen, nichts speichern.
@@ -1314,7 +1314,7 @@ def weihnachtskarten():
         app.logger.error("card_campaign row missing in karten database")
         abort(503)
 
-    if request.method == "GET":
+    if request.method != "POST":
         return render_template("weihnachtskarten.html", **_card_form_context(campaign))
 
     if not campaign.is_accepting():

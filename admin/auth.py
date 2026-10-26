@@ -16,7 +16,7 @@ def get_admin_emails():
 
 def login():
     """Show login form and handle magic link request"""
-    if request.method == 'GET':
+    if request.method != 'POST':
         # Already logged in?
         if session.get('admin_authenticated'):
             return redirect(url_for('admin.index'))

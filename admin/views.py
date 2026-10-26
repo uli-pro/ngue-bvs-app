@@ -1564,7 +1564,7 @@ def _bulk_render(fd, preview=None, errors=()):
 @admin_required
 def bulk_sponsoring_new():
     """Formular, Vorschau und Eintragen für ein Bulk-Sponsoring."""
-    if request.method == 'GET':
+    if request.method != 'POST':
         fd = {f: '' for f in BULK_FORM_FIELDS}
         fd.update(country='DE', zahlungsweg='Überweisung', newsletter_consent=False,
                   zuwendungsdatum=datetime.now().strftime('%Y-%m-%d'))
