@@ -1450,14 +1450,20 @@ class StripeService:
                 return True
             donation_id = int(donation_id)
 
-            donation = Donation.query.filter(
-                Donation.id == donation_id,
-                Donation.payment_status.in_(['pending', 'processing'])
-            ).first()
+            donation = Donation.query.filter(Donation.id == donation_id).first()
 
             if not donation:
-                logger.info(f"No pending donation found for requires_action PaymentIntent {payment_intent.id} - may be already processed")
+                logger.error(f"Donation {donation_id} not found for requires_action PaymentIntent {payment_intent.id}")
                 return False
+
+            # Already finished (e.g. superseded attempt marked failed, or payment completed):
+            # nothing to do. Acknowledge with 200 so Stripe stops retrying.
+            if donation.payment_status not in ('pending', 'processing'):
+                logger.info(
+                    f"Donation {donation.id} already {donation.payment_status} - "
+                    f"ignoring requires_action PaymentIntent {payment_intent.id}"
+                )
+                return True
             
             # Keep status as processing for now - user needs to complete action
             if donation.payment_status == 'pending':
@@ -1492,14 +1498,20 @@ class StripeService:
                 return True
             donation_id = int(donation_id)
 
-            donation = Donation.query.filter(
-                Donation.id == donation_id,
-                Donation.payment_status.in_(['pending', 'processing'])
-            ).first()
+            donation = Donation.query.filter(Donation.id == donation_id).first()
 
             if not donation:
-                logger.info(f"No pending donation found for canceled PaymentIntent {payment_intent.id} - may be already processed")
+                logger.error(f"Donation {donation_id} not found for canceled PaymentIntent {payment_intent.id}")
                 return False
+
+            # Already finished (e.g. superseded attempt marked failed, or payment completed):
+            # nothing to do. Acknowledge with 200 so Stripe stops retrying.
+            if donation.payment_status not in ('pending', 'processing'):
+                logger.info(
+                    f"Donation {donation.id} already {donation.payment_status} - "
+                    f"ignoring canceled PaymentIntent {payment_intent.id}"
+                )
+                return True
             
             cancellation_reason = payment_intent.cancellation_reason or 'canceled'
             error_message = f"Payment canceled: {cancellation_reason}"
