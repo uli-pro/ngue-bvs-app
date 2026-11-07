@@ -794,6 +794,10 @@ class StripeService:
 
         Returns:
             bool: True if fulfillment successful
+
+        Raises:
+            RuntimeError: if no PDF could be generated or the email could not be sent.
+                Callers catch this and send an admin alert.
         """
         from pdf_service import PDFGeneratorService
         from email_service import email_service
@@ -857,11 +861,17 @@ class StripeService:
                     # when payment_status becomes 'completed' (for both card and SEPA)
                     return True
                 else:
-                    logger.error(f"Failed to send certificate email for donation {donation.id}")
-                    return False
+                    # Raise so the caller sends an admin alert (donor got nothing)
+                    raise RuntimeError(
+                        f"Versand der Urkunden-Mail fehlgeschlagen für Donation {donation.id} "
+                        f"– Spender hat keine Bestätigung erhalten"
+                    )
             else:
-                logger.warning(f"No PDFs generated for donation {donation.id}")
-                return False
+                # Raise so the caller sends an admin alert (donor got nothing)
+                raise RuntimeError(
+                    f"Keine PDFs erzeugt für Donation {donation.id} (Urkunde und ggf. "
+                    f"Spendenbescheinigung fehlgeschlagen) – Spender hat keine Mail erhalten"
+                )
 
         except Exception as e:
             logger.error(f"Error in _fulfill_donation for donation {donation.id}: {e}")
