@@ -4,11 +4,11 @@
 {% extends "layout.html" %}
 
 {% block title %}Weihnachtskarten mit einem Bibelvers aus der NGÜ{% endblock %}
-{% block meta_description %}Fünf Weihnachtskarten mit einem weihnachtlichen Bibelvers aus der Neuen Genfer Übersetzung, kostenlos für 100 Haushalte. Einfach Adresse eintragen, die Karten kommen mit der Post.{% endblock %}
-{% block og_title %}Fünf Weihnachtskarten, kostenlos{% endblock %}
-{% block og_description %}Ein weihnachtlicher Bibelvers aus der Neuen Genfer Übersetzung, gedruckt auf fünf Karten. Kostenlos für 100 Haushalte.{% endblock %}
-{% block twitter_title %}Fünf Weihnachtskarten, kostenlos{% endblock %}
-{% block twitter_description %}Ein weihnachtlicher Bibelvers aus der Neuen Genfer Übersetzung, gedruckt auf fünf Karten.{% endblock %}
+{% block meta_description %}Fünfmal diese Weihnachtskarte mit einem Bibelvers aus der Neuen Genfer Übersetzung, kostenlos für 100 Haushalte. Einfach Adresse eintragen, die Karten kommen mit der Post.{% endblock %}
+{% block og_title %}Fünfmal diese Weihnachtskarte, kostenlos{% endblock %}
+{% block og_description %}Mit einem Bibelvers aus der Neuen Genfer Übersetzung. Kostenlos für 100 Haushalte.{% endblock %}
+{% block twitter_title %}Fünfmal diese Weihnachtskarte, kostenlos{% endblock %}
+{% block twitter_description %}Mit einem Bibelvers aus der Neuen Genfer Übersetzung. Kostenlos für 100 Haushalte.{% endblock %}
 
 {% block main %}
 <section class="hero-section">
@@ -20,13 +20,14 @@
             <i class="fab fa-instagram text-primary me-1"></i>Eine Aktion von <strong>@ngue2029</strong> auf Instagram
           </a>
         </p>
-        <h1 class="hero-title mb-4">Fünf Weihnachtskarten für Sie<br><small class="text-primary">mit einem weihnachtlichen Bibelvers aus der Neuen Genfer Übersetzung</small></h1>
+        <h1 class="hero-title mb-4">Fünfmal diese Karte,<br><small class="text-primary">kostenlos für dich</small></h1>
+        <img src="/static/img/weihnachtskarte-2026.jpg" alt="Weihnachtskarte: Äste im Winterlicht mit dem Bibelvers „Das Licht leuchtet in der Finsternis, und die Finsternis hat es nicht auslöschen können.“ Johannes 1,5" class="img-fluid rounded shadow mb-4" width="1200" height="851">
         <p class="hero-subtitle">
-          Auf unserem Instagram-Kanal <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a> zeigen wir, wie die Neue Genfer Übersetzung entsteht. Zum Advent schicken wir unseren Followern und allen, die es werden möchten, ein Set mit fünf Karten nach Hause: kostenlos, ohne Verpflichtung, zum Verschenken, Verschicken oder Selberbehalten. Ein Set pro Haushalt, solange der Vorrat reicht.
+          Auf unserem Instagram-Kanal <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a> zeigen wir, wie die Neue Genfer Übersetzung entsteht. Zum Advent schicken wir unseren Followern und allen, die es werden möchten, fünfmal diese Karte nach Hause: kostenlos und ohne Verpflichtung, zum Verschicken, Verschenken oder Hinstellen. Einmal pro Haushalt, solange der Vorrat reicht.
         </p>
         {% if accepting %}
         <p class="mb-4">
-          <span class="badge bg-primary fs-6 px-3 py-2">Noch {{ remaining }} von {{ campaign.max_households }} Sets frei</span>
+          <span class="badge bg-primary fs-6 px-3 py-2">Noch {{ remaining }} {{ 'Bestellung' if remaining == 1 else 'Bestellungen' }} möglich</span>
         </p>
         <a href="#bestellen" class="btn btn-primary btn-lg"><i class="fas fa-envelope-open-text me-2"></i>Karten bestellen</a>
         {% endif %}
@@ -45,18 +46,18 @@
           <div class="card-body p-4 text-center">
             <i class="fas fa-gift fa-3x text-primary mb-3"></i>
             {% if campaign.is_open and remaining == 0 %}
-            <h2 class="h4">Alle Sets sind vergeben</h2>
-            <p class="text-secondary mb-0">Innerhalb kurzer Zeit wurden alle {{ campaign.max_households }} Kartensets bestellt. Vielen Dank für das große Interesse! Ob es eine zweite Runde gibt, erfahren Sie auf Instagram bei <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
+            <h2 class="h4">Alle Karten sind vergeben</h2>
+            <p class="text-secondary mb-0">Alle {{ campaign.max_households }} Bestellungen sind eingegangen. Vielen Dank für das große Interesse! Ob es eine zweite Runde gibt, erfährst du auf Instagram bei <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
             {% else %}
             <h2 class="h4">Die Kartenaktion ist zurzeit nicht geöffnet</h2>
-            <p class="text-secondary mb-0">Wann es losgeht, erfahren Sie auf Instagram bei <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
+            <p class="text-secondary mb-0">Wann es losgeht, erfährst du auf Instagram bei <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a>.</p>
             {% endif %}
           </div>
         </div>
 
         {% else %}
         <h2 class="text-center mb-2">Wohin dürfen wir die Karten schicken?</h2>
-        <p class="text-center text-secondary mb-4">Die Karten gehen am 4. Dezember mit der Post raus. Felder mit * sind Pflichtfelder.</p>
+        <p class="text-center text-secondary mb-4">Bestellen kannst du bis zum 3. Dezember, am 4. Dezember gehen die Karten mit der Post raus. Felder mit * sind Pflichtfelder.</p>
 
         {% if errors %}
         <div class="alert alert-danger" role="alert">
@@ -81,7 +82,7 @@
               <div class="mb-3">
                 <label for="name" class="form-label">Vor- und Nachname *</label>
                 <input type="text" class="form-control" id="name" name="name" maxlength="200" required autocomplete="name" value="{{ form_data.name or '' }}">
-                <div class="invalid-feedback">Bitte geben Sie Ihren Namen an.</div>
+                <div class="invalid-feedback">Bitte gib deinen Namen an.</div>
               </div>
               <div class="mb-3">
                 <label for="address_extra" class="form-label">Adresszusatz</label>
@@ -90,7 +91,7 @@
               <div class="mb-3">
                 <label for="street" class="form-label">Straße und Hausnummer *</label>
                 <input type="text" class="form-control" id="street" name="street" maxlength="200" required autocomplete="address-line1" value="{{ form_data.street or '' }}">
-                <div class="invalid-feedback">Bitte geben Sie Straße und Hausnummer an.</div>
+                <div class="invalid-feedback">Bitte gib Straße und Hausnummer an.</div>
               </div>
               <div class="row mb-3">
                 <div class="col-4 col-md-3">
@@ -101,7 +102,7 @@
                 <div class="col-8 col-md-9">
                   <label for="city" class="form-label">Ort *</label>
                   <input type="text" class="form-control" id="city" name="city" maxlength="100" required autocomplete="address-level2" value="{{ form_data.city or '' }}">
-                  <div class="invalid-feedback">Bitte geben Sie Ihren Ort an.</div>
+                  <div class="invalid-feedback">Bitte gib deinen Ort an.</div>
                 </div>
               </div>
               <div class="mb-4">
@@ -117,7 +118,7 @@
               <div class="mb-3">
                 <label for="email" class="form-label">E-Mail</label>
                 <input type="email" class="form-control" id="email" name="email" maxlength="255" autocomplete="email" value="{{ form_data.email or '' }}">
-                <div class="form-text">Freiwillig. Nur nötig, wenn Sie den Newsletter möchten oder wir Rückfragen zur Adresse haben.</div>
+                <div class="form-text">Freiwillig. Nur nötig, wenn du den Newsletter möchtest oder wir Rückfragen zur Adresse haben.</div>
               </div>
               <div class="mb-3">
                 <div class="form-check">
@@ -133,12 +134,12 @@
                   <label class="form-check-label" for="privacy">
                     Ich habe die <a href="/datenschutz#weihnachtskarten" target="_blank">Datenschutzerklärung</a> gelesen. Meine Adresse wird nur für den Versand der Karten gespeichert und danach gelöscht. *
                   </label>
-                  <div class="invalid-feedback">Bitte akzeptieren Sie die Datenschutzerklärung.</div>
+                  <div class="invalid-feedback">Bitte akzeptiere die Datenschutzerklärung.</div>
                 </div>
               </div>
 
               <button type="submit" class="btn btn-primary btn-lg w-100">
-                <i class="fas fa-paper-plane me-2"></i>Kartenset bestellen
+                <i class="fas fa-paper-plane me-2"></i>Karten bestellen
               </button>
             </form>
           </div>
@@ -149,7 +150,7 @@
           <div class="card-body p-3 d-flex align-items-center gap-3">
             <i class="fab fa-instagram fa-2x text-primary"></i>
             <div>
-              <strong>Wer steckt dahinter?</strong> Der Instagram-Kanal <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a> begleitet die Übersetzung des Alten Testaments für die Neue Genfer Übersetzung, getragen von der Peter-Schoeffer-Stiftung. Wenn Ihnen die Karten gefallen: Folgen Sie uns, teilen Sie ein Foto Ihrer Karte und markieren Sie @ngue2029.
+              <strong>Wer steckt dahinter?</strong> Der Instagram-Kanal <a href="https://www.instagram.com/ngue2029/" target="_blank" rel="noopener noreferrer">@ngue2029</a> begleitet die Übersetzung des Alten Testaments für die Neue Genfer Übersetzung, getragen von der Peter-Schoeffer-Stiftung. Wenn dir die Karten gefallen: Folge uns, teile ein Foto deiner Karte und markiere @ngue2029.
             </div>
           </div>
         </div>

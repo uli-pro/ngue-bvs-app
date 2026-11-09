@@ -1208,7 +1208,7 @@ def vortrag():
     if f["tech_available"] not in ("ja", "nein", "unklar"):
         f["tech_available"] = None
     if not f["privacy"]:
-        errors.append("Bitte akzeptieren Sie die Datenschutzerklärung.")
+        errors.append("Bitte akzeptiere die Datenschutzerklärung.")
     if len(f["topic"]) > 5000:
         errors.append("Der Themenwunsch ist zu lang (maximal 5000 Zeichen).")
     event_date = None
@@ -1333,11 +1333,11 @@ def weihnachtskarten():
 
     errors = []
     if _card_form_too_fast(request.form.get("form_token")):
-        errors.append("Das ging zu schnell. Bitte prüfen Sie Ihre Angaben und senden Sie das Formular noch einmal ab.")
+        errors.append("Das ging zu schnell. Bitte prüfe deine Angaben und sende das Formular noch einmal ab.")
     if len(f["name"]) < 2:
-        errors.append("Bitte geben Sie Ihren Namen an.")
+        errors.append("Bitte gib deinen Namen an.")
     if len(f["street"]) < 3 or not any(ch.isdigit() for ch in f["street"]):
-        errors.append("Bitte geben Sie Straße und Hausnummer an.")
+        errors.append("Bitte gib Straße und Hausnummer an.")
     if f["country"] not in dict(CardRequest.COUNTRIES):
         errors.append("Wir verschicken nur nach Deutschland, Österreich und in die Schweiz.")
         f["country"] = "DE"
@@ -1346,20 +1346,20 @@ def weihnachtskarten():
         errors.append("Die Postleitzahl passt nicht zum gewählten Land.")
     f["postal_code"] = plz
     if len(f["city"]) < 2:
-        errors.append("Bitte geben Sie Ihren Ort an.")
+        errors.append("Bitte gib deinen Ort an.")
     if f["email"] and ("@" not in f["email"] or "." not in f["email"].split("@")[-1] or " " in f["email"]):
         errors.append("Die E-Mail-Adresse sieht nicht gültig aus.")
     if f["newsletter"] and not f["email"]:
         errors.append("Für den Newsletter brauchen wir eine E-Mail-Adresse.")
     if not f["privacy"]:
-        errors.append("Bitte akzeptieren Sie die Datenschutzerklärung.")
+        errors.append("Bitte akzeptiere die Datenschutzerklärung.")
 
     if errors:
         return render_template("weihnachtskarten.html", **_card_form_context(campaign, f, errors)), 400
 
     address_key = CardRequest.address_key(f["country"], f["postal_code"], f["street"], f["name"])
     email_key = CardRequest.email_key(f["email"])
-    duplicate_message = "Für diese Adresse oder E-Mail-Adresse ist schon ein Kartenset eingetragen. Ein Set pro Haushalt, danke fürs Verständnis."
+    duplicate_message = "Für diese Adresse oder E-Mail-Adresse ist schon eine Bestellung eingetragen. Einmal pro Haushalt, danke fürs Verständnis."
 
     try:
         # Zeile sperren, damit bei 99 Einträgen nicht zwei gleichzeitig durchrutschen
@@ -1399,7 +1399,7 @@ def weihnachtskarten():
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Card request could not be saved: {e}")
-        errors = ["Es gab ein Problem beim Speichern. Bitte versuchen Sie es später noch einmal oder schreiben Sie an info@vers-patenschaft.de."]
+        errors = ["Es gab ein Problem beim Speichern. Bitte versuch es später noch einmal oder schreib an info@vers-patenschaft.de."]
         return render_template("weihnachtskarten.html", **_card_form_context(campaign, f, errors)), 500
 
     app.logger.info(f"Card request #{req.id} saved ({req.postal_code} {req.city}, {req.country})"
